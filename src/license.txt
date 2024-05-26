@@ -1,0 +1,54 @@
+Subscriptions for Woo
+
+Copyright 2024 by the contributors
+
+Free Version (GPL License):
+
+    License: GNU General Public License (GPL) Version 2 or later
+
+      This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by 
+    the Free Software Foundation, either version 2 of the License, or
+    (at your option) any later version.
+
+      This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+      You should have received a copy of the GNU General Public License
+    along with this program. If not, see http://www.gnu.org/licenses/.
+
+    Additional Terms for Paid Upgrade Version.
+
+Paid Upgrade Version (GPL with Additional Terms):
+
+    License: GNU General Public License (GPL) Version 2 or later with Additional Terms
+
+      In addition to the terms of the GNU General Public License (GPL) Version 2 or later,
+    the following terms apply to the paid upgrade version:
+
+      Use Restrictions: The paid upgrade version may only be used by the
+    individual or entity who has purchased the license for the plugin.
+    Redistribution of the paid upgrade version is prohibited.
+
+      Support and Updates: Purchasing a license for the paid upgrade version
+    grants access to support and updates for a specified period. After this
+    period, continued access to support and updates may require renewal of
+    the license.
+
+      Exclusive Features: The paid upgrade version may include additional
+    features or functionality not available in the free version of the
+    plugin. These features are exclusively available to users who have
+    purchased a license for the paid upgrade version.
+
+      No Guarantee of Future Compatibility: While efforts will be made to
+    maintain compatibility with future versions of WordPress, there is
+    no guarantee that the paid upgrade version will remain compatible
+    with all future WordPress releases.
+
+      By purchasing a license for the paid upgrade version, you agree to abide
+    by these additional terms in addition to the terms of the GNU General
+    Public License (GPL) Version 2 or later.
+
+    Complete additional terms may be found at https://wp-subscriptions.com/terms-conditions/
