@@ -6,6 +6,8 @@ use Automattic\WooCommerce\Utilities\FeaturesUtil;
 
 class PayPalSubs
 {
+    public static $instance;
+
     public static $template_dir = ABSPATH . "/wp-content/plugins/subscriptions-for-woo/templates";
 
     public static $api_namespace = "subscriptions-for-woo/v1";
@@ -15,12 +17,6 @@ class PayPalSubs
     public static $options_group = "ppsfwoo_options_group";
 
     public static $upgrade_link = "https://wp-subscriptions.com/";
-
-    public static $capabilities = [
-        'ppsfwoo_manage_settings'      => 'Manage Subscriptions Plugin Settings',
-        'ppsfwoo_manage_subscriptions' => 'Manage Subscriptions',
-        'ppsfwoo_manage_subscription_products' => 'Manage Subscription Products'
-    ];
 
     public static $options = [
         'ppsfwoo_thank_you_page_id' => [
@@ -104,6 +100,8 @@ class PayPalSubs
         $this->ppsfwoo_add_actions();
 
         $this->ppsfwoo_add_filters();
+
+        self::$instance = $this;
     }
 
     protected function ppsfwoo_add_actions()
@@ -129,8 +127,6 @@ class PayPalSubs
         add_action('woocommerce_product_meta_start', [$this, 'ppsfwoo_add_custom_paypal_button']);
 
         add_action('plugins_loaded', 'ppsfwoo_register_product_type');
-
-        add_action('admin_footer', [$this, 'ppsfwoo_custom_js']);
         
         add_action('woocommerce_product_data_panels', [$this, 'ppsfwoo_options_product_tab_content']);
         
@@ -288,26 +284,6 @@ class PayPalSubs
         echo '<style>ul.wc-tabs li.ppsfwoo_options a::before {
           content: "\f515" !important;
         }</style>';
-    }
-
-    public static function ppsfwoo_custom_js()
-    {
-        if ('product' != get_post_type()) {
-
-            return;
-
-        }
-
-        ?><script type='text/javascript'>
-            jQuery(document).ready(function() {
-                var class_list = ".options_group.pricing,.general_options";
-                class_list += "<?php echo  PPSFWOO_PERMISSIONS ? ",.show_if_simple": ""; ?>";
-                jQuery(class_list)
-                    .addClass('show_if_ppsfwoo')
-                    .show();
-            });
-
-        </script><?php
     }
 
     public static function ppsfwoo_custom_product_tabs($tabs)
@@ -626,7 +602,7 @@ class PayPalSubs
                 for ($i = 1; $i <= $total_pages; $i++)
                 {
                     $href = esc_url(add_query_arg([
-                        'page'          => 'paypal_subs',
+                        'page'          => 'subscriptions_for_woo',
                         'subs_page_num' => $i
                     ]));
 
@@ -846,14 +822,6 @@ class PayPalSubs
         }
     }
 
-    protected function ppsfwoo_get_users_by_capabilities()
-    {
-        return get_users([
-            'fields'   => 'ID',
-            'role__in' => array_keys(self::$capabilities)
-        ]);
-    }
-
     public function ppsfwoo_plugin_deactivation()
     {
         global $wpdb;
@@ -874,21 +842,6 @@ class PayPalSubs
 
                 delete_option($option);
 
-            }
-
-            if($users = $this->ppsfwoo_get_users_by_capabilities()) {
-
-                foreach ($users as $user_id)
-                {
-                    $user = new \WP_User($user_id);
-
-                    foreach (self::$capabilities as $capability => $name)
-                    {
-                        $user->remove_cap($capability);
-
-                        delete_user_meta($user_id, 'ppsfwoo_custom_capabilities');
-                    }
-                }
             }
         }
     }
@@ -1009,7 +962,7 @@ class PayPalSubs
 
     public function ppsfwoo_settings_link($links)
     {
-        $settings_url = esc_url(admin_url('admin.php?page=paypal_subs'));
+        $settings_url = esc_url(admin_url('admin.php?page=subscriptions_for_woo'));
 
         $settings = ["<a href='$settings_url'>Settings</a>"];
         
@@ -1018,7 +971,7 @@ class PayPalSubs
 
     public function ppsfwoo_script_handler($hook)
     {
-        if ('woocommerce_page_paypal_subs' !== $hook) {
+        if ('woocommerce_page_subscriptions_for_woo' !== $hook) {
 
             return;
 
@@ -1051,58 +1004,19 @@ class PayPalSubs
 
     public function ppsfwoo_register_options_page()
     {
-        if(is_super_admin()) {
-
-            $required = "manage_options";
-
-        } else {
-
-            $required = "ppsfwoo_manage_settings";
-
-            foreach(self::$capabilities as $cap => $name)
-            {
-                if(strpos($cap, "manageppsfwoo_") === 0 && current_user_can($cap)) {
-
-                    $required = $cap;
-
-                    break;
-
-                }
-            }
-        }
-
         add_submenu_page(
             'woocommerce',
             'Settings',
             'Subscriptions',
-            $required,
-            'paypal_subs',
+            'manage_options',
+            'subscriptions_for_woo',
             [$this,'ppsfwoo_options_page']
         );
     }
 
     public function ppsfwoo_add_custom_user_fields($user)
     {
-        if(PPSFWOO_PERMISSIONS) return;
-        ?>
-        <h3>Subscriptions Capabilities</h3>
-        <table class="form-table">
-            <tr>
-                <th><label for="ppsfwoo_custom_cap">Capabilities</label></th>
-                <td>
-                    <select name="ppsfwoo_custom_cap" id="ppsfwoo_custom_cap" multiple="multiple">
-                        <?php
-                        foreach (self::$capabilities as $capability => $label)
-                        {
-                            echo '<option value="' . esc_attr($capability) . '" disabled>' . esc_html($label) . '</option>';
-                        }
-                        ?>
-                    </select>
-                    <p class="description"><?php echo !PPSFWOO_PERMISSIONS ? "<a href='".esc_url(self::$upgrade_link)."' target='_blank'>Pro feature</a>: ": ""; ?>Select custom capabilities for the user.</p>
-                </td>
-            </tr>
-        </table>
-        <?php
+        self::ppsfwoo_display_template("edit-user");
     }
 
     public function ppsfwoo_options_page()

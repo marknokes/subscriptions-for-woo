@@ -39,7 +39,7 @@
 			$export_url = add_query_arg([
 			    'export_table'  => 'true',
 			    '_wpnonce' 		=> wp_create_nonce('db_export_nonce', time() + 600)
-			], admin_url('admin.php?page=paypal_subs'));
+			], admin_url('admin.php?page=subscriptions_for_woo'));
 			
 			?>
 
@@ -54,7 +54,7 @@
     	}
 
         ?>
-        <a class="button" style="display: none;" id="reset" href="<?php echo esc_url(admin_url('admin.php?page=paypal_subs')); ?>">Reset</a>
+        <a class="button" style="display: none;" id="reset" href="<?php echo esc_url(admin_url('admin.php?page=subscriptions_for_woo')); ?>">Reset</a>
     </div>	
 
 	<div id="tab-general" class="tab-content">
