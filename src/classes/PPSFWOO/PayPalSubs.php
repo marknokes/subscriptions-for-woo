@@ -106,7 +106,7 @@ class PayPalSubs
 
     protected function ppsfwoo_add_actions()
     {
-        add_action('init', [$this, 'ppsfwoo_init']);
+        add_action('admin_init', [$this, 'ppsfwoo_register_settings']);
 
         add_action('admin_init', [$this, 'ppsfwoo_handle_export_action']);
 
@@ -158,55 +158,52 @@ class PayPalSubs
     {
         $export_table = isset($_GET['export_table']) ? sanitize_text_field(wp_unslash($_GET['export_table'])): "";
 
-        if(empty($export_table)) {
+        if(empty($export_table) || $export_table !== 'true') {
 
             return;
 
         }
 
-        if ($export_table === 'true') {
+        if (!isset($_GET['_wpnonce'] ) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
 
-            if (!isset($_GET['_wpnonce'] ) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
+            wp_die('Security check failed.');
 
-                wp_die('Security check failed.');
-
-            }
-
-            global $wpdb;
-
-            $data = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber", ARRAY_A); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
-            if(!isset($data[0])) {
-
-                exit;
-
-            }
-
-            $columns = array_keys($data[0]);
-
-            $values = array();
-
-            foreach ($data as $row)
-            {
-                $row_values = array_map([$wpdb, 'prepare'], array_fill(0, count($row), '%s'), $row);
-
-                $values[] = '(' . implode(', ', $row_values) . ')';
-            }
-
-            $db_name = DB_NAME;
-
-            $sql_content = "INSERT INTO `$db_name`.`{$wpdb->prefix}ppsfwoo_subscriber` (`" . implode('`, `', $columns) . "`) VALUES \n";
-                
-            $sql_content .= implode(",\n", $values) . ";\n";
-
-            header('Content-Type: application/sql');
-
-            header('Content-Disposition: attachment; filename="table_backup.sql"');
-
-            echo $sql_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-
-            exit();
         }
+
+        global $wpdb;
+
+        $data = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber", ARRAY_A); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+        if(!isset($data[0])) {
+
+            exit;
+
+        }
+
+        $columns = array_keys($data[0]);
+
+        $values = array();
+
+        foreach ($data as $row)
+        {
+            $row_values = array_map([$wpdb, 'prepare'], array_fill(0, count($row), '%s'), $row);
+
+            $values[] = '(' . implode(', ', $row_values) . ')';
+        }
+
+        $db_name = DB_NAME;
+
+        $sql_content = "INSERT INTO `$db_name`.`{$wpdb->prefix}ppsfwoo_subscriber` (`" . implode('`, `', $columns) . "`) VALUES \n";
+            
+        $sql_content .= implode(",\n", $values) . ";\n";
+
+        header('Content-Type: application/sql');
+
+        header('Content-Disposition: attachment; filename="table_backup.sql"');
+
+        echo $sql_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+        exit();
     }
 
     public function ppsfwoo_enqueue_styles_on_order_received_page()
@@ -305,13 +302,13 @@ class PayPalSubs
         return $tabs;
     }
 
-    public static function ppsfwoo_options_product_tab_content()
+    public function ppsfwoo_options_product_tab_content()
     {
         ?><div id='ppsfwoo_options' class='panel woocommerce_options_panel'><?php
 
             ?><div class='options_group'><?php
 
-                if($plans = self::ppsfwoo_get_plans()) {
+                if($plans = $this->ppsfwoo_plans) {
 
                     foreach($plans as $plan_id => $plan_data)
                     {
@@ -334,7 +331,7 @@ class PayPalSubs
         </div><?php
     }
 
-    public static function ppsfwoo_save_option_field($post_id)
+    public function ppsfwoo_save_option_field($post_id)
     {
         if (!isset($_POST['ppsfwoo_plan_id']) || !isset($_POST['ppsfwoo_plan_id_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ppsfwoo_plan_id_nonce'])), 'ppsfwoo_plan_id_nonce')) {
 
@@ -363,7 +360,7 @@ class PayPalSubs
 
                 }
 
-                if(!self::display_subs($email)) {
+                if(!$this->display_subs($email)) {
 
                     echo esc_attr("false");
 
@@ -471,7 +468,7 @@ class PayPalSubs
 
             case 'list_plans':
 
-                echo wp_json_encode(self::ppsfwoo_get_plans());
+                echo wp_json_encode($this->ppsfwoo_plans);
 
                 break;
 
@@ -539,7 +536,7 @@ class PayPalSubs
         wp_die();
     }
 
-    public static function display_subs($email = "")
+    public function display_subs($email = "")
     {
         if(PPSFWOO_PERMISSIONS && !current_user_can('ppsfwoo_manage_subscriptions')) {
 
@@ -551,7 +548,7 @@ class PayPalSubs
 
         global $wpdb;
 
-        $per_page = get_option('ppsfwoo_rows_per_page') ?: 10;
+        $per_page = $this->ppsfwoo_rows_per_page ?: 10;
 
         $subs_page_num = isset($_GET['subs_page_num']) ? sanitize_text_field(wp_unslash($_GET['subs_page_num'])): null; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
 
@@ -811,11 +808,16 @@ class PayPalSubs
 
     public function ppsfwoo_plugin_activation()
     {
+        foreach (self::$options as $option => $option_value)
+        {
+            add_option($option, $option_value['default']);
+        }
+
         $this->ppsfwoo_db_install();
 
         $this->ppsfwoo_create_thank_you_page();
 
-        if(get_transient('ppcp-paypal-bearerppcp-bearer') && !get_option('ppsfwoo_webhook_id')) {
+        if(get_transient('ppcp-paypal-bearerppcp-bearer') && !$this->ppsfwoo_webhook_id) {
 
             $this->ppsfwoo_create_webhooks();
 
@@ -838,7 +840,7 @@ class PayPalSubs
             
             wp_delete_post($this->ppsfwoo_thank_you_page_id, true);
             
-            foreach(self::$options as $option => $array) {
+            foreach(self::$options as $option => $option_value) {
 
                 delete_option($option);
 
@@ -982,21 +984,13 @@ class PayPalSubs
         wp_enqueue_script('pp-subs-scripts', str_replace("classes/", "", plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/main.min.js"), ['jquery'], $this->plugin_version, true);
     }
 
-    public function ppsfwoo_init()
+    public function ppsfwoo_register_settings()
     {
-        foreach (self::$options as $option => $array)
+        foreach (self::$options as $option => $option_value)
         {
-            $option_value = get_option($option);
+            $this->$option = get_option($option);
 
-            if(!$option_value) {
-
-                update_option($option, $array['default']);
-
-            }
-
-            $this->$option = $option_value;
-
-            if('skip_settings_field' === $array['type']) continue;
+            if('skip_settings_field' === $option_value['type']) continue;
             
             register_setting(self::$options_group, $option);
         }
@@ -1033,14 +1027,9 @@ class PayPalSubs
     {
         $plan_id = get_post_meta($product_id, 'ppsfwoo_plan_id', true);
 
-        $plans = self::ppsfwoo_get_plans();
+        $plans = $this->ppsfwoo_plans;
 
         return $product_id && isset($plans[$plan_id]['frequency']) ? $plans[$plan_id]['frequency']: "";
-    }
-
-    public static function ppsfwoo_get_plans()
-    {
-        return get_option('ppsfwoo_plans');
     }
 
     public static function ppsfwoo_is_token_expired($created, $expiration)
