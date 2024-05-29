@@ -259,18 +259,15 @@
 		<a class="button" id="resubscribe" href="#">Resubscribe webhooks</a><span class="spinner"></span>
 		<h3>Users and Capabilities</h3>
 		<?php
-		if($user_ids = $this->ppsfwoo_get_users_by_capabilities()) {
+		if(PPSFWOO_PERMISSIONS) {
 
-			self::ppsfwoo_display_template("users-table-settings-page", [
-	            'user_ids'    => $user_ids
-	        ]);
+			\PPSFWOO\PayPalSubsPermissions::ppsfwoo_get_users_by_capabilities(true);
 
 		} else {
 
-			echo "<p>There are no (non-admin) users with access to this plugin. Assign user permissions on the edit user profile screen.</p>";
+			echo "<a href='" . esc_url(self::$upgrade_link) . "' target='_blank'>Pro feature</a>: Select custom capabilities for users.";
 
 		}
-
 		?>
     </div>
 

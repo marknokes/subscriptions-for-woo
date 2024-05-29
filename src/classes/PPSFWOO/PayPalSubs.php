@@ -93,6 +93,11 @@ class PayPalSubs
 
         $this->listen_address = $this->site_url . "/wp-json/" . self::$api_namespace . self::$endpoint;
 
+        foreach (self::$options as $option => $option_value)
+        {
+            $this->$option = get_option($option);
+        }
+
         register_activation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'ppsfwoo_plugin_activation']);
 
         register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'ppsfwoo_plugin_deactivation']);
@@ -112,7 +117,7 @@ class PayPalSubs
 
         add_action('admin_menu', [$this, 'ppsfwoo_register_options_page']);
 
-        add_action('admin_enqueue_scripts', [$this, 'ppsfwoo_script_handler'], 40);
+        add_action('admin_enqueue_scripts', [$this, 'ppsfwoo_script_handler']);
 
         add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$this, 'ppsfwoo_admin_ajax_callback']);
 
@@ -988,8 +993,6 @@ class PayPalSubs
     {
         foreach (self::$options as $option => $option_value)
         {
-            $this->$option = get_option($option);
-
             if('skip_settings_field' === $option_value['type']) continue;
             
             register_setting(self::$options_group, $option);

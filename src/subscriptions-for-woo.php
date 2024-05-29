@@ -37,8 +37,4 @@ define('PPSFWOO_PERMISSIONS', class_exists('\PPSFWOO\PayPalSubsPermissions'));
 
 new \PPSFWOO\PayPalSubs();
 
-if(PPSFWOO_PERMISSIONS) {
-
-    new \PPSFWOO\PayPalSubsPermissions();
-
-}
+$PayPalSubsPermissions = PPSFWOO_PERMISSIONS ? new \PPSFWOO\PayPalSubsPermissions(): NULL;
