@@ -33,8 +33,8 @@ spl_autoload_register(function ($class_name) {
 
 define('PPSFWOO_PLUGIN_PATH', __FILE__);
 
-define('PPSFWOO_PERMISSIONS', class_exists('\PPSFWOO\PayPalSubsPermissions'));
+define('PPSFWOO_PERMISSIONS', class_exists(\PPSFWOO\SubsForWooPermissions::class));
 
-new \PPSFWOO\PayPalSubs();
+new \PPSFWOO\SubsForWoo();
 
-$PayPalSubsPermissions = PPSFWOO_PERMISSIONS ? new \PPSFWOO\PayPalSubsPermissions(): NULL;
+$SubsForWooPermissions = PPSFWOO_PERMISSIONS ? new \PPSFWOO\SubsForWooPermissions(): NULL;

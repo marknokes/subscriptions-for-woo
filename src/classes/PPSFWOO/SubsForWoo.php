@@ -2,9 +2,7 @@
 
 namespace PPSFWOO;
 
-use Automattic\WooCommerce\Utilities\FeaturesUtil;
-
-class PayPalSubs
+class SubsForWoo
 {
     public static $instance;
 
@@ -622,11 +620,9 @@ class PayPalSubs
 
     public function ppsfwoo_wc_declare_compatibility()
     {
-        if (class_exists(FeaturesUtil::class)) {
+        if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
 
-            FeaturesUtil::declare_compatibility('custom_order_tables', PPSFWOO_PLUGIN_PATH);
-
-            FeaturesUtil::declare_compatibility('product_block_editor', PPSFWOO_PLUGIN_PATH);
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', PPSFWOO_PLUGIN_PATH);
             
         }
     }

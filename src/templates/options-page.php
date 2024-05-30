@@ -261,7 +261,7 @@
 		<?php
 		if(PPSFWOO_PERMISSIONS) {
 
-			\PPSFWOO\PayPalSubsPermissions::ppsfwoo_get_users_by_capabilities(true);
+			\PPSFWOO\SubsForWooPermissions::ppsfwoo_get_users_by_capabilities(true);
 
 		} else {
 
