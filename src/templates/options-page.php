@@ -38,7 +38,7 @@
 
 			$export_url = add_query_arg([
 			    'export_table'  => 'true',
-			    '_wpnonce' 		=> wp_create_nonce('db_export_nonce', time() + 600)
+			    '_wpnonce' 		=> wp_create_nonce('db_export_nonce')
 			], admin_url('admin.php?page=subscriptions_for_woo'));
 			
 			?>

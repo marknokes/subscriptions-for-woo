@@ -225,7 +225,11 @@ class SubsForWoo
     {
         $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): null;
 
-        if (!isset($subs_id) || !isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'subs_id_redirect_nonce')) {
+        if (
+            !isset($subs_id) ||
+            !isset($_GET['_wpnonce']) ||
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'subs_id_redirect_nonce')
+        ) {
 
             return;
 
@@ -662,7 +666,7 @@ class SubsForWoo
             wp_enqueue_script('paypal-sdk');
 
             $redirect = add_query_arg([
-                '_wpnonce' => wp_create_nonce('subs_id_redirect_nonce', time() + 600)
+                '_wpnonce' => wp_create_nonce('subs_id_redirect_nonce')
             ], get_permalink($this->ppsfwoo_thank_you_page_id));
 
             wp_add_inline_script('paypal-sdk', "
@@ -822,6 +826,8 @@ class SubsForWoo
 
             $this->ppsfwoo_create_webhooks();
 
+            $this->ppfswoo_replace_webhooks();
+
         }
     }
 
@@ -869,6 +875,47 @@ class SubsForWoo
         }
 
         return $response['response'] ?? false;
+    }
+
+    protected function ppfswoo_replace_webhooks()
+    {
+        if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
+
+            if(isset($webhooks['response']['webhooks'])) {
+
+                foreach($webhooks['response']['webhooks'] as $key => $webhook)
+                {
+                    if($this->listen_address !== $webhooks['response']['webhooks'][$key]['url']) {
+
+                        $webhook_id = $webhooks['response']['webhooks'][$key]['id'];
+
+                        $types = [];
+
+                        foreach($webhooks['response']['webhooks'][$key]['event_types'] as $type_key => $type)
+                        {
+                            if(strpos($type['name'], "BILLING.SUBSCRIPTION") === 0) {
+
+                                unset($webhooks['response']['webhooks'][$key]['event_types'][$type_key]);
+                                    
+                            }
+                        }
+
+                        foreach ($webhooks['response']['webhooks'][$key]['event_types'] as $type)
+                        {
+                            array_push($types, ['name' => $type['name']]);
+                        }
+
+                        $data = [
+                            "op"    => "replace",
+                            "path"  => "/event_types",
+                            "value" => $types
+                        ];
+
+                        self::ppsfwoo_paypal_data("/v1/notifications/webhooks/$webhook_id", [$data], "PATCH");
+                    }
+                }
+            }
+        }
     }
 
     protected function ppsfwoo_delete_webhooks($webhook_id = "")
