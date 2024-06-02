@@ -44,7 +44,7 @@ WooCommerce and WooCommerce PayPal Payments
 
 = Where can I report bugs? =
 
-Please report confirmed bugs on the Subscriptions for Woo [github](https://github.com/marknokes/subscriptions-for-woo/issues/new) directly. Include any screenshots and as much detail as possible.
+Please report confirmed bugs on the Subscriptions for Woo [github](https://github.com/marknokes/subscriptions-for-woo/issues/new?assignees=marknokes&labels=bug&template=bug_report.md) directly. Include any screenshots and as much detail as possible.
 
 == Installation ==
 
