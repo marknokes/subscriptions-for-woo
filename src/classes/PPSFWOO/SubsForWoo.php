@@ -826,8 +826,6 @@ class SubsForWoo
 
             $this->ppsfwoo_create_webhooks();
 
-            $this->ppfswoo_replace_webhooks();
-
         }
     }
 
@@ -873,6 +871,8 @@ class SubsForWoo
             update_option('ppsfwoo_webhook_id', $response['response']['id']);
         
         }
+
+        $this->ppfswoo_replace_webhooks();
 
         return $response['response'] ?? false;
     }
