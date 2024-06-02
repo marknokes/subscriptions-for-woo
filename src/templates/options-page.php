@@ -256,7 +256,14 @@
 			</tr>
 		</table>
 		<p>Listen Address: <code><?php echo esc_url($this->listen_address); ?></code></p>
-		<a class="button" id="resubscribe" href="#">Resubscribe webhooks</a><span class="spinner"></span>
+		<?php
+		$resub_url = add_query_arg([
+		    'tab'  => 'checkout',
+		    'section' => 'ppcp-gateway',
+		    'ppcp-tab' => 'ppcp-connection'
+		], admin_url('admin.php?page=wc-settings'));
+		?>
+		<a class="button" id="resubscribe" href="<?php echo esc_url($resub_url . "#field-webhooks_list"); ?>">Resubscribe webhooks</a>
 		<h3>Users and Capabilities</h3>
 		<?php
 		if(PPSFWOO_PERMISSIONS) {

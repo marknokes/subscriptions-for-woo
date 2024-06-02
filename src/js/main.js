@@ -106,25 +106,6 @@ jQuery(document).ready(function($) {
 	});
 
 	/*
-	*	Click handler for settings page. Actions are defined by the button element's id
-	*/
-	$("#resubscribe").click(function(e) {
-		e.preventDefault();
-		var $spinner = $(this).next('.spinner');
-		$spinner.addClass('is-active');
-		do_ajax($(this).attr("id"), function(r) {
-			var response = JSON.parse(r);
-			if(false !== response) {
-				showMsg("Successfully refreshed webhooks.");
-				listWebhooks();
-			} else {
-				showMsg(settingsError, "error");
-			}
-			$spinner.removeClass('is-active');
-		});
-	});
-
-	/*
 	*	When saving options, reset the query string variables so the subscriber table
 	*	loads the new ppsfwoo_rows_per_page
 	*/

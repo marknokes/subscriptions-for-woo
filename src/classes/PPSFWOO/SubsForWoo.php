@@ -139,7 +139,9 @@ class SubsForWoo
 
         add_action('wp', [$this, 'ppsfwoo_add_custom_js_for_ajax']);   
 
-        add_action('wp_enqueue_scripts', [$this, 'ppsfwoo_enqueue_styles_on_order_received_page']);     
+        add_action('wp_enqueue_scripts', [$this, 'ppsfwoo_enqueue_styles_on_order_received_page']);
+
+        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'wc_ajax_shutdown']);
     }
 
     protected function ppsfwoo_add_filters()
@@ -155,6 +157,39 @@ class SubsForWoo
         add_filter('product_type_selector', [$this, 'ppsfwoo_add_product']);
 
         add_filter('woocommerce_product_data_tabs', [$this, 'ppsfwoo_custom_product_tabs']);
+    }
+
+    public function wc_ajax_shutdown()
+    {
+        add_action('shutdown', [$this, 'resubscribe_webhooks']);
+    }
+
+    public function resubscribe_webhooks()
+    {
+        $success = false;
+
+        if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
+
+            if(isset($webhooks['response']['webhooks'])) {
+
+                foreach($webhooks['response']['webhooks'] as $key => $webhook)
+                {
+                    if($this->listen_address === $webhooks['response']['webhooks'][$key]['url']) {
+
+                        $this->ppsfwoo_delete_webhooks($webhooks['response']['webhooks'][$key]['id']);
+
+                    }
+                }
+
+                $this->ppsfwoo_create_webhooks();
+
+                $success = true;
+
+            }
+
+        }
+
+        return $success;
     }
 
     public function ppsfwoo_handle_export_action()
@@ -411,35 +446,6 @@ class SubsForWoo
                 }
 
                 echo $redirect ? esc_url($redirect): esc_attr("false");
-
-                break;
-
-            case 'resubscribe':
-
-                $success = "false";
-
-                if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
-
-                    if(isset($webhooks['response']['webhooks'])) {
-
-                        foreach($webhooks['response']['webhooks'] as $key => $webhook)
-                        {
-                            if($this->listen_address === $webhooks['response']['webhooks'][$key]['url']) {
-
-                                $this->ppsfwoo_delete_webhooks($webhooks['response']['webhooks'][$key]['id']);
-
-                            }
-                        }
-
-                        $this->ppsfwoo_create_webhooks();
-
-                        $success = "true";
-
-                    }
-
-                }
-
-                echo esc_attr($success);
 
                 break;
 
