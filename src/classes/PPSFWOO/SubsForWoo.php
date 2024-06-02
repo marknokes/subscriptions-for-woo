@@ -166,8 +166,6 @@ class SubsForWoo
 
     public function resubscribe_webhooks()
     {
-        $success = false;
-
         if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
 
             if(isset($webhooks['response']['webhooks'])) {
@@ -182,14 +180,8 @@ class SubsForWoo
                 }
 
                 $this->ppsfwoo_create_webhooks();
-
-                $success = true;
-
             }
-
         }
-
-        return $success;
     }
 
     public function ppsfwoo_handle_export_action()
