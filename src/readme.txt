@@ -4,7 +4,7 @@ Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 Requires at least: 6.4.3
 Tested up to: 6.5.3
 Requires PHP: 7.2
-Stable tag: 1.5
+Stable tag: 1.5.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,5 +91,5 @@ If you encounter issues with the PayPal buttons not appearing after an update, p
 
 == Changelog ==
 
-= 1.5 =
+= 1.5.1 =
 * Initial release.
