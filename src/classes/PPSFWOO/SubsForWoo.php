@@ -1015,20 +1015,30 @@ class SubsForWoo
 
     public static function ppsfwoo_get_paypal_access_token()
     {
-        $ppcp = new \WooCommerce\PayPalCommerce\PPCP();
-                
-        $container = $ppcp->container();
+        try {
 
-        $PayPalBearer = new \WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer(
-            new \WooCommerce\PayPalCommerce\ApiClient\Helper\Cache('ppcp-paypal-bearer'),
-            $container->get('api.host'),
-            $container->get('api.key'),
-            $container->get('api.secret'),
-            $container->get('woocommerce.logger.woocommerce'),
-            $container->get('wcgateway.settings')
-        );
+            $ppcp = new \WooCommerce\PayPalCommerce\PPCP();
+                    
+            $container = $ppcp->container();
 
-        return $PayPalBearer->bearer()->token();
+            $PayPalBearer = new \WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer(
+                new \WooCommerce\PayPalCommerce\ApiClient\Helper\Cache('ppcp-paypal-bearer'),
+                $container->get('api.host'),
+                $container->get('api.key'),
+                $container->get('api.secret'),
+                $container->get('woocommerce.logger.woocommerce'),
+                $container->get('wcgateway.settings')
+            );
+
+            return $PayPalBearer->bearer()->token();
+
+        } catch(\Exception $e) {
+
+            error_log($e->getMessage());
+
+            return false;
+
+        }
     }
 
     public static function ppsfwoo_get_env()
