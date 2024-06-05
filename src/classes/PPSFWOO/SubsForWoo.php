@@ -71,15 +71,19 @@ class SubsForWoo
            $ppsfwoo_delete_plugin_data,
            $user,
            $event_type,
-           $plugin_version;
+           $plugin_version,
+           $plugin_name;
 
     public function __construct()
     {
         $plugin_data = get_file_data(PPSFWOO_PLUGIN_PATH, [
             'Version' => 'Version',
+            'Name'    => 'Plugin Name'
         ], 'plugin');
 
         $this->plugin_version = $plugin_data['Version'];
+
+        $this->plugin_name = $plugin_data['Name'];
 
         $env = self::ppsfwoo_get_env();
 
@@ -378,6 +382,141 @@ class SubsForWoo
         update_post_meta($post_id, 'ppsfwoo_plan_id', $plan_id);
     }
 
+    protected function ppsfwoo_search()
+    {
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): ""; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+        if(empty($email)) { 
+
+            return "";
+
+        }
+
+        if(!$this->display_subs($email)) {
+
+            return "false";
+
+        }
+    }
+
+    protected function ppsfwoo_get_sub()
+    {
+        $id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): null; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+        if(!isset($id)) {
+
+            return "";
+
+        }
+
+        global $wpdb;
+
+        $redirect = false;
+
+        $results = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->prepare(
+                "SELECT `wp_customer_id`, `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
+                $id
+            )
+        );
+
+        $order_id = isset($results[0]->order_id) ? $results[0]->order_id: null;
+
+        if ($order = wc_get_order($order_id)) {
+
+            $redirect = $order->get_checkout_order_received_url();
+
+            if ($user = get_user_by('id', $results[0]->wp_customer_id)) {
+
+                wp_set_auth_cookie($user->ID);
+
+            }
+
+        }
+
+        return $redirect ? esc_url($redirect): esc_attr("false");
+    }
+
+    protected function ppsfwoo_list_webhooks()
+    {
+        if($this->ppsfwoo_webhook_id && $webhooks = $this->ppsfwoo_subscribed_webhooks) {
+
+            $subscribed = $webhooks;
+
+        } else if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
+
+            $subscribed = [];
+
+            if(isset($webhooks['response']['webhooks'])) {
+
+                foreach($webhooks['response']['webhooks'] as $key => $webhook)
+                {
+                    if($webhook['id'] === $this->ppsfwoo_webhook_id) {
+
+                        $subscribed = $webhook;
+
+                    }
+                }
+
+            }
+
+            update_option('ppsfwoo_subscribed_webhooks', $subscribed);
+        }
+
+        return isset($subscribed['event_types']) ? wp_json_encode($subscribed['event_types']): "";
+    }
+
+    protected function ppsfwoo_refresh()
+    {
+        $success = "false";
+
+        if($plan_data = self::ppsfwoo_paypal_data("/v1/billing/plans")) {
+
+            $plans = [];
+
+            if(isset($plan_data['response']['plans'])) {
+
+                $products = [];
+
+                foreach($plan_data['response']['plans'] as $plan)
+                {
+                    if($plan['status'] !== "ACTIVE") {
+
+                        continue;
+
+                    }
+
+                    $plan_freq = self::ppsfwoo_paypal_data("/v1/billing/plans/{$plan['id']}");
+
+                    if(!in_array($plan['product_id'], array_keys($products))) {
+                    
+                        $product_data = self::ppsfwoo_paypal_data("/v1/catalogs/products/{$plan['product_id']}");
+
+                        $product_name = $product_data['response']['name'];
+
+                        $products[$plan['product_id']] = $product_name;
+
+                    } else {
+
+                        $product_name = $products[$plan['product_id']];
+                    }
+
+                    $plans[$plan['id']] = [
+                        'plan_name'     => $plan['name'],
+                        'product_name'  => $product_name,
+                        'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit']
+                    ];
+                }
+            
+                update_option('ppsfwoo_plans', $plans);
+
+                $success = "true";
+            }
+        }
+
+        return $success;
+    }
+
     public function ppsfwoo_admin_ajax_callback()
     {  
         $do = isset($_POST['do']) ? sanitize_text_field(wp_unslash($_POST['do'])): ""; // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -386,88 +525,19 @@ class SubsForWoo
         {
             case 'search':
 
-                $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): ""; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-
-                if(empty($email)) { 
-
-                    return;
-
-                }
-
-                if(!$this->display_subs($email)) {
-
-                    echo esc_attr("false");
-
-                }
+                echo $this->ppsfwoo_search(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
                 break;
 
             case 'get_sub':
 
-                $id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): null; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-
-                if(!isset($id)) {
-
-                    return;
-
-                }
-
-                global $wpdb;
-
-                $redirect = false;
-
-                $results = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                    $wpdb->prepare(
-                        "SELECT `wp_customer_id`, `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
-                        $id
-                    )
-                );
-
-                $order_id = isset($results[0]->order_id) ? $results[0]->order_id: null;
-
-                if ($order = wc_get_order($order_id)) {
-
-                    $redirect = $order->get_checkout_order_received_url();
-
-                    if ($user = get_user_by('id', $results[0]->wp_customer_id)) {
-
-                        wp_set_auth_cookie($user->ID);
-
-                    }
-
-                }
-
-                echo $redirect ? esc_url($redirect): esc_attr("false");
+                echo $this->ppsfwoo_get_sub(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
                 break;
 
             case 'list_webhooks':
                 
-                if($this->ppsfwoo_webhook_id && $webhooks = $this->ppsfwoo_subscribed_webhooks) {
-
-                    $subscribed = $webhooks;
-
-                } else if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
-
-                    $subscribed = [];
-
-                    if(isset($webhooks['response']['webhooks'])) {
-
-                        foreach($webhooks['response']['webhooks'] as $key => $webhook)
-                        {
-                            if($webhook['id'] === $this->ppsfwoo_webhook_id) {
-
-                                $subscribed = $webhook;
-
-                            }
-                        }
-
-                    }
-
-                    update_option('ppsfwoo_subscribed_webhooks', $subscribed);
-                }
-
-                echo isset($subscribed['event_types']) ? wp_json_encode($subscribed['event_types']): "";
+                echo $this->ppsfwoo_list_webhooks(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
                 break;
 
@@ -479,61 +549,15 @@ class SubsForWoo
 
             case 'refresh':
 
-                $success = "false";
-
-                if($plan_data = self::ppsfwoo_paypal_data("/v1/billing/plans")) {
-
-                    $plans = [];
-
-                    if(isset($plan_data['response']['plans'])) {
-
-                        $products = [];
-
-                        foreach($plan_data['response']['plans'] as $plan)
-                        {
-                            if($plan['status'] !== "ACTIVE") {
-
-                                continue;
-
-                            }
-
-                            $plan_freq = self::ppsfwoo_paypal_data("/v1/billing/plans/{$plan['id']}");
-
-                            if(!in_array($plan['product_id'], array_keys($products))) {
-                            
-                                $product_data = self::ppsfwoo_paypal_data("/v1/catalogs/products/{$plan['product_id']}");
-
-                                $product_name = $product_data['response']['name'];
-
-                                $products[$plan['product_id']] = $product_name;
-
-                            } else {
-
-                                $product_name = $products[$plan['product_id']];
-                            }
-
-                            $plans[$plan['id']] = [
-                                'plan_name'     => $plan['name'],
-                                'product_name'  => $product_name,
-                                'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit']
-                            ];
-                        }
-                    
-                        update_option('ppsfwoo_plans', $plans);
-
-                        $success = "true";
-                    }
-                }
-
                 flush_rewrite_rules();
 
-                echo esc_attr($success);
+                echo $this->ppsfwoo_refresh(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
                 break;
 
             default:
 
-                // do nothing
+                echo "";
 
                 break;
         }
@@ -1071,68 +1095,28 @@ class SubsForWoo
     {
         $plan_id = get_post_meta($product_id, 'ppsfwoo_plan_id', true);
 
-        $plans = $this->ppsfwoo_plans;
-
-        return $product_id && isset($plans[$plan_id]['frequency']) ? $plans[$plan_id]['frequency']: "";
+        return $product_id && isset($this->ppsfwoo_plans[$plan_id]['frequency']) ? $this->ppsfwoo_plans[$plan_id]['frequency']: "";
     }
 
-    public static function ppsfwoo_is_token_expired($created, $expiration)
-    {
-        $currentTime = time();
-
-        $timeDifference = $currentTime - $created;
-
-        if ($timeDifference >= $expiration) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    protected static function ppsfwoo_refresh_access_token()
-    {
-        if(!class_exists('\WooCommerce\PayPalCommerce\PPCP')) {
-
-            return;
-
-        }
-
-        $ppcp = new \WooCommerce\PayPalCommerce\PPCP();
-                
-        $container = $ppcp->container();
-                
-        do_action('woocommerce_paypal_payments_clear_apm_product_status', $container->get('wcgateway.settings'));
-
-        $token = get_transient('ppcp-paypal-bearerppcp-bearer');
-
-        return $token;
-    }
+    
 
 
     public static function ppsfwoo_get_paypal_access_token()
     {
-        $access_token = "";
+        $ppcp = new \WooCommerce\PayPalCommerce\PPCP();
+                
+        $container = $ppcp->container();
 
-        if($token = get_transient('ppcp-paypal-bearerppcp-bearer')) {
-        
-            $token_data = json_decode($token);
+        $PayPalBearer = new \WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer(
+            new \WooCommerce\PayPalCommerce\ApiClient\Helper\Cache('ppcp-paypal-bearer'),
+            $container->get('api.host'),
+            $container->get('api.key'),
+            $container->get('api.secret'),
+            $container->get('woocommerce.logger.woocommerce'),
+            $container->get('wcgateway.settings')
+        );
 
-            $access_token = $token_data->access_token ?? "";
-
-        }
-
-        if ("" === $access_token || ($access_token && self::ppsfwoo_is_token_expired($token_data->created, $token_data->expires_in))) {
-
-            $token = self::ppsfwoo_refresh_access_token();
-
-            $token_data = json_decode($token);
-
-            $access_token = $token_data->access_token ?? "";
-
-        }
-
-        return $access_token;
-
+        return $PayPalBearer->bearer()->token();
     }
 
     public static function ppsfwoo_get_env()
