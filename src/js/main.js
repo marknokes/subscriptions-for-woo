@@ -22,55 +22,6 @@ jQuery(document).ready(function($) {
 		$('.nav-tab-wrapper a.nav-tab-active').click();
 	}
 
-	function do_ajax(action, success, args = {}) {
-		var data = {
-			'action': 'ppsfwoo_admin_ajax_callback',
-			'do'	: action
-		}
-		
-		if(!$.isEmptyObject(args)) {
-			data = $.extend({}, data, args);
-		}
-
-		$.ajax({
-			'type': "POST",
-			'url': '/wp-admin/admin-ajax.php',
-			'data': data,
-			'success': success
-		});
-	}
-
-	function listPlans() {
-		do_ajax('list_plans', function(r) {
-			if(!r) return;
-			var obj = JSON.parse(r),
-				$table = $('#plans'),
-				table_data = "";
-			Object.keys(obj).forEach(plan_id => {
-				var vals = Object.values(obj[plan_id]);
-				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td></tr>`;
-			});
-			$table.find('.plan-row').remove();
-			$table.append(table_data);
-			$table.show();
-		});
-	}
-
-	function listWebhooks() {
-		do_ajax('list_webhooks', function(r) {
-			if(!r) return;
-			var obj = JSON.parse(r),
-				$table = $('#webhooks'),
-				table_data = "";
-			Object.values(obj).forEach(hook => {
-				table_data += `<tr class="webhook-row"><td>${hook['name']}</td><td>${hook['description']}</td></tr>`;
-			});
-			$table.find('.webhook-row').remove();
-			$table.append(table_data);
-			$table.show();
-		});
-	}
-
 	/*
 	*	Show a Wordpress UI admin notice
 	*/
@@ -86,6 +37,72 @@ jQuery(document).ready(function($) {
 		});
 	}
 
+	function do_ajax(action, success, args = {}) {
+		var data = {
+			'action': 'ppsfwoo_admin_ajax_callback',
+			'method': action
+		}
+		
+		if(!$.isEmptyObject(args)) {
+			data = $.extend({}, data, args);
+		}
+
+		$.ajax({
+			'type': "POST",
+			'url': '/wp-admin/admin-ajax.php',
+			'data': data,
+			'success': success
+		});
+	}
+
+	$('#subs-search').on('submit', function(e) {
+    	e.preventDefault();
+    	var email = $("#email-input").val();
+    	if(!email) return;
+        do_ajax('ppsfwoo_search', function(r) {
+			if("false" !== r) {
+				$("#tab-subscribers .pagination, .button.export-table-data").hide();
+				$("#reset").show();
+				$("#subscribers").replaceWith(r);
+			} else {
+				showMsg("No users found with that email address.", "warning");
+			}
+		}, {
+			'email': email
+		});
+    });
+
+	function listPlans() {
+		do_ajax('ppsfwoo_list_plans', function(r) {
+			if(!r) return;
+			var obj = JSON.parse(r),
+				$table = $('#plans'),
+				table_data = "";
+			Object.keys(obj).forEach(plan_id => {
+				var vals = Object.values(obj[plan_id]);
+				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td></tr>`;
+			});
+			$table.find('.plan-row').remove();
+			$table.append(table_data);
+			$table.show();
+		});
+	}
+
+	function listWebhooks() {
+		do_ajax('ppsfwoo_list_webhooks', function(r) {
+			if(!r) return;
+			var obj = JSON.parse(r),
+				$table = $('#webhooks'),
+				table_data = "";
+			Object.values(obj).forEach(hook => {
+				table_data += `<tr class="webhook-row"><td>${hook['name']}</td><td>${hook['description']}</td></tr>`;
+			});
+			$table.find('.webhook-row').remove();
+			$table.append(table_data);
+			$table.show();
+		});
+	}
+
 	/*
 	*	Click handler for settings page. Actions are defined by the button element's id
 	*/
@@ -93,7 +110,7 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $spinner = $(this).next('.spinner');
 		$spinner.addClass('is-active');
-		do_ajax($(this).attr("id"), function(r) {
+		do_ajax('ppsfwoo_refresh', function(r) {
 			var response = JSON.parse(r);
 			if(false !== response) {
 				showMsg("Successfully refreshed current plans.");
@@ -132,22 +149,5 @@ jQuery(document).ready(function($) {
     	if($(this).is(':checked')) {
     		return confirm("Selecting this option will delete plugin options and the subscribers table on plugin deactivation. Are you sure you want to do this?\n\nThe setting will take effect after you 'Save Changes' below.");
     	}
-    });
-
-    $('#subs-search').on('submit', function(e) {
-    	e.preventDefault();
-    	var email = $("#email-input").val();
-    	if(!email) return;
-        do_ajax('search', function(r) {
-			if("false" !== r) {
-				$("#tab-subscribers .pagination, .button.export-table-data").hide();
-				$("#reset").show();
-				$("#subscribers").replaceWith(r);
-			} else {
-				showMsg("No users found with that email address.", "warning");
-			}
-		}, {
-			'email': email
-		});
     });
 });
