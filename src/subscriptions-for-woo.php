@@ -5,14 +5,14 @@
  * Requires Plugins: woocommerce, woocommerce-paypal-payments
  * Author: WP Subscriptions
  * Author URI: https://wp-subscriptions.com
- * License: GPL v2 or later
+ * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Version: 1.5.1
  * WC requires at least: 8.6.0
- * WC tested up to: 8.7.0
- * Tested up to: 6.5.3
- * Requires PHP: 7.4
+ * WC tested up to: 8.9.2
  * Requires at least: 6.4.3
+ * Tested up to: 6.5.4
+ * Requires PHP: 7.4
  */
 
 if (!defined('ABSPATH')) exit;
