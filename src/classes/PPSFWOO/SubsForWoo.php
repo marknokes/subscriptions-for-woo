@@ -143,9 +143,7 @@ class SubsForWoo
 
         add_action('admin_head', [$this, 'ppsfwoo_edit_product_css']);
 
-        add_action('wp', [$this, 'ppsfwoo_add_custom_js_for_ajax']);   
-
-        add_action('wp_enqueue_scripts', [$this, 'ppsfwoo_enqueue_styles_on_order_received_page']);
+        add_action('wp_enqueue_scripts', [$this, 'ppsfwoo_enqueue_frontend']);
 
         add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'wc_ajax_shutdown']);
     }
@@ -258,34 +256,28 @@ class SubsForWoo
         exit();
     }
 
-    public function ppsfwoo_enqueue_styles_on_order_received_page()
+    public function ppsfwoo_get_customer_nonce_name()
     {
-        if (function_exists('is_wc_endpoint_url') &&
-            (is_wc_endpoint_url('order-received') ||
-            is_wc_endpoint_url('view-order') ||
-            is_page($this->ppsfwoo_thank_you_page_id))
-        ) {
-
-            wp_enqueue_style('ppsfwoo-styles', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "css/my-account.min.css", [], $this->plugin_version);
-
-        }
-    }
-
-    public function ppsfwoo_add_custom_js_for_ajax()
-    {
-        $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): null;
-
         if (!session_id()) {
 
             session_start();
 
         }
 
+        return $_SESSION['ppsfwoo_customer_nonce'] ?? NULL;
+    }
+
+    public function ppsfwoo_enqueue_frontend()
+    {
+        wp_enqueue_style('ppsfwoo-styles', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "css/frontend.min.css", [], $this->plugin_version);
+        
+        $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): NULL;
+
+        $ppsfwoo_customer_nonce_name = $this->ppsfwoo_get_customer_nonce_name();
+
         if (
-            !isset($subs_id) ||
-            !isset($_GET['subs_id_redirect_nonce']) ||
-            !isset($_SESSION['ppsfwoo_customer_nonce']) ||
-            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $_SESSION['ppsfwoo_customer_nonce'])
+            !isset($subs_id, $_GET['subs_id_redirect_nonce'], $ppsfwoo_customer_nonce_name) ||
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $ppsfwoo_customer_nonce_name)
         ) {
 
             return;
@@ -294,7 +286,9 @@ class SubsForWoo
 
         wp_enqueue_script('ppsfwoo-scripts', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/get-sub.min.js", ['jquery'], $this->plugin_version, true);
 
-        wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', ['subs_id' => $subs_id]);
+        wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
+            'subs_id' => $subs_id
+        ]);
     }
 
     public static function ppsfwoo_add_product($types)
@@ -643,9 +637,9 @@ class SubsForWoo
         
         if($plan_id = self::ppsfwoo_get_plan_id_by_product_id(get_the_ID())) {
 
-            echo "<button id='subscribeButton' style='margin-bottom:15px;font-size:1.5em'>Subscribe with PayPal</button>";
-    
-            echo "<div id='paypal-button-container-" . esc_attr($plan_id) . "'></div>";
+            self::ppsfwoo_display_template("paypal-button", [
+                'plan_id' => $plan_id
+            ]);
 
             wp_enqueue_script('paypal-sdk', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/paypal-button.min.js", [], $this->plugin_version, true);
 

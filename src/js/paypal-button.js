@@ -1,3 +1,5 @@
+var ppsfwooLdsEllipsis = document.getElementById('lds-ellipsis');
+
 function ppsfwooLoadPayPalScript(callback) {
     if (window.paypal) {
         callback();
@@ -11,6 +13,7 @@ function ppsfwooLoadPayPalScript(callback) {
 }
 
 function ppsfwooRender(nonce) {
+    ppsfwooLdsEllipsis.style.setProperty("display", "none", "important");
     paypal.Buttons({
         style: {
             shape: 'rect',
@@ -46,7 +49,9 @@ function ppsfwooInitializePayPalSubscription() {
     xhr.send('action=ppsfwoo_admin_ajax_callback&method=subs_id_redirect_nonce');
 }
 
+
 document.getElementById('subscribeButton').addEventListener('click', function() {
+    ppsfwooLdsEllipsis.style.setProperty("display", "inline-block", "important");
     this.style.display = 'none';
     ppsfwooLoadPayPalScript(ppsfwooInitializePayPalSubscription);
 });
