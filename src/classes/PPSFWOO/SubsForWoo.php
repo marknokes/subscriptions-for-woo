@@ -269,7 +269,11 @@ class SubsForWoo
 
     public function ppsfwoo_enqueue_frontend()
     {
-        wp_enqueue_style('ppsfwoo-styles', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "css/frontend.min.css", [], $this->plugin_version);
+        if(!is_admin()) {
+            
+            wp_enqueue_style('ppsfwoo-styles', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "css/frontend.min.css", [], $this->plugin_version);
+
+        }
         
         $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): NULL;
 
