@@ -16,6 +16,8 @@ class SubsForWoo
 
     public static $upgrade_link = "https://wp-subscriptions.com/";
 
+    public static $ppcp_settings_url = "admin.php?page=wc-settings&tab=checkout&section=ppcp-gateway&ppcp-tab=ppcp-connection";
+
     public static $options = [
         'ppsfwoo_thank_you_page_id' => [
             'name'    => 'Order thank you page',
@@ -81,11 +83,11 @@ class SubsForWoo
             'Name'    => 'Plugin Name'
         ], 'plugin');
 
+        $env = self::ppsfwoo_get_env();
+
         $this->plugin_version = $plugin_data['Version'];
 
         $this->plugin_name = $plugin_data['Name'];
-
-        $env = self::ppsfwoo_get_env();
 
         $this->client_id = $env['client_id'];
 
@@ -119,7 +121,7 @@ class SubsForWoo
 
         add_action('admin_menu', [$this, 'ppsfwoo_register_options_page']);
 
-        add_action('admin_enqueue_scripts', [$this, 'ppsfwoo_script_handler']);
+        add_action('admin_enqueue_scripts', [$this, 'ppsfwoo_admin_enqueue_scripts']);
 
         add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$this, 'ppsfwoo_admin_ajax_callback']);
 
@@ -258,9 +260,10 @@ class SubsForWoo
 
     public function ppsfwoo_enqueue_styles_on_order_received_page()
     {
-        if (is_wc_endpoint_url('order-received') ||
+        if (function_exists('is_wc_endpoint_url') &&
+            (is_wc_endpoint_url('order-received') ||
             is_wc_endpoint_url('view-order') ||
-            is_page($this->ppsfwoo_thank_you_page_id)
+            is_page($this->ppsfwoo_thank_you_page_id))
         ) {
 
             wp_enqueue_style('ppsfwoo-styles', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "css/my-account.min.css", [], $this->plugin_version);
@@ -956,7 +959,7 @@ class SubsForWoo
         return array_merge($settings, $links);
     }
 
-    public function ppsfwoo_script_handler($hook)
+    public function ppsfwoo_admin_enqueue_scripts($hook)
     {
         if ('woocommerce_page_subscriptions_for_woo' !== $hook) {
 
@@ -967,6 +970,10 @@ class SubsForWoo
         wp_enqueue_style('ppsfwoo-styles', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "css/style.min.css", [], $this->plugin_version);
 
         wp_enqueue_script('ppsfwoo-scripts', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/main.min.js", ['jquery'], $this->plugin_version, true);
+
+        wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
+            'settings_url' => admin_url(self::$ppcp_settings_url)
+        ]);
     }
 
     public function ppsfwoo_register_settings()
@@ -1033,8 +1040,6 @@ class SubsForWoo
             return $PayPalBearer->bearer()->token();
 
         } catch(\Exception $e) {
-
-            error_log($e->getMessage());
 
             return false;
 

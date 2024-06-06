@@ -1,6 +1,6 @@
 jQuery(document).ready(function($) {
 
-	var settingsError = "There has been an error. Please try again and check your WooCommerce PayPal Payments settings.";
+	var settingsError = "There has been an error. Please try again and check your <a href='" + ppsfwoo_ajax_var.settings_url + "'>WooCommerce PayPal Payments settings</a>.";
 
 	listPlans();
 
