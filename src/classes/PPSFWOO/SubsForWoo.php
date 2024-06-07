@@ -161,22 +161,21 @@ class SubsForWoo
         add_filter('product_type_selector', [$this, 'ppsfwoo_add_product']);
 
         add_filter('woocommerce_product_data_tabs', [$this, 'ppsfwoo_custom_product_tabs']);
+
+        add_filter('woocommerce_product_data_store_cpt_get_products_query', [$this, 'handle_custom_query_var'], 10, 2);
     }
 
-    public function subs_id_redirect_nonce()
+    public function handle_custom_query_var($query, $query_vars)
     {
-        if (!session_id()) {
+        if (!empty($query_vars['ppsfwoo_plan_id'])) {
 
-            session_start();
-
-            if (!isset($_SESSION['ppsfwoo_customer_nonce'])) {
-
-                $_SESSION['ppsfwoo_customer_nonce'] = wp_generate_password(24, false);
-
-            }
+            $query['meta_query'][] = [
+                'key'   => 'ppsfwoo_plan_id',
+                'value' => esc_attr($query_vars['ppsfwoo_plan_id']),
+            ];
         }
 
-        return isset($_SESSION['ppsfwoo_customer_nonce']) ? wp_json_encode(['nonce' => wp_create_nonce($_SESSION['ppsfwoo_customer_nonce'])]): "";
+        return $query;
     }
 
     public function wc_ajax_shutdown()
@@ -222,7 +221,8 @@ class SubsForWoo
 
         global $wpdb;
 
-        $data = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber", ARRAY_A); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $data = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber", ARRAY_A);
 
         if(!isset($data[0])) {
 
@@ -251,20 +251,32 @@ class SubsForWoo
 
         header('Content-Disposition: attachment; filename="table_backup.sql"');
 
-        echo $sql_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo $sql_content;
 
         exit();
     }
 
-    public function ppsfwoo_get_customer_nonce_name()
+    public function subs_id_redirect_nonce()
     {
-        if (!session_id()) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing 
+        $is_ajax = isset($_POST['action'], $_POST['method']) && $_POST['method'] === __FUNCTION__;
 
-            session_start();
+        $nonce_name = "";
+
+        if(!session_id()) session_start();
+
+        if (!isset($_SESSION['ppsfwoo_customer_nonce'])) {
+
+            $nonce_name = $_SESSION['ppsfwoo_customer_nonce'] = wp_generate_password(24, false);
+
+        } else {
+
+            $nonce_name = $_SESSION['ppsfwoo_customer_nonce'];
 
         }
 
-        return $_SESSION['ppsfwoo_customer_nonce'] ?? NULL;
+        return $is_ajax ? wp_json_encode(['nonce' => wp_create_nonce($nonce_name)]): $nonce_name;
     }
 
     public function ppsfwoo_enqueue_frontend()
@@ -277,11 +289,9 @@ class SubsForWoo
         
         $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): NULL;
 
-        $ppsfwoo_customer_nonce_name = $this->ppsfwoo_get_customer_nonce_name();
-
         if (
-            !isset($subs_id, $_GET['subs_id_redirect_nonce'], $ppsfwoo_customer_nonce_name) ||
-            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $ppsfwoo_customer_nonce_name)
+            !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $this->subs_id_redirect_nonce())
         ) {
 
             return;
@@ -380,7 +390,8 @@ class SubsForWoo
 
     protected function ppsfwoo_search()
     {
-        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): ""; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): "";
 
         if(empty($email)) { 
 
@@ -397,7 +408,8 @@ class SubsForWoo
 
     protected function ppsfwoo_get_sub()
     {
-        $id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): null; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): NULL;
 
         if(!isset($id)) {
 
@@ -409,14 +421,15 @@ class SubsForWoo
 
         $redirect = false;
 
-        $results = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $results = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT `wp_customer_id`, `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
                 $id
             )
         );
 
-        $order_id = isset($results[0]->order_id) ? $results[0]->order_id: null;
+        $order_id = isset($results[0]->order_id) ? $results[0]->order_id: NULL;
 
         if ($order = wc_get_order($order_id)) {
 
@@ -520,9 +533,11 @@ class SubsForWoo
 
     public function ppsfwoo_admin_ajax_callback()
     {  
-        $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])): ""; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])): "";
 
-        echo method_exists($this, $method) ? call_user_func([$this, $method]): ""; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo method_exists($this, $method) ? call_user_func([$this, $method]): "";
 
         wp_die();
     }
@@ -541,7 +556,8 @@ class SubsForWoo
 
         $per_page = $this->ppsfwoo_rows_per_page ?: 10;
 
-        $subs_page_num = isset($_GET['subs_page_num']) ? sanitize_text_field(wp_unslash($_GET['subs_page_num'])): null; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
+        $subs_page_num = isset($_GET['subs_page_num']) ? sanitize_text_field(wp_unslash($_GET['subs_page_num'])): NULL;
 
         $page = isset($subs_page_num) ? absint($subs_page_num) : 1;
 
@@ -568,13 +584,15 @@ class SubsForWoo
 
         }
 
-        $results = $wpdb->get_results($stmt); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+        $results = $wpdb->get_results($stmt);
 
         $num_subs = is_array($results) ? sizeof($results): 0;
 
         if($num_subs) {
 
-            $total_rows = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppsfwoo_subscriber"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $total_rows = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppsfwoo_subscriber");
 
             $total_pages = ceil($total_rows / $per_page);
 
@@ -781,7 +799,8 @@ class SubsForWoo
 
         if("1" === $this->ppsfwoo_delete_plugin_data) {
             
-            $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ppsfwoo_subscriber"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+            $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ppsfwoo_subscriber");
 
             $this->ppsfwoo_delete_webhooks();
             
@@ -895,7 +914,8 @@ class SubsForWoo
             ON UPDATE CASCADE ON DELETE CASCADE
         ) $charset_collate;";
 
-        $wpdb->query($create_table); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query($create_table);
     }
 
     public function ppsfwoo_rest_api_init()
@@ -1230,7 +1250,8 @@ class SubsForWoo
 
         }
 
-        $result = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $result = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
                 $this->user->subscription_id
@@ -1241,7 +1262,8 @@ class SubsForWoo
 
         if(false === $order_id) {
 
-             $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->query(
                 $wpdb->prepare(
                     "INSERT INTO {$wpdb->prefix}ppsfwoo_subscriber (
                         `id`,
@@ -1263,7 +1285,8 @@ class SubsForWoo
 
         } else {
 
-            $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->query(
                 $wpdb->prepare(
                     "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET
                         `paypal_plan_id` = %s,
@@ -1293,7 +1316,8 @@ class SubsForWoo
     {
         global $wpdb;
 
-        $result = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $result = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
                 $request['resource']['id']
@@ -1306,7 +1330,8 @@ class SubsForWoo
 
         }
         
-        $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query(
             $wpdb->prepare(
                 "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET `event_type` = %s, `canceled_date` = %s WHERE `id` = %s;",
                 $this->event_type,
@@ -1324,7 +1349,8 @@ class SubsForWoo
     {
         global $wpdb;
 
-        $results = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $results = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT `download_count` FROM {$wpdb->prefix}woocommerce_downloadable_product_permissions
                 WHERE `download_id` = %s
@@ -1379,7 +1405,8 @@ class SubsForWoo
 
                         }
 
-                        $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                        $wpdb->query(
                             $wpdb->prepare(
                                 "UPDATE {$wpdb->prefix}woocommerce_downloadable_product_permissions
                                 SET `downloads_remaining` = %s
@@ -1396,56 +1423,17 @@ class SubsForWoo
         }
     }
 
-    protected function ppsfwoo_get_the_product_att($plan_id, $att = "")
-    {
-        $data = "";
-
-        $products_query = new \WP_Query([
-            'post_type'      => 'product',
-            'posts_per_page' => -1, 
-            'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-                [
-                    'key'     => 'ppsfwoo_plan_id',
-                    'value'   => $plan_id,
-                    'compare' => 'LIKE'
-                ],
-            ],
-        ]);
-
-        if ($products_query->have_posts()) {
-
-            while ($products_query->have_posts())
-            {
-                $products_query->the_post();
-                
-                switch ($att) {
-
-                    case 'title':
-
-                        $data = get_the_title();
-
-                        break;
-
-                    default:
-
-                        $data = get_the_id();
-
-                        break;
-                }
-            }
-            wp_reset_postdata();
-        }
-
-        return $data;
-    }
-
     protected function ppsfwoo_insert_order()
     {   
         $order = wc_create_order();
 
+        $products = wc_get_products(['ppsfwoo_plan_id' => $this->user->plan_id]);
+        
+        $product_id = $products ? $products[0]->get_id(): 0;
+
         $order->set_customer_id($this->user->user_id);
 
-        $order->add_product(wc_get_product($this->ppsfwoo_get_the_product_att($this->user->plan_id, "ID")));
+        $order->add_product(wc_get_product($product_id));
 
         $address = [
             'first_name' => $this->user->first_name,
@@ -1490,7 +1478,8 @@ class SubsForWoo
 
             $order_id = $this->ppsfwoo_insert_order();
 
-            $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->query(
                 $wpdb->prepare(
                     "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET `order_id` = %d WHERE `id` = %s;",
                     $order_id,
