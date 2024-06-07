@@ -161,21 +161,6 @@ class SubsForWoo
         add_filter('product_type_selector', [$this, 'ppsfwoo_add_product']);
 
         add_filter('woocommerce_product_data_tabs', [$this, 'ppsfwoo_custom_product_tabs']);
-
-        add_filter('woocommerce_product_data_store_cpt_get_products_query', [$this, 'handle_custom_query_var'], 10, 2);
-    }
-
-    public function handle_custom_query_var($query, $query_vars)
-    {
-        if (!empty($query_vars['ppsfwoo_plan_id'])) {
-
-            $query['meta_query'][] = [
-                'key'   => 'ppsfwoo_plan_id',
-                'value' => esc_attr($query_vars['ppsfwoo_plan_id']),
-            ];
-        }
-
-        return $query;
     }
 
     public function wc_ajax_shutdown()
@@ -1423,17 +1408,32 @@ class SubsForWoo
         }
     }
 
+    protected function get_product_id_by_plan_id()
+    {
+        $query = new \WP_Query ([
+            'post_type'      => 'product',
+            'posts_per_page' => 1, 
+            'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+                [
+                    'key'     => 'ppsfwoo_plan_id',
+                    'value'   => $this->user->plan_id,
+                    'compare' => '='
+                ],
+            ],
+        ]);
+
+        $products = $query->get_posts();
+
+        return $products ? $products[0]->ID: 0;
+    }
+
     protected function ppsfwoo_insert_order()
     {   
         $order = wc_create_order();
 
-        $products = wc_get_products(['ppsfwoo_plan_id' => $this->user->plan_id]);
-        
-        $product_id = $products ? $products[0]->get_id(): 0;
-
         $order->set_customer_id($this->user->user_id);
 
-        $order->add_product(wc_get_product($product_id));
+        $order->add_product(wc_get_product($this->get_product_id_by_plan_id()));
 
         $address = [
             'first_name' => $this->user->first_name,
