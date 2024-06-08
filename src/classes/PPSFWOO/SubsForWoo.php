@@ -283,6 +283,17 @@ class SubsForWoo
 
         }
 
+        if($response = self::ppsfwoo_paypal_data("/v1/billing/subscriptions/$subs_id")) {
+
+            if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
+
+                $this->ppsfwoo_create_user_object_from_request($response, 'response');
+
+                $this->ppsfwoo_subs(false);
+
+            }
+        }
+
         wp_enqueue_script('ppsfwoo-scripts', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/get-sub.min.js", ['jquery'], $this->plugin_version, true);
 
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
@@ -562,7 +573,7 @@ class SubsForWoo
         } else {
 
             $stmt = $wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber LIMIT %d OFFSET %d",
+                "SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber ORDER BY order_id DESC LIMIT %d OFFSET %d",
                 $per_page,
                 $offset
             );
@@ -1212,6 +1223,21 @@ class SubsForWoo
         $customer->save();
     }
 
+    protected function ppsfwoo_get_order_id_by_subscription_id($subs_id)
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $result = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
+                $subs_id
+            )
+        );
+
+        return isset($result[0]->order_id) ? $result[0]->order_id: false;
+    }
+
     protected function ppsfwoo_insert_subscriber()
     {
         global $wpdb;
@@ -1235,15 +1261,7 @@ class SubsForWoo
 
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $result = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
-                $this->user->subscription_id
-            )
-        );
-
-        $order_id = isset($result[0]->order_id) ? $result[0]->order_id: false;
+        $order_id = $this->ppsfwoo_get_order_id_by_subscription_id($this->user->subscription_id);
 
         if(false === $order_id) {
 
@@ -1301,17 +1319,9 @@ class SubsForWoo
     {
         global $wpdb;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $result = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
-                $request['resource']['id']
-            )
-        );
-
-        if(isset($result[0]->order_id)) {
+        if($order_id = $this->ppsfwoo_get_order_id_by_subscription_id($request['resource']['id'])) {
         
-            $this->ppsfwoo_update_download_permissions($result[0]->order_id, 'revoke');
+            $this->ppsfwoo_update_download_permissions($order_id, 'revoke');
 
         }
         
@@ -1468,7 +1478,7 @@ class SubsForWoo
         return $order->get_id();
     }
 
-    protected function ppsfwoo_subs()
+    protected function ppsfwoo_subs($is_rest_request = true)
     {
         global $wpdb;
 
@@ -1488,39 +1498,43 @@ class SubsForWoo
             );
         }
 
-        $this->ppsfwoo_respond([
-            "status"    => 200,
-            "id"        => $this->user->subscription_id
-        ]);
+        if($is_rest_request) {
+
+            $this->ppsfwoo_respond([
+                "status"    => 200,
+                "id"        => $this->user->subscription_id
+            ]);
+
+        }
     }
 
-    public function ppsfwoo_create_user_object_from_request($request)
+    public function ppsfwoo_create_user_object_from_request($request, $type = 'resource')
     {
         $user = new \stdClass();
 
-        $user->create_time      = $request['create_time'];
+        $user->create_time      = $type === 'resource' ? $request['create_time']: $request[$type]['create_time'];
 
-        $user->subscription_id  = $request['resource']['id'];
+        $user->subscription_id  = $request[$type]['id'];
 
-        $user->plan_id          = $request['resource']['plan_id'];
+        $user->plan_id          = $request[$type]['plan_id'];
 
-        $user->email            = $request['resource']['subscriber']['email_address'];
+        $user->email            = $request[$type]['subscriber']['email_address'];
 
-        $user->first_name       = $request['resource']['subscriber']['name']['given_name'];
+        $user->first_name       = $request[$type]['subscriber']['name']['given_name'];
 
-        $user->last_name        = $request['resource']['subscriber']['name']['surname'];
+        $user->last_name        = $request[$type]['subscriber']['name']['surname'];
 
-        $user->address_line_1   = $request['resource']['subscriber']['shipping_address']['address']['address_line_1'];
+        $user->address_line_1   = $request[$type]['subscriber']['shipping_address']['address']['address_line_1'];
 
-        $user->address_line_2   = $request['resource']['subscriber']['shipping_address']['address']['address_line_2'] ?? "";
+        $user->address_line_2   = $request[$type]['subscriber']['shipping_address']['address']['address_line_2'] ?? "";
 
-        $user->city             = $request['resource']['subscriber']['shipping_address']['address']['admin_area_2'];
+        $user->city             = $request[$type]['subscriber']['shipping_address']['address']['admin_area_2'];
 
-        $user->state            = $request['resource']['subscriber']['shipping_address']['address']['admin_area_1'];
+        $user->state            = $request[$type]['subscriber']['shipping_address']['address']['admin_area_1'];
 
-        $user->postal_code      = $request['resource']['subscriber']['shipping_address']['address']['postal_code'];
+        $user->postal_code      = $request[$type]['subscriber']['shipping_address']['address']['postal_code'];
 
-        $user->country_code     = $request['resource']['subscriber']['shipping_address']['address']['country_code'];
+        $user->country_code     = $request[$type]['subscriber']['shipping_address']['address']['country_code'];
 
         $this->user = $user;
     }
