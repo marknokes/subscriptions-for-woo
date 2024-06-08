@@ -113,7 +113,7 @@ jQuery(document).ready(function($) {
 		do_ajax('ppsfwoo_refresh', function(r) {
 			var response = JSON.parse(r);
 			if(false !== response) {
-				showMsg("Successfully refreshed current plans.");
+				showMsg("Successfully refreshed active plans.");
 				listPlans();
 			} else {
 				showMsg(settingsError, "error");

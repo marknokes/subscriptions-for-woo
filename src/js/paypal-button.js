@@ -1,5 +1,3 @@
-var ppsfwooLdsEllipsis = document.getElementById('lds-ellipsis');
-
 function ppsfwooLoadPayPalScript(callback) {
     if (window.paypal) {
         callback();
@@ -13,7 +11,7 @@ function ppsfwooLoadPayPalScript(callback) {
 }
 
 function ppsfwooRender(nonce) {
-    ppsfwooLdsEllipsis.style.setProperty("display", "none", "important");
+    document.getElementById('lds-ellipsis').style.setProperty("display", "none", "important");
     paypal.Buttons({
         style: {
             shape: 'rect',
@@ -46,12 +44,11 @@ function ppsfwooInitializePayPalSubscription() {
             alert('There has been an unexpeced error. Please refresh and try again.');
         }
     };
-    xhr.send('action=ppsfwoo_admin_ajax_callback&method=subs_id_redirect_nonce');
+    xhr.send('action=ppsfwoo_admin_ajax_callback&method=ppsfwoo_subs_id_redirect_nonce');
 }
 
-
 document.getElementById('subscribeButton').addEventListener('click', function() {
-    ppsfwooLdsEllipsis.style.setProperty("display", "inline-block", "important");
     this.style.display = 'none';
+    document.getElementById('lds-ellipsis').style.setProperty("display", "inline-block", "important");
     ppsfwooLoadPayPalScript(ppsfwooInitializePayPalSubscription);
 });

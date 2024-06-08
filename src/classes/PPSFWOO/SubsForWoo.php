@@ -145,7 +145,7 @@ class SubsForWoo
 
         add_action('wp_enqueue_scripts', [$this, 'ppsfwoo_enqueue_frontend']);
 
-        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'wc_ajax_shutdown']);
+        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'ppsfwoo_wc_ajax_shutdown']);
     }
 
     protected function ppsfwoo_add_filters()
@@ -163,12 +163,12 @@ class SubsForWoo
         add_filter('woocommerce_product_data_tabs', [$this, 'ppsfwoo_custom_product_tabs']);
     }
 
-    public function wc_ajax_shutdown()
+    public function ppsfwoo_wc_ajax_shutdown()
     {
-        add_action('shutdown', [$this, 'resubscribe_webhooks']);
+        add_action('shutdown', [$this, 'ppsfwoo_resubscribe_webhooks']);
     }
 
-    public function resubscribe_webhooks()
+    public function ppsfwoo_resubscribe_webhooks()
     {
         if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
 
@@ -242,7 +242,7 @@ class SubsForWoo
         exit();
     }
 
-    public function subs_id_redirect_nonce()
+    public function ppsfwoo_subs_id_redirect_nonce()
     {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing 
         $is_ajax = isset($_POST['action'], $_POST['method']) && $_POST['method'] === __FUNCTION__;
@@ -276,7 +276,7 @@ class SubsForWoo
 
         if (
             !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
-            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $this->subs_id_redirect_nonce())
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $this->ppsfwoo_subs_id_redirect_nonce())
         ) {
 
             return;
@@ -395,7 +395,7 @@ class SubsForWoo
 
         }
 
-        if(!$this->display_subs($email)) {
+        if(!$this->ppsfwoo_display_subs($email)) {
 
             return "false";
 
@@ -538,7 +538,7 @@ class SubsForWoo
         wp_die();
     }
 
-    public function display_subs($email = "")
+    public function ppsfwoo_display_subs($email = "")
     {
         if(PPSFWOO_PERMISSIONS && !current_user_can('ppsfwoo_manage_subscriptions')) {
 
@@ -896,9 +896,9 @@ class SubsForWoo
           paypal_plan_id varchar(64) NOT NULL,
           order_id bigint(20) UNSIGNED DEFAULT NULL,
           event_type varchar(35) NOT NULL,
-          created datetime NOT NULL,
+          created datetime DEFAULT current_timestamp(),
           last_updated datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-          canceled_date date DEFAULT '0000-00-00',
+          canceled_date datetime DEFAULT '0000-00-00' ON UPDATE current_timestamp(),
           PRIMARY KEY (id),
           KEY idx_wp_customer_id (wp_customer_id),
           KEY idx_order_id (order_id),
@@ -1266,28 +1266,30 @@ class SubsForWoo
         if(false === $order_id) {
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->query('SET time_zone = "+00:00"');
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->query(
                 $wpdb->prepare(
                     "INSERT INTO {$wpdb->prefix}ppsfwoo_subscriber (
                         `id`,
                         `wp_customer_id`,
                         `paypal_plan_id`,
-                        `event_type`,
-                        `created`
+                        `event_type`
                     )
-                    VALUES (%s,%d,%s,%s,%s)",
+                    VALUES (%s,%d,%s,%s)",
                     [
                         $this->user->subscription_id,
                         $this->user->user_id,
                         $this->user->plan_id,
-                        $this->event_type,
-                        $this->user->create_time
+                        $this->event_type
                     ]
                 )
             );
 
         } else {
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->query('SET time_zone = "+00:00"');
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->query(
                 $wpdb->prepare(
@@ -1310,33 +1312,34 @@ class SubsForWoo
         $errors = !empty($wpdb->last_error) ? $wpdb->last_error: false;
 
         return [
-            'errors'               => $errors,
-            'action'               => false === $order_id ? 'insert': 'update'
+            'errors' => $errors,
+            'action' => false === $order_id ? 'insert': 'update'
         ];
     }
 
-    protected function ppsfwoo_cancel_subscriber($request)
+    protected function ppsfwoo_cancel_subscriber()
     {
         global $wpdb;
 
-        if($order_id = $this->ppsfwoo_get_order_id_by_subscription_id($request['resource']['id'])) {
+        if($order_id = $this->ppsfwoo_get_order_id_by_subscription_id($this->user->subscription_id)) {
         
             $this->ppsfwoo_update_download_permissions($order_id, 'revoke');
 
         }
         
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query('SET time_zone = "+00:00"');
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query(
             $wpdb->prepare(
-                "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET `event_type` = %s, `canceled_date` = %s WHERE `id` = %s;",
+                "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET `event_type` = %s WHERE `id` = %s;",
                 $this->event_type,
-                $request['create_time'],
-                $request['resource']['id']
+                $this->user->subscription_id
             )
         );
 
         return [
-            'errors'  => $wpdb->last_error
+            'errors' => $wpdb->last_error
         ];
     }
 
@@ -1418,7 +1421,7 @@ class SubsForWoo
         }
     }
 
-    protected function get_product_id_by_plan_id()
+    protected function ppsfwoo_get_product_id_by_plan_id()
     {
         $query = new \WP_Query ([
             'post_type'      => 'product',
@@ -1443,7 +1446,7 @@ class SubsForWoo
 
         $order->set_customer_id($this->user->user_id);
 
-        $order->add_product(wc_get_product($this->get_product_id_by_plan_id()));
+        $order->add_product(wc_get_product($this->ppsfwoo_get_product_id_by_plan_id()));
 
         $address = [
             'first_name' => $this->user->first_name,
@@ -1489,6 +1492,8 @@ class SubsForWoo
             $order_id = $this->ppsfwoo_insert_order();
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->query('SET time_zone = "+00:00"');
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->query(
                 $wpdb->prepare(
                     "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET `order_id` = %d WHERE `id` = %s;",
@@ -1511,8 +1516,6 @@ class SubsForWoo
     public function ppsfwoo_create_user_object_from_request($request, $type = 'resource')
     {
         $user = new \stdClass();
-
-        $user->create_time      = $type === 'resource' ? $request['create_time']: $request[$type]['create_time'];
 
         $user->subscription_id  = $request[$type]['id'];
 
@@ -1560,17 +1563,18 @@ class SubsForWoo
 
         $this->event_type = $request['event_type'] ?? "";
 
+        $this->ppsfwoo_create_user_object_from_request($request);
+
         switch($this->event_type)
         {
             case 'BILLING.SUBSCRIPTION.ACTIVATED':
-                $this->ppsfwoo_create_user_object_from_request($request);
                 $this->ppsfwoo_subs();
                 break;
             case 'BILLING.SUBSCRIPTION.EXPIRED':
             case 'BILLING.SUBSCRIPTION.CANCELLED':
             case 'BILLING.SUBSCRIPTION.SUSPENDED':
             case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
-                $this->ppsfwoo_cancel_subscriber($request);
+                $this->ppsfwoo_cancel_subscriber();
                 break;
         }
     }

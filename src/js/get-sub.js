@@ -18,4 +18,4 @@ function ppsfwooSendAjaxRequest() {
         });
     }
 }
-setInterval(ppsfwooSendAjaxRequest, 1000);
+setInterval(ppsfwooSendAjaxRequest, 5000);

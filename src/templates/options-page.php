@@ -22,7 +22,7 @@
 
         <?php
 
-        $num_subs = self::display_subs();
+        $num_subs = $this->ppsfwoo_display_subs();
 
         if($num_subs) {
 
