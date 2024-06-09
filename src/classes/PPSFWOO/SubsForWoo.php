@@ -283,17 +283,6 @@ class SubsForWoo
 
         }
 
-        if($response = self::ppsfwoo_paypal_data("/v1/billing/subscriptions/$subs_id")) {
-
-            if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
-
-                $this->ppsfwoo_create_user_object_from_request($response, 'response');
-
-                $this->ppsfwoo_subs(false);
-
-            }
-        }
-
         wp_enqueue_script('ppsfwoo-scripts', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/get-sub.min.js", ['jquery'], $this->plugin_version, true);
 
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
@@ -404,30 +393,32 @@ class SubsForWoo
 
     protected function ppsfwoo_get_sub()
     {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): NULL;
+        global $wpdb;
 
-        if(!isset($id)) {
+        if(!session_id()) session_start();
+        
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $subs_id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): NULL;
+
+        $redirect = false;
+
+        if(!isset($subs_id)) {
 
             return "";
 
         }
 
-        global $wpdb;
-
-        $redirect = false;
-
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $results = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT `wp_customer_id`, `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
-                $id
+                $subs_id
             )
         );
 
-        $order_id = isset($results[0]->order_id) ? $results[0]->order_id: NULL;
+        $order_id = $results[0]->order_id ?? NULL;
 
-        if ($order = wc_get_order($order_id)) {
+        if ($order_id && $order = wc_get_order($order_id)) {
 
             $redirect = $order->get_checkout_order_received_url();
 
@@ -437,6 +428,17 @@ class SubsForWoo
 
             }
 
+        } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = self::ppsfwoo_paypal_data("/v1/billing/subscriptions/$subs_id")) {
+
+            if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
+
+                unset($_SESSION['ppsfwoo_customer_nonce']);
+
+                $this->ppsfwoo_create_user_object_from_request($response, 'response');
+
+                $this->ppsfwoo_subs(false);
+
+            }
         }
 
         return $redirect ? esc_url($redirect): esc_attr("false");
