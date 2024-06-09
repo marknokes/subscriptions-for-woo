@@ -2,3 +2,5 @@
 dist
 *users-table-settings-page.php
 *subscriber-table-my-account.php
+*my-account.js
+*my-account.min.js
