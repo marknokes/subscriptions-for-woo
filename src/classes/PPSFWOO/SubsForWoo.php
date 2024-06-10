@@ -1036,32 +1036,6 @@ class SubsForWoo
         return $product_id && isset($this->ppsfwoo_plans[$plan_id]['frequency']) ? $this->ppsfwoo_plans[$plan_id]['frequency']: "";
     }
 
-    public static function ppsfwoo_get_paypal_access_token()
-    {
-        try {
-
-            $ppcp = new \WooCommerce\PayPalCommerce\PPCP();
-                    
-            $container = $ppcp->container();
-
-            $PayPalBearer = new \WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer(
-                new \WooCommerce\PayPalCommerce\ApiClient\Helper\Cache('ppcp-paypal-bearer'),
-                $container->get('api.host'),
-                $container->get('api.key'),
-                $container->get('api.secret'),
-                $container->get('woocommerce.logger.woocommerce'),
-                $container->get('wcgateway.settings')
-            );
-
-            return $PayPalBearer->bearer()->token();
-
-        } catch(\Exception $e) {
-
-            return false;
-
-        }
-    }
-
     public static function ppsfwoo_get_env()
     {
         $env = [
@@ -1110,6 +1084,34 @@ class SubsForWoo
         die(wp_json_encode($response));
     }
 
+    public static function ppsfwoo_get_paypal_access_token()
+    {
+        try {
+
+            $ppcp = new \WooCommerce\PayPalCommerce\PPCP();
+                    
+            $container = $ppcp->container();
+
+            $PayPalBearer = new \WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer(
+                new \WooCommerce\PayPalCommerce\ApiClient\Helper\Cache('ppcp-paypal-bearer'),
+                $container->get('api.host'),
+                $container->get('api.key'),
+                $container->get('api.secret'),
+                $container->get('woocommerce.logger.woocommerce'),
+                $container->get('wcgateway.settings')
+            );
+
+            return $PayPalBearer->bearer()->token();
+
+        } catch(\Exception $e) {
+
+            wc_get_logger()->error($e->getMessage(), ['source' => self::$instance->plugin_name]);
+
+            return false;
+
+        }
+    }
+
     public static function ppsfwoo_paypal_data($api, $payload = [], $method = "GET")
     {    
         if(!$token = self::ppsfwoo_get_paypal_access_token()) {
@@ -1136,10 +1138,21 @@ class SubsForWoo
 
         $remote_response = wp_remote_request($url, $args);
 
-        $response = wp_remote_retrieve_body($remote_response);
+        $response_body = wp_remote_retrieve_body($remote_response);
+
+        $response_array = json_decode($response_body, true);
+
+        if (isset($response_array['name']) && isset($response_array['message'])) {
+
+            $error_name = $response_array['name'];
+
+            $error_message = $response_array['message'];
+
+            wc_get_logger()->error("PayPal API Error: $error_name - $error_message", ['source' => self::$instance->plugin_name]);
+        }
 
         return [
-            'response' => json_decode($response, true),
+            'response' => $response_array,
             'status'   => $remote_response['response']['code']
         ];
     }
