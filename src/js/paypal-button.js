@@ -26,7 +26,10 @@ function ppsfwooRender(nonce) {
         },
         onApprove: function(data, actions) {
             var redirect_url = ppsfwoo_paypal_ajax_var.redirect + "?subs_id=" + data.subscriptionID + "&subs_id_redirect_nonce=" + nonce;
-            location.href = redirect_url;
+            window.location.assign(redirect_url);
+        },
+        onError: function(err) {
+            alert('An error occurred while processing your subscription: ' + err.message);
         }
     }).render(`#paypal-button-container-${ppsfwoo_paypal_ajax_var.plan_id}`);
 }
