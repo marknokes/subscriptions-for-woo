@@ -4,9 +4,19 @@ namespace PPSFWOO;
 
 class SubsForWoo
 {
-    public static $instance;
+    const WEBHOOK_PREFIX = "BILLING.SUBSCRIPTION";
 
-    public static $template_dir = ABSPATH . "/wp-content/plugins/subscriptions-for-woo/templates";
+    const ACTIVATED = 'BILLING.SUBSCRIPTION.ACTIVATED';
+
+    const EXPIRED = 'BILLING.SUBSCRIPTION.EXPIRED';
+
+    const CANCELLED = 'BILLING.SUBSCRIPTION.CANCELLED';
+
+    const SUSPENDED = 'BILLING.SUBSCRIPTION.SUSPENDED';
+
+    const PAYMENT_FAILED = 'BILLING.SUBSCRIPTION.PAYMENT.FAILED';
+
+    public static $instance;
 
     public static $api_namespace = "subscriptions-for-woo/v1";
 
@@ -74,7 +84,10 @@ class SubsForWoo
            $user,
            $event_type,
            $plugin_version,
-           $plugin_name;
+           $plugin_name,
+           $template_dir,
+           $plugin_dir_url,
+           $is_rest_request;
 
     public function __construct()
     {
@@ -88,6 +101,10 @@ class SubsForWoo
         $this->plugin_version = $plugin_data['Version'];
 
         $this->plugin_name = $plugin_data['Name'];
+
+        $this->template_dir = plugin_dir_path(PPSFWOO_PLUGIN_PATH) . "templates/";
+
+        $this->plugin_dir_url = plugin_dir_url(PPSFWOO_PLUGIN_PATH);
 
         $this->client_id = $env['client_id'];
 
@@ -268,7 +285,7 @@ class SubsForWoo
     {
         if(!is_admin()) {
             
-            wp_enqueue_style('ppsfwoo-styles', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "css/frontend.min.css", [], $this->plugin_version);
+            wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/frontend.min.css", [], $this->plugin_version);
 
         }
         
@@ -283,7 +300,7 @@ class SubsForWoo
 
         }
 
-        wp_enqueue_script('ppsfwoo-scripts', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/get-sub.min.js", ['jquery'], $this->plugin_version, true);
+        wp_enqueue_script('ppsfwoo-scripts', $this->plugin_dir_url . "js/get-sub.min.js", ['jquery'], $this->plugin_version, true);
 
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
             'subs_id' => $subs_id
@@ -436,7 +453,11 @@ class SubsForWoo
 
                 $this->ppsfwoo_create_user_object_from_request($response, 'response');
 
-                $this->ppsfwoo_subs(false);
+                $this->is_rest_request = false;
+
+                $this->event_type = self::ACTIVATED;
+
+                $this->ppsfwoo_subs();
 
             }
         }
@@ -633,7 +654,7 @@ class SubsForWoo
 
     protected static function ppsfwoo_display_template($template = "", $args = [])
     {
-        $template = self::$template_dir . "/$template.php";
+        $template = self::$instance->template_dir . "/$template.php";
 
         if(!file_exists($template)) {
 
@@ -661,7 +682,7 @@ class SubsForWoo
                 'plan_id' => $plan_id
             ]);
 
-            wp_enqueue_script('paypal-sdk', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/paypal-button.min.js", [], $this->plugin_version, true);
+            wp_enqueue_script('paypal-sdk', $this->plugin_dir_url . "js/paypal-button.min.js", [], $this->plugin_version, true);
 
             wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
                 'client_id' => $this->client_id,
@@ -757,7 +778,7 @@ class SubsForWoo
 
         if (!$page_id) {
 
-            $thank_you_template = plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "/templates/thank-you.php";
+            $thank_you_template = $this->plugin_dir_url . "templates/thank-you.php";
 
             $response = wp_remote_get($thank_you_template);
 
@@ -817,11 +838,11 @@ class SubsForWoo
         $response = self::ppsfwoo_paypal_data("/v1/notifications/webhooks", [
             'url' => $this->listen_address,
             'event_types' => [
-                ['name' => 'BILLING.SUBSCRIPTION.ACTIVATED'],
-                ['name' => 'BILLING.SUBSCRIPTION.EXPIRED'],
-                ['name' => 'BILLING.SUBSCRIPTION.CANCELLED'],
-                ['name' => 'BILLING.SUBSCRIPTION.SUSPENDED'],
-                ['name' => 'BILLING.SUBSCRIPTION.PAYMENT.FAILED']
+                ['name' => self::ACTIVATED],
+                ['name' => self::EXPIRED],
+                ['name' => self::CANCELLED],
+                ['name' => self::SUSPENDED],
+                ['name' => self::PAYMENT_FAILED]
             ]
         ], "POST");
 
@@ -852,7 +873,7 @@ class SubsForWoo
 
                         foreach($webhooks['response']['webhooks'][$key]['event_types'] as $type_key => $type)
                         {
-                            if(strpos($type['name'], "BILLING.SUBSCRIPTION") === 0) {
+                            if(strpos($type['name'], self::WEBHOOK_PREFIX) === 0) {
 
                                 unset($webhooks['response']['webhooks'][$key]['event_types'][$type_key]);
                                     
@@ -900,7 +921,7 @@ class SubsForWoo
           event_type varchar(35) NOT NULL,
           created datetime DEFAULT current_timestamp(),
           last_updated datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-          canceled_date datetime DEFAULT '0000-00-00' ON UPDATE current_timestamp(),
+          canceled_date datetime DEFAULT '0000-00-00 00:00:00' ON UPDATE current_timestamp(),
           PRIMARY KEY (id),
           KEY idx_wp_customer_id (wp_customer_id),
           KEY idx_order_id (order_id),
@@ -928,7 +949,7 @@ class SubsForWoo
                     'args'                => [
                         'event_type' => [
                             'validate_callback' => function($param, $request, $key) {
-                                return strpos($param, "BILLING.SUBSCRIPTION") === 0;
+                                return strpos($param, self::WEBHOOK_PREFIX) === 0;
                             }
                         ]
                     ]
@@ -983,9 +1004,9 @@ class SubsForWoo
 
         }
 
-        wp_enqueue_style('ppsfwoo-styles', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "css/style.min.css", [], $this->plugin_version);
+        wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/style.min.css", [], $this->plugin_version);
 
-        wp_enqueue_script('ppsfwoo-scripts', plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/main.min.js", ['jquery'], $this->plugin_version, true);
+        wp_enqueue_script('ppsfwoo-scripts', $this->plugin_dir_url . "js/main.min.js", ['jquery'], $this->plugin_version, true);
 
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
             'settings_url' => admin_url(self::$ppcp_settings_url)
@@ -1021,7 +1042,7 @@ class SubsForWoo
 
     public function ppsfwoo_options_page()
     {
-        include self::$template_dir . "/options-page.php";
+        include $this->template_dir . "/options-page.php";
     }
 
     public static function ppsfwoo_get_plan_id_by_product_id($product_id)
@@ -1311,7 +1332,7 @@ class SubsForWoo
                     "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET
                         `paypal_plan_id` = %s,
                         `event_type` = %s,
-                        `canceled_date` = '0000-00-00'
+                        `canceled_date` = '0000-00-00 00:00:00'
                     WHERE `id` = %s;",
                     [
                         $this->user->plan_id,
@@ -1496,7 +1517,7 @@ class SubsForWoo
         return $order->get_id();
     }
 
-    protected function ppsfwoo_subs($is_rest_request = true)
+    protected function ppsfwoo_subs()
     {
         global $wpdb;
 
@@ -1511,14 +1532,17 @@ class SubsForWoo
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->query(
                 $wpdb->prepare(
-                    "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET `order_id` = %d WHERE `id` = %s;",
+                    "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET
+                        `order_id` = %d,
+                        `canceled_date` = '0000-00-00 00:00:00'
+                        WHERE `id` = %s;",
                     $order_id,
                     $this->user->subscription_id
                 )
             );
         }
 
-        if($is_rest_request) {
+        if($this->is_rest_request) {
 
             $this->ppsfwoo_respond([
                 "status"    => 200,
@@ -1576,19 +1600,21 @@ class SubsForWoo
 
         }
 
+        $this->is_rest_request = true;
+
         $this->event_type = $request['event_type'] ?? "";
 
         $this->ppsfwoo_create_user_object_from_request($request);
 
         switch($this->event_type)
         {
-            case 'BILLING.SUBSCRIPTION.ACTIVATED':
+            case self::ACTIVATED:
                 $this->ppsfwoo_subs();
                 break;
-            case 'BILLING.SUBSCRIPTION.EXPIRED':
-            case 'BILLING.SUBSCRIPTION.CANCELLED':
-            case 'BILLING.SUBSCRIPTION.SUSPENDED':
-            case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
+            case self::EXPIRED:
+            case self::CANCELLED:
+            case self::SUSPENDED:
+            case self::PAYMENT_FAILED:
                 $this->ppsfwoo_cancel_subscriber();
                 break;
         }

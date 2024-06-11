@@ -1,4 +1,5 @@
-.inactive-subscription {
+.inactive-subscription,
+.ppsfwoo-cancelled {
   display: none;
 }
 .subs-actions a {
