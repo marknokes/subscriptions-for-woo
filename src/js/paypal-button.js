@@ -1,3 +1,37 @@
+function ppsfwooSendPostRequest(url, data) {
+    return new Promise((resolve, reject) => {
+        var xhr = new XMLHttpRequest();
+        
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    try {
+                        const jsonResponse = JSON.parse(xhr.responseText);
+                        resolve(jsonResponse);
+                    } catch (error) {
+                        reject(new Error('Invalid JSON response'));
+                    }
+                } else {
+                    reject(new Error('Request failed: ' + xhr.status));
+                }
+            }
+        };
+
+        xhr.onerror = function() {
+            reject(new Error('Network error occurred'));
+        };
+
+        var formData = new URLSearchParams();
+        for (var key in data) {
+            formData.append(key, data[key]);
+        }
+
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.send(formData.toString());
+    });
+}
+
 function ppsfwooLoadPayPalScript(callback) {
     if (window.paypal) {
         callback();
@@ -29,25 +63,35 @@ function ppsfwooRender(nonce) {
             window.location.assign(redirect_url);
         },
         onError: function(err) {
-            alert('An error occurred while processing your subscription: ' + err.message);
+            if(err.message) {
+                ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
+                    'action': 'ppsfwoo_admin_ajax_callback',
+                    'method': 'ppsfwoo_log_paypal_buttons_error',
+                    'message': err.message
+                })
+                .then(response => {
+                    console.log(response);
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+            }
         }
     }).render(`#paypal-button-container-${ppsfwoo_paypal_ajax_var.plan_id}`);
 }
 
 function ppsfwooInitializePayPalSubscription() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/wp-admin/admin-ajax.php');
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.responseType = 'json';
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            var response = xhr.response;
-            ppsfwooRender(response.nonce);
-        } else {
-            alert('There has been an unexpeced error. Please refresh and try again.');
-        }
-    };
-    xhr.send('action=ppsfwoo_admin_ajax_callback&method=ppsfwoo_subs_id_redirect_nonce');
+    ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
+        'action': 'ppsfwoo_admin_ajax_callback',
+        'method': 'ppsfwoo_subs_id_redirect_nonce'
+    })
+    .then(response => {
+        ppsfwooRender(response.nonce);
+    })
+    .catch(error => {
+        console.log(error);
+        alert("There has been an unexpeced error. Please refresh and try again.");
+    });
 }
 
 document.getElementById('subscribeButton').addEventListener('click', function() {
