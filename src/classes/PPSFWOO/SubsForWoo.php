@@ -408,6 +408,24 @@ class SubsForWoo
         }
     }
 
+    protected function ppsfwoo_reactivate_subscriber($response)
+    {
+        if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
+
+            $this->ppsfwoo_create_user_object_from_request($response, 'response');
+
+            $this->is_rest_request = false;
+
+            $this->event_type = self::ACTIVATED;
+
+            $this->ppsfwoo_subs();
+
+            return true;
+        }
+
+        return false;
+    }
+
     protected function ppsfwoo_get_sub()
     {
         global $wpdb;
@@ -447,17 +465,9 @@ class SubsForWoo
 
         } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = self::ppsfwoo_paypal_data("/v1/billing/subscriptions/$subs_id")) {
 
-            if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
+            if(true === $this->ppsfwoo_reactivate_subscriber($response)) {
 
                 unset($_SESSION['ppsfwoo_customer_nonce']);
-
-                $this->ppsfwoo_create_user_object_from_request($response, 'response');
-
-                $this->is_rest_request = false;
-
-                $this->event_type = self::ACTIVATED;
-
-                $this->ppsfwoo_subs();
 
             }
         }
