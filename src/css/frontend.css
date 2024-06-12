@@ -89,4 +89,8 @@ p.order-again {
   .subs-actions::before {
     content: "" !important;
   }
+  .subs-actions a.inactive-subscription,
+  .subs-actions a.ppsfwoo-cancelled {
+    display: none;
+  }
 }
