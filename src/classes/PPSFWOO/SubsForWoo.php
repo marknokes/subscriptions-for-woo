@@ -162,7 +162,9 @@ class SubsForWoo
 
         add_action('wp_enqueue_scripts', [$this, 'ppsfwoo_enqueue_frontend']);
 
-        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'ppsfwoo_wc_ajax_shutdown']);
+        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'ppsfwoo_shutdown']);
+
+        add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'ppsfwoo_shutdown'], 999);
     }
 
     protected function ppsfwoo_add_filters()
@@ -180,7 +182,7 @@ class SubsForWoo
         add_filter('woocommerce_product_data_tabs', [$this, 'ppsfwoo_custom_product_tabs']);
     }
 
-    public function ppsfwoo_wc_ajax_shutdown()
+    public function ppsfwoo_shutdown()
     {
         add_action('shutdown', [$this, 'ppsfwoo_resubscribe_webhooks']);
     }
