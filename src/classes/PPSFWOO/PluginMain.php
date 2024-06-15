@@ -7,7 +7,7 @@ use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
 use PPSFWOO\User;
 
-class SubsForWoo
+class PluginMain
 {
     public static $instance;
 
@@ -278,7 +278,7 @@ class SubsForWoo
 
     public static function ppsfwoo_add_product($types)
     {
-        if(PPSFWOO_PERMISSIONS && !current_user_can('ppsfwoo_manage_subscription_products')) {
+        if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
 
             return $types;
         }
@@ -297,7 +297,7 @@ class SubsForWoo
 
     public static function ppsfwoo_custom_product_tabs($tabs)
     {
-        if(PPSFWOO_PERMISSIONS && !current_user_can('ppsfwoo_manage_subscription_products')) {
+        if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
 
             return $tabs;
         }
@@ -514,7 +514,7 @@ class SubsForWoo
 
     public function ppsfwoo_display_subs($email = "")
     {
-        if(PPSFWOO_PERMISSIONS && !current_user_can('ppsfwoo_manage_subscriptions')) {
+        if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscriptions')) {
 
             echo "<p>You're user permissions do not allow you to view this content. Please contact your website administrator.</p>";
 
@@ -833,7 +833,7 @@ class SubsForWoo
             'bugs' => '<a href="' . esc_url("https://github.com/marknokes/subscriptions-for-woo/issues/new?assignees=marknokes&labels=bug&template=bug_report.md") . '" target="_blank">Submit a bug</a>'
         ];
 
-        if (!PPSFWOO_PERMISSIONS) {
+        if (!PPSFWOO_PLUGIN_EXTRAS) {
 
             return array_merge($links, $upgrade, $bugs);
 

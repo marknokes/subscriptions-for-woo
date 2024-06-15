@@ -33,8 +33,8 @@ spl_autoload_register(function ($class_name) {
 
 define('PPSFWOO_PLUGIN_PATH', __FILE__);
 
-define('PPSFWOO_PERMISSIONS', class_exists(\PPSFWOO\SubsForWooPermissions::class));
+define('PPSFWOO_PLUGIN_EXTRAS', class_exists(\PPSFWOO\PluginExtras::class));
 
-new \PPSFWOO\SubsForWoo();
+new \PPSFWOO\PluginMain();
 
-$SubsForWooPermissions = PPSFWOO_PERMISSIONS ? new \PPSFWOO\SubsForWooPermissions(): NULL;
+$PluginExtras = PPSFWOO_PLUGIN_EXTRAS ? new \PPSFWOO\PluginExtras(): NULL;

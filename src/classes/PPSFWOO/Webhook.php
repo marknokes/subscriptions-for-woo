@@ -3,7 +3,7 @@
 namespace PPSFWOO;
 
 use PPSFWOO\PayPal;
-use PPSFWOO\SubsForWoo;
+use PPSFWOO\PluginMain;
 use PPSFWOO\User;
 
 class Webhook
@@ -60,7 +60,7 @@ class Webhook
 
         }
 
-        $SubsForWoo = SubsForWoo::$instance;
+        $PluginMain = PluginMain::$instance;
 
         $user = new User($request);
 
@@ -69,13 +69,13 @@ class Webhook
         switch($event_type)
         {
             case Webhook::ACTIVATED:
-                $SubsForWoo->ppsfwoo_subs($user, $event_type);
+                $PluginMain->ppsfwoo_subs($user, $event_type);
                 break;
             case Webhook::EXPIRED:
             case Webhook::CANCELLED:
             case Webhook::SUSPENDED:
             case Webhook::PAYMENT_FAILED:
-                $SubsForWoo->ppsfwoo_cancel_subscriber($user, $event_type);
+                $PluginMain->ppsfwoo_cancel_subscriber($user, $event_type);
                 break;
         }
 

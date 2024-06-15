@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) exit;
 
 <div class="flex-container">
 	
-<div class="wrap <?php echo PPSFWOO_PERMISSIONS ? 'full-width': 'partial-width'; ?>">
+<div class="wrap <?php echo PPSFWOO_PLUGIN_EXTRAS ? 'full-width': 'partial-width'; ?>">
 
 	<script type="text/javascript">
     	var tab_subs_active = <?php echo isset($_GET['subs_page_num']) ? "true": "false"; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
@@ -265,9 +265,9 @@ if (!defined('ABSPATH')) exit;
 		<a class="button" id="resubscribe" href="<?php echo esc_url(admin_url(self::$ppcp_settings_url) . "#field-webhooks_list"); ?>">Resubscribe webhooks</a>
 		<h3>Users and Capabilities</h3>
 		<?php
-		if(PPSFWOO_PERMISSIONS) {
+		if(PPSFWOO_PLUGIN_EXTRAS) {
 
-			\PPSFWOO\SubsForWooPermissions::ppsfwoo_get_users_by_capabilities(true);
+			\PPSFWOO\PluginExtras::ppsfwoo_get_users_by_capabilities(true);
 
 		} else {
 
@@ -279,7 +279,7 @@ if (!defined('ABSPATH')) exit;
 
 </div>
 
-<?php if(!PPSFWOO_PERMISSIONS) { ?>
+<?php if(!PPSFWOO_PLUGIN_EXTRAS) { ?>
 <div class="wrap">
 
 	<div class="go-pro">
