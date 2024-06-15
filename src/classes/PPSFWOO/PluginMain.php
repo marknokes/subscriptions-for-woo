@@ -70,23 +70,12 @@ class PluginMain
            $ppsfwoo_delete_plugin_data,
            $user,
            $event_type,
-           $plugin_version,
-           $plugin_name,
            $template_dir,
            $plugin_dir_url;
 
     public function __construct()
     {
-        $plugin_data = get_file_data(PPSFWOO_PLUGIN_PATH, [
-            'Version' => 'Version',
-            'Name'    => 'Plugin Name'
-        ], 'plugin');
-
         $env = PayPal::env();
-
-        $this->plugin_version = $plugin_data['Version'];
-
-        $this->plugin_name = $plugin_data['Name'];
 
         $this->template_dir = plugin_dir_path(PPSFWOO_PLUGIN_PATH) . "templates/";
 
@@ -101,80 +90,85 @@ class PluginMain
             $this->$option = get_option($option);
         }
 
-        register_activation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'ppsfwoo_plugin_activation']);
+        register_activation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_activation']);
 
-        register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'ppsfwoo_plugin_deactivation']);
+        register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_deactivation']);
 
-        $this->ppsfwoo_add_actions();
+        $this->add_actions();
 
-        $this->ppsfwoo_add_filters();
+        $this->add_filters();
 
         self::$instance = $this;
     }
 
-    protected function ppsfwoo_add_actions()
+    protected function add_actions()
     {
-        add_action('admin_init', [$this, 'ppsfwoo_register_settings']);
+        add_action('admin_init', [$this, 'register_settings']);
 
-        add_action('admin_init', [$this, 'ppsfwoo_handle_export_action']);
+        add_action('admin_init', [$this, 'handle_export_action']);
 
-        add_action('admin_menu', [$this, 'ppsfwoo_register_options_page']);
+        add_action('admin_menu', [$this, 'register_options_page']);
 
-        add_action('admin_enqueue_scripts', [$this, 'ppsfwoo_admin_enqueue_scripts']);
+        add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
 
-        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$this, 'ppsfwoo_admin_ajax_callback']);
+        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$this, 'admin_ajax_callback']);
 
-        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [$this, 'ppsfwoo_admin_ajax_callback']);
+        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [$this, 'admin_ajax_callback']);
 
-        add_action('edit_user_profile', [$this, 'ppsfwoo_add_custom_user_fields']);
+        add_action('edit_user_profile', [$this, 'add_custom_user_fields']);
         
         add_action('rest_api_init', [new Webhook(), 'rest_api_init']);
         
-        add_action('before_woocommerce_init', [$this, 'ppsfwoo_wc_declare_compatibility']);
+        add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
 
-        add_action('woocommerce_product_meta_start', [$this, 'ppsfwoo_add_custom_paypal_button']);
+        add_action('woocommerce_product_meta_start', [$this, 'add_custom_paypal_button']);
 
         add_action('plugins_loaded', 'ppsfwoo_register_product_type');
         
-        add_action('woocommerce_product_data_panels', [$this, 'ppsfwoo_options_product_tab_content']);
+        add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
         
-        add_action('woocommerce_process_product_meta_ppsfwoo', [$this, 'ppsfwoo_save_option_field']);
+        add_action('woocommerce_process_product_meta_ppsfwoo', [$this, 'save_option_field']);
 
-        add_action('admin_head', [$this, 'ppsfwoo_edit_product_css']);
+        add_action('admin_head', [$this, 'edit_product_css']);
 
-        add_action('wp_enqueue_scripts', [$this, 'ppsfwoo_enqueue_frontend']);
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend']);
 
-        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'ppsfwoo_shutdown']);
+        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'shutdown']);
 
-        add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'ppsfwoo_shutdown'], 999);
+        add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'shutdown'], 999);
     }
 
-    protected function ppsfwoo_add_filters()
+    protected function add_filters()
     {
-        add_filter('plugin_action_links_subscriptions-for-woo/subscriptions-for-woo.php', [$this, 'ppsfwoo_settings_link']);
+        add_filter('plugin_action_links_subscriptions-for-woo/subscriptions-for-woo.php', [$this, 'settings_link']);
 
-        add_filter('plugin_row_meta', [$this, 'ppsfwoo_plugin_row_meta'], 10, 2);
+        add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 2);
 
-        add_filter('wp_new_user_notification_email', [$this, 'ppsfwoo_new_user_notification_email'], 10, 4);
+        add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
 
-        add_filter('woocommerce_get_price_html', [$this, 'ppsfwoo_change_product_price_display']);
+        add_filter('woocommerce_get_price_html', [$this, 'change_product_price_display']);
 
-        add_filter('product_type_selector', [$this, 'ppsfwoo_add_product']);
+        add_filter('product_type_selector', [$this, 'add_product']);
 
-        add_filter('woocommerce_product_data_tabs', [$this, 'ppsfwoo_custom_product_tabs']);
+        add_filter('woocommerce_product_data_tabs', [$this, 'custom_product_tabs']);
     }
 
-    public function ppsfwoo_set($var, $value)
+    public static function plugin_data($data)
     {
-        $this->$var = $value;
+        $plugin_data = get_file_data(PPSFWOO_PLUGIN_PATH, [
+            'Version' => 'Version',
+            'Name'    => 'Plugin Name'
+        ], 'plugin');
+
+        return $plugin_data[$data];
     }
 
-    public function ppsfwoo_shutdown()
+    public function shutdown()
     {
         add_action('shutdown', [new Webhook(), 'resubscribe']);
     }
 
-    public function ppsfwoo_handle_export_action()
+    public function handle_export_action()
     {
         $export_table = isset($_GET['export_table']) ? sanitize_text_field(wp_unslash($_GET['export_table'])): "";
 
@@ -228,7 +222,7 @@ class PluginMain
         exit();
     }
 
-    public function ppsfwoo_subs_id_redirect_nonce()
+    public function subs_id_redirect_nonce()
     {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing 
         $is_ajax = isset($_POST['action'], $_POST['method']) && $_POST['method'] === __FUNCTION__;
@@ -250,11 +244,11 @@ class PluginMain
         return $is_ajax ? wp_json_encode(['nonce' => wp_create_nonce($nonce_name)]): $nonce_name;
     }
 
-    public function ppsfwoo_enqueue_frontend()
+    public function enqueue_frontend()
     {
         if(!is_admin()) {
             
-            wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/frontend.min.css", [], $this->plugin_version);
+            wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/frontend.min.css", [], self::plugin_data('Version'));
 
         }
         
@@ -262,21 +256,21 @@ class PluginMain
 
         if (
             !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
-            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $this->ppsfwoo_subs_id_redirect_nonce())
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $this->subs_id_redirect_nonce())
         ) {
 
             return;
 
         }
 
-        wp_enqueue_script('ppsfwoo-scripts', $this->plugin_dir_url . "js/get-sub.min.js", ['jquery'], $this->plugin_version, true);
+        wp_enqueue_script('ppsfwoo-scripts', $this->plugin_dir_url . "js/get-sub.min.js", ['jquery'], self::plugin_data('Version'), true);
 
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
             'subs_id' => $subs_id
         ]);
     }
 
-    public static function ppsfwoo_add_product($types)
+    public static function add_product($types)
     {
         if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
 
@@ -288,14 +282,14 @@ class PluginMain
         return $types;
     }
 
-    public static function ppsfwoo_edit_product_css()
+    public static function edit_product_css()
     {
         echo '<style>ul.wc-tabs li.ppsfwoo_options a::before {
           content: "\f515" !important;
         }</style>';
     }
 
-    public static function ppsfwoo_custom_product_tabs($tabs)
+    public static function custom_product_tabs($tabs)
     {
         if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
 
@@ -314,7 +308,7 @@ class PluginMain
         return $tabs;
     }
 
-    public function ppsfwoo_options_product_tab_content()
+    public function options_product_tab_content()
     {
         ?><div id='ppsfwoo_options' class='panel woocommerce_options_panel'><?php
 
@@ -343,7 +337,7 @@ class PluginMain
         </div><?php
     }
 
-    public function ppsfwoo_save_option_field($post_id)
+    public function save_option_field($post_id)
     {
         if (!isset($_POST['ppsfwoo_plan_id']) ||
             !isset($_POST['ppsfwoo_plan_id_nonce']) ||
@@ -359,7 +353,7 @@ class PluginMain
         update_post_meta($post_id, 'ppsfwoo_plan_id', $plan_id);
     }
 
-    protected function ppsfwoo_search()
+    protected function search_subscribers()
     {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): "";
@@ -370,18 +364,18 @@ class PluginMain
 
         }
 
-        if(!$this->ppsfwoo_display_subs($email)) {
+        if(!$this->display_subs($email)) {
 
             return "false";
 
         }
     }
 
-    protected function ppsfwoo_reactivate_subscriber($response)
+    protected function reactivate_subscriber($response)
     {
         if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
 
-            $this->ppsfwoo_subs(new User($response, 'response'), Webhook::ACTIVATED);
+            $this->subscribe(new User($response, 'response'), Webhook::ACTIVATED);
 
             return true;
         }
@@ -389,7 +383,7 @@ class PluginMain
         return false;
     }
 
-    protected function ppsfwoo_get_sub()
+    protected function get_sub()
     {
         global $wpdb;
 
@@ -428,7 +422,7 @@ class PluginMain
 
         } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")) {
 
-            if(true === $this->ppsfwoo_reactivate_subscriber($response)) {
+            if(true === $this->reactivate_subscriber($response)) {
 
                 unset($_SESSION['ppsfwoo_customer_nonce']);
 
@@ -438,7 +432,7 @@ class PluginMain
         return $redirect ? esc_url($redirect): esc_attr("false");
     }
 
-    protected function ppsfwoo_refresh()
+    protected function refresh_plans()
     {
         $success = "false";
 
@@ -489,19 +483,19 @@ class PluginMain
         return $success;
     }
 
-    protected function ppsfwoo_list_plans()
+    protected function list_plans()
     {
         return wp_json_encode($this->ppsfwoo_plans);
     }
 
-    public function ppsfwoo_list_webhooks()
+    public function list_webhooks()
     {
         $Webhook = new Webhook();
 
         return $Webhook->list();
     }
 
-    public function ppsfwoo_admin_ajax_callback()
+    public function admin_ajax_callback()
     {  
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])): "";
@@ -512,7 +506,7 @@ class PluginMain
         wp_die();
     }
 
-    public function ppsfwoo_display_subs($email = "")
+    public function display_subs($email = "")
     {
         if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscriptions')) {
 
@@ -566,7 +560,7 @@ class PluginMain
 
             $total_pages = ceil($total_rows / $per_page);
 
-            self::ppsfwoo_display_template("subscriber-table-settings-page", [
+            self::display_template("subscriber-table-settings-page", [
                 'results'    => $results,
                 'paypal_url' => PayPal::env()['paypal_url']
             ]);
@@ -594,7 +588,7 @@ class PluginMain
         return $num_subs;
     }
 
-    public function ppsfwoo_wc_declare_compatibility()
+    public function wc_declare_compatibility()
     {
         if (class_exists(FeaturesUtil::class)) {
 
@@ -603,7 +597,7 @@ class PluginMain
         }
     }
 
-    protected static function ppsfwoo_display_template($template = "", $args = [])
+    protected static function display_template($template = "", $args = [])
     {
         $template = self::$instance->template_dir . "/$template.php";
 
@@ -618,7 +612,7 @@ class PluginMain
         include $template;
     }
 
-    public function ppsfwoo_add_custom_paypal_button()
+    public function add_custom_paypal_button()
     {
         global $product;
 
@@ -627,13 +621,13 @@ class PluginMain
             return;
         }
         
-        if($plan_id = self::ppsfwoo_get_plan_id_by_product_id(get_the_ID())) {
+        if($plan_id = self::get_plan_id_by_product_id(get_the_ID())) {
 
-            self::ppsfwoo_display_template("paypal-button", [
+            self::display_template("paypal-button", [
                 'plan_id' => $plan_id
             ]);
 
-            wp_enqueue_script('paypal-sdk', $this->plugin_dir_url . "js/paypal-button.min.js", [], $this->plugin_version, true);
+            wp_enqueue_script('paypal-sdk', $this->plugin_dir_url . "js/paypal-button.min.js", [], self::plugin_data('Version'), true);
 
             wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
                 'client_id' => $this->client_id,
@@ -643,7 +637,7 @@ class PluginMain
         }
     }
 
-    public function ppsfwoo_change_product_price_display($price)
+    public function change_product_price_display($price)
     {
         global $product;
 
@@ -655,7 +649,7 @@ class PluginMain
 
         }
 
-        if ($frequency = $this->ppsfwoo_get_plan_frequency_by_product_id($product_id)) {
+        if ($frequency = $this->get_plan_frequency_by_product_id($product_id)) {
 
             $dom = new \DOMDocument();
 
@@ -678,7 +672,7 @@ class PluginMain
         return $price;
     }
 
-    public function ppsfwoo_new_user_notification_email($notification_email, $user, $blogname)
+    public function new_user_notification_email($notification_email, $user, $blogname)
     {
         $key = get_password_reset_key($user);
 
@@ -695,7 +689,7 @@ class PluginMain
         return $notification_email;
     }
 
-    protected function ppsfwoo_get_page_by_title($title)
+    protected function get_page_by_title($title)
     {
         $query = new \WP_Query([
             'post_type'      => 'page',
@@ -721,11 +715,11 @@ class PluginMain
         }
     }
 
-    protected function ppsfwoo_create_thank_you_page()
+    protected function create_thank_you_page()
     {
         $title = "Thank you for your order";
 
-        $page_id = $this->ppsfwoo_get_page_by_title($title);
+        $page_id = $this->get_page_by_title($title);
 
         if (!$page_id) {
 
@@ -745,16 +739,16 @@ class PluginMain
         update_option('ppsfwoo_thank_you_page_id', $page_id);
     }
 
-    public function ppsfwoo_plugin_activation()
+    public function plugin_activation()
     {
         foreach (self::$options as $option => $option_value)
         {
             add_option($option, $option_value['default']);
         }
 
-        $this->ppsfwoo_db_install();
+        $this->db_install();
 
-        $this->ppsfwoo_create_thank_you_page();
+        $this->create_thank_you_page();
 
         $Webhook = new Webhook();
 
@@ -765,7 +759,7 @@ class PluginMain
         }
     }
 
-    public function ppsfwoo_plugin_deactivation()
+    public function plugin_deactivation()
     {
         global $wpdb;
 
@@ -788,7 +782,7 @@ class PluginMain
         }
     }
 
-    protected function ppsfwoo_db_install()
+    protected function db_install()
     {
         global $wpdb;
 
@@ -818,7 +812,7 @@ class PluginMain
         $wpdb->query($create_table);
     }
 
-    public function ppsfwoo_plugin_row_meta($links, $file)
+    public function plugin_row_meta($links, $file)
     {
         if(plugin_basename(PPSFWOO_PLUGIN_PATH) !== $file) {
 
@@ -842,7 +836,7 @@ class PluginMain
         return array_merge($links, $bugs);
     }
 
-    public function ppsfwoo_settings_link($links)
+    public function settings_link($links)
     {
         $settings_url = esc_url(admin_url('admin.php?page=subscriptions_for_woo'));
 
@@ -851,7 +845,7 @@ class PluginMain
         return array_merge($settings, $links);
     }
 
-    public function ppsfwoo_admin_enqueue_scripts($hook)
+    public function admin_enqueue_scripts($hook)
     {
         if ('woocommerce_page_subscriptions_for_woo' !== $hook) {
 
@@ -859,16 +853,16 @@ class PluginMain
 
         }
 
-        wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/style.min.css", [], $this->plugin_version);
+        wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/style.min.css", [], self::plugin_data('Version'));
 
-        wp_enqueue_script('ppsfwoo-scripts', $this->plugin_dir_url . "js/main.min.js", ['jquery'], $this->plugin_version, true);
+        wp_enqueue_script('ppsfwoo-scripts', $this->plugin_dir_url . "js/main.min.js", ['jquery'], self::plugin_data('Version'), true);
 
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
             'settings_url' => admin_url(self::$ppcp_settings_url)
         ]);
     }
 
-    public function ppsfwoo_register_settings()
+    public function register_settings()
     {
         foreach (self::$options as $option => $option_value)
         {
@@ -878,7 +872,7 @@ class PluginMain
         }
     }
 
-    public function ppsfwoo_register_options_page()
+    public function register_options_page()
     {
         add_submenu_page(
             'woocommerce',
@@ -886,33 +880,33 @@ class PluginMain
             'Subscriptions',
             'manage_options',
             'subscriptions_for_woo',
-            [$this,'ppsfwoo_options_page']
+            [$this, 'options_page']
         );
     }
 
-    public function ppsfwoo_add_custom_user_fields($user)
+    public function add_custom_user_fields($user)
     {
-        self::ppsfwoo_display_template("edit-user");
+        self::display_template("edit-user");
     }
 
-    public function ppsfwoo_options_page()
+    public function options_page()
     {
         include $this->template_dir . "/options-page.php";
     }
 
-    public static function ppsfwoo_get_plan_id_by_product_id($product_id)
+    public static function get_plan_id_by_product_id($product_id)
     {
         return $product_id ? get_post_meta($product_id, 'ppsfwoo_plan_id', true): "";
     }
 
-    public function ppsfwoo_get_plan_frequency_by_product_id($product_id)
+    public function get_plan_frequency_by_product_id($product_id)
     {
         $plan_id = get_post_meta($product_id, 'ppsfwoo_plan_id', true);
 
         return $product_id && isset($this->ppsfwoo_plans[$plan_id]['frequency']) ? $this->ppsfwoo_plans[$plan_id]['frequency']: "";
     }
 
-    public function ppsfwoo_log_paypal_buttons_error()
+    public function log_paypal_buttons_error()
     {
         $logged_error = false;
 
@@ -921,7 +915,7 @@ class PluginMain
         
         if($message) {
 
-            wc_get_logger()->error("PayPal subscription button error: $message", ['source' => self::$instance->plugin_name]);
+            wc_get_logger()->error("PayPal subscription button error: $message", ['source' => self::plugin_data('Name')]);
 
             $logged_error = true;
 
@@ -930,25 +924,7 @@ class PluginMain
         return wp_json_encode(['logged_error' => $logged_error]);
     }
 
-    protected function ppsfwoo_create_wp_user($user_data)
-    {
-        $user_id = wp_insert_user($user_data);
-
-        if (!is_wp_error($user_id)) {
-
-            wp_new_user_notification($user_id, null, 'user');
-
-            return $user_id;
-
-        } else {
-
-            error_log('Error creating user');
-
-            return false;
-        }
-    }
-
-    protected function ppsfwoo_get_order_id_by_subscription_id($subs_id)
+    protected function get_order_id_by_subscription_id($subs_id)
     {
         global $wpdb;
 
@@ -963,7 +939,7 @@ class PluginMain
         return isset($result[0]->order_id) ? $result[0]->order_id: false;
     }
 
-    protected function ppsfwoo_insert_subscriber()
+    protected function insert_subscriber()
     {
         global $wpdb;
 
@@ -973,20 +949,13 @@ class PluginMain
 
         if(!$this->user->user_id) {
 
-            $this->user->user_id = $this->ppsfwoo_create_wp_user([
-                'user_login' => strtolower($this->user->first_name) . '.' . strtolower($this->user->last_name),
-                'user_pass'  => wp_generate_password(12, false),
-                'user_email' => $this->user->email,
-                'first_name' => $this->user->first_name,
-                'last_name'  => $this->user->last_name,
-                'role'       => 'customer'
-            ]);
+            $this->user->user_id = $this->user->create_wp_user();
 
             $this->user->create_woocommerce_customer();
 
         }
 
-        $order_id = $this->ppsfwoo_get_order_id_by_subscription_id($this->user->subscription_id);
+        $order_id = $this->get_order_id_by_subscription_id($this->user->subscription_id);
 
         if(false === $order_id) {
 
@@ -1031,7 +1000,7 @@ class PluginMain
                 )
             );
 
-            $this->ppsfwoo_update_download_permissions($order_id, 'grant');
+            $this->update_download_permissions($order_id, 'grant');
         }
 
         $errors = !empty($wpdb->last_error) ? $wpdb->last_error: false;
@@ -1042,13 +1011,13 @@ class PluginMain
         ];
     }
 
-    protected function ppsfwoo_cancel_subscriber($user, $event_type)
+    public function cancel_subscriber($user, $event_type)
     {
         global $wpdb;
 
-        if($order_id = $this->ppsfwoo_get_order_id_by_subscription_id($user->subscription_id)) {
+        if($order_id = $this->get_order_id_by_subscription_id($user->subscription_id)) {
         
-            $this->ppsfwoo_update_download_permissions($order_id, 'revoke');
+            $this->update_download_permissions($order_id, 'revoke');
 
         }
         
@@ -1068,7 +1037,7 @@ class PluginMain
         ];
     }
 
-    protected function ppsfwoo_get_download_count($download_id, $order_id)
+    protected function get_download_count($download_id, $order_id)
     {
         global $wpdb;
 
@@ -1086,7 +1055,7 @@ class PluginMain
         return isset($results[0]->download_count) ? $results[0]->download_count: 0;
     }
 
-    public function ppsfwoo_update_download_permissions($order_id, $action = "grant") {
+    public function update_download_permissions($order_id, $action = "grant") {
 
         global $wpdb;
 
@@ -1112,7 +1081,7 @@ class PluginMain
 
                     foreach (array_keys($downloads) as $download_id)
                     {
-                        $download_count = $this->ppsfwoo_get_download_count($download_id, $order_id);
+                        $download_count = $this->get_download_count($download_id, $order_id);
 
                         if($action === 'grant' && $default_download_limit === "-1") {
 
@@ -1146,7 +1115,7 @@ class PluginMain
         }
     }
 
-    protected function ppsfwoo_get_product_id_by_plan_id()
+    protected function get_product_id_by_plan_id()
     {
         $query = new \WP_Query ([
             'post_type'      => 'product',
@@ -1165,13 +1134,13 @@ class PluginMain
         return $products ? $products[0]->ID: 0;
     }
 
-    protected function ppsfwoo_insert_order()
+    protected function insert_order()
     {   
         $order = wc_create_order();
 
         $order->set_customer_id($this->user->user_id);
 
-        $order->add_product(wc_get_product($this->ppsfwoo_get_product_id_by_plan_id()));
+        $order->add_product(wc_get_product($this->get_product_id_by_plan_id()));
 
         $address = [
             'first_name' => $this->user->first_name,
@@ -1206,7 +1175,7 @@ class PluginMain
         return $order->get_id();
     }
 
-    public function ppsfwoo_subs($user, $event_type)
+    public function subscribe($user, $event_type)
     {
         global $wpdb;
 
@@ -1214,11 +1183,11 @@ class PluginMain
 
         $this->event_type = $event_type;
 
-        $response = $this->ppsfwoo_insert_subscriber();
+        $response = $this->insert_subscriber();
 
         if(false === $response['errors'] && 'insert' === $response['action']) {
 
-            $order_id = $this->ppsfwoo_insert_order();
+            $order_id = $this->insert_order();
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->query('SET time_zone = "+00:00"');

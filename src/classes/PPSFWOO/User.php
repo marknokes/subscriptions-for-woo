@@ -2,6 +2,8 @@
 
 namespace PPSFWOO;
 
+use \PPSFWOO\PluginMain;
+
 class User
 {
 	public $user_id,
@@ -45,6 +47,31 @@ class User
 
         return $this;
 	}
+
+    public function create_wp_user()
+    {
+        $user_id = wp_insert_user([
+            'user_login' => strtolower($this->first_name) . '.' . strtolower($this->last_name),
+            'user_pass'  => wp_generate_password(12, false),
+            'user_email' => $this->email,
+            'first_name' => $this->first_name,
+            'last_name'  => $this->last_name,
+            'role'       => 'customer'
+        ]);
+
+        if (!is_wp_error($user_id)) {
+
+            wp_new_user_notification($user_id, null, 'user');
+
+            return $user_id;
+
+        } else {
+
+            wc_get_logger()->error("Error creating user", ['source' => PluginMain::plugin_data('Name')]);
+
+            return false;
+        }
+    }
 
 	public function create_woocommerce_customer()
     {

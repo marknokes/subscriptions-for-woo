@@ -40,7 +40,7 @@ class Webhook
     	$this->subscribed_webhooks = get_option('ppsfwoo_subscribed_webhooks');
     }
 
-    public function ppsfwoo_subscription_webhook(\WP_REST_Request $request)
+    public function handle_request(\WP_REST_Request $request)
     {
         $response = new \WP_REST_Response();
         
@@ -69,13 +69,13 @@ class Webhook
         switch($event_type)
         {
             case Webhook::ACTIVATED:
-                $PluginMain->ppsfwoo_subs($user, $event_type);
+                $PluginMain->subscribe($user, $event_type);
                 break;
             case Webhook::EXPIRED:
             case Webhook::CANCELLED:
             case Webhook::SUSPENDED:
             case Webhook::PAYMENT_FAILED:
-                $PluginMain->ppsfwoo_cancel_subscriber($user, $event_type);
+                $PluginMain->cancel_subscriber($user, $event_type);
                 break;
         }
 
@@ -92,7 +92,7 @@ class Webhook
                 [
                     'methods'             => \WP_REST_Server::CREATABLE,
                     'permission_callback' => '__return_true',
-                    'callback'            => [$this, 'ppsfwoo_subscription_webhook'],
+                    'callback'            => [$this, 'handle_request'],
                     'args'                => [
                         'event_type' => [
                             'validate_callback' => function($param, $request, $key) {
@@ -104,7 +104,7 @@ class Webhook
                 [
                     'methods' => \WP_REST_Server::READABLE,
                     'permission_callback' => '__return_true',
-                    'callback' => [$this, 'ppsfwoo_subscription_webhook']
+                    'callback' => [$this, 'handle_request']
                 ]
             ]
         );
@@ -169,7 +169,7 @@ class Webhook
         return isset($subscribed['event_types']) ? wp_json_encode($subscribed['event_types']): "";
     }
 
-    protected function create()
+    public function create()
     {
         $response = PayPal::request("/v1/notifications/webhooks", [
             'url' => $this->listen_address(),
@@ -234,7 +234,7 @@ class Webhook
         }
     }
 
-    protected function delete($webhook_id = "")
+    public function delete($webhook_id = "")
     {
         $webhook_id = $webhook_id ?: $this->id();
 

@@ -66,7 +66,7 @@ function ppsfwooRender(nonce) {
             if(err.message) {
                 ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
                     'action': 'ppsfwoo_admin_ajax_callback',
-                    'method': 'ppsfwoo_log_paypal_buttons_error',
+                    'method': 'log_paypal_buttons_error',
                     'message': err.message
                 })
                 .then(response => {
@@ -83,7 +83,7 @@ function ppsfwooRender(nonce) {
 function ppsfwooInitializePayPalSubscription() {
     ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
         'action': 'ppsfwoo_admin_ajax_callback',
-        'method': 'ppsfwoo_subs_id_redirect_nonce'
+        'method': 'subs_id_redirect_nonce'
     })
     .then(response => {
         ppsfwooRender(response.nonce);

@@ -6,7 +6,7 @@ function ppsfwooSendAjaxRequest() {
             type: 'POST',
             data: {
                 'action': 'ppsfwoo_admin_ajax_callback',
-                'method': 'ppsfwoo_get_sub',
+                'method': 'get_sub',
                 'id'    : ppsfwoo_ajax_var.subs_id
             },
             success: function(response) {

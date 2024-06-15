@@ -2,6 +2,7 @@
 
 namespace PPSFWOO;
 
+use \PPSFWOO\PluginMain;
 use \WooCommerce\PayPalCommerce\PPCP;
 use \WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer;
 use \WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
@@ -43,7 +44,7 @@ class PayPal
 	protected static function access_token()
     {
         try {
-
+            
             $ppcp = new PPCP();
                     
             $container = $ppcp->container();
@@ -61,7 +62,7 @@ class PayPal
 
         } catch(\Exception $e) {
 
-            wc_get_logger()->error($e->getMessage(), ['source' => 'Subscriptions for Woo']);
+            wc_get_logger()->error($e->getMessage(), ['source' => PluginMain::plugin_data("Name")]);
 
             return false;
 
@@ -104,7 +105,7 @@ class PayPal
 
             $error_message = $response_array['message'];
 
-            wc_get_logger()->error("PayPal API Error: $error_name - $error_message", ['source' => 'Subscriptions for Woo']);
+            wc_get_logger()->error("PayPal API Error: $error_name - $error_message", ['source' => PluginMain::plugin_data("Name")]);
         }
 
         return [

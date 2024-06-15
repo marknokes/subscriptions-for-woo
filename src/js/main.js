@@ -59,7 +59,7 @@ jQuery(document).ready(function($) {
     	e.preventDefault();
     	var email = $("#email-input").val();
     	if(!email) return;
-        do_ajax('ppsfwoo_search', function(r) {
+        do_ajax('search_subscribers', function(r) {
 			if("false" !== r) {
 				$("#tab-subscribers .pagination, .button.export-table-data").hide();
 				$("#reset").show();
@@ -73,7 +73,7 @@ jQuery(document).ready(function($) {
     });
 
 	function listPlans() {
-		do_ajax('ppsfwoo_list_plans', function(r) {
+		do_ajax('list_plans', function(r) {
 			if(!r) return;
 			var obj = JSON.parse(r),
 				$table = $('#plans'),
@@ -89,7 +89,7 @@ jQuery(document).ready(function($) {
 	}
 
 	function listWebhooks() {
-		do_ajax('ppsfwoo_list_webhooks', function(r) {
+		do_ajax('list_webhooks', function(r) {
 			if(!r) return;
 			var obj = JSON.parse(r),
 				$table = $('#webhooks'),
@@ -110,7 +110,7 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		var $spinner = $(this).next('.spinner');
 		$spinner.addClass('is-active');
-		do_ajax('ppsfwoo_refresh', function(r) {
+		do_ajax('refresh_plans', function(r) {
 			var response = JSON.parse(r);
 			if(false !== response) {
 				showMsg("Successfully refreshed active plans.");

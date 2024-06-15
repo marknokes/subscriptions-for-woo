@@ -28,7 +28,7 @@ if (!defined('ABSPATH')) exit;
 
         <?php
 
-        $num_subs = $this->ppsfwoo_display_subs();
+        $num_subs = $this->display_subs();
 
         if($num_subs) {
 
@@ -267,7 +267,7 @@ if (!defined('ABSPATH')) exit;
 		<?php
 		if(PPSFWOO_PLUGIN_EXTRAS) {
 
-			\PPSFWOO\PluginExtras::ppsfwoo_get_users_by_capabilities(true);
+			\PPSFWOO\PluginExtras::get_users_by_capabilities(true);
 
 		} else {
 
