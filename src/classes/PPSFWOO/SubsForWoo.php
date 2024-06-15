@@ -2,25 +2,14 @@
 
 namespace PPSFWOO;
 
+use Automattic\WooCommerce\Utilities\FeaturesUtil;
+use PPSFWOO\Webhook;
+use PPSFWOO\PayPal;
+use PPSFWOO\User;
+
 class SubsForWoo
 {
-    const WEBHOOK_PREFIX = "BILLING.SUBSCRIPTION";
-
-    const ACTIVATED = 'BILLING.SUBSCRIPTION.ACTIVATED';
-
-    const EXPIRED = 'BILLING.SUBSCRIPTION.EXPIRED';
-
-    const CANCELLED = 'BILLING.SUBSCRIPTION.CANCELLED';
-
-    const SUSPENDED = 'BILLING.SUBSCRIPTION.SUSPENDED';
-
-    const PAYMENT_FAILED = 'BILLING.SUBSCRIPTION.PAYMENT.FAILED';
-
     public static $instance;
-
-    public static $api_namespace = "subscriptions-for-woo/v1";
-
-    public static $endpoint = "/incoming";
 
     public static $options_group = "ppsfwoo_options_group";
 
@@ -73,10 +62,8 @@ class SubsForWoo
 
     public $client_id,
            $paypal_url,
-           $site_url,
-           $listen_address,
-           $ppsfwoo_subscribed_webhooks,
            $ppsfwoo_webhook_id,
+           $ppsfwoo_subscribed_webhooks,
            $ppsfwoo_plans,
            $ppsfwoo_thank_you_page_id,
            $ppsfwoo_rows_per_page,
@@ -86,8 +73,7 @@ class SubsForWoo
            $plugin_version,
            $plugin_name,
            $template_dir,
-           $plugin_dir_url,
-           $is_rest_request;
+           $plugin_dir_url;
 
     public function __construct()
     {
@@ -96,7 +82,7 @@ class SubsForWoo
             'Name'    => 'Plugin Name'
         ], 'plugin');
 
-        $env = self::ppsfwoo_get_env();
+        $env = PayPal::env();
 
         $this->plugin_version = $plugin_data['Version'];
 
@@ -109,10 +95,6 @@ class SubsForWoo
         $this->client_id = $env['client_id'];
 
         $this->paypal_url = $env['paypal_url'];
-
-        $this->site_url = network_site_url();
-
-        $this->listen_address = $this->site_url . "/wp-json/" . self::$api_namespace . self::$endpoint;
 
         foreach (self::$options as $option => $option_value)
         {
@@ -146,7 +128,7 @@ class SubsForWoo
 
         add_action('edit_user_profile', [$this, 'ppsfwoo_add_custom_user_fields']);
         
-        add_action('rest_api_init', [$this, 'ppsfwoo_rest_api_init']);
+        add_action('rest_api_init', [new Webhook(), 'rest_api_init']);
         
         add_action('before_woocommerce_init', [$this, 'ppsfwoo_wc_declare_compatibility']);
 
@@ -182,29 +164,14 @@ class SubsForWoo
         add_filter('woocommerce_product_data_tabs', [$this, 'ppsfwoo_custom_product_tabs']);
     }
 
-    public function ppsfwoo_shutdown()
+    public function ppsfwoo_set($var, $value)
     {
-        add_action('shutdown', [$this, 'ppsfwoo_resubscribe_webhooks']);
+        $this->$var = $value;
     }
 
-    public function ppsfwoo_resubscribe_webhooks()
+    public function ppsfwoo_shutdown()
     {
-        if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
-
-            if(isset($webhooks['response']['webhooks'])) {
-
-                foreach($webhooks['response']['webhooks'] as $key => $webhook)
-                {
-                    if($this->listen_address === $webhooks['response']['webhooks'][$key]['url']) {
-
-                        $this->ppsfwoo_delete_webhooks($webhooks['response']['webhooks'][$key]['id']);
-
-                    }
-                }
-
-                $this->ppsfwoo_create_webhooks();
-            }
-        }
+        add_action('shutdown', [new Webhook(), 'resubscribe']);
     }
 
     public function ppsfwoo_handle_export_action()
@@ -414,13 +381,7 @@ class SubsForWoo
     {
         if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
 
-            $this->ppsfwoo_create_user_object_from_request($response, 'response');
-
-            $this->is_rest_request = false;
-
-            $this->event_type = self::ACTIVATED;
-
-            $this->ppsfwoo_subs();
+            $this->ppsfwoo_subs(new User($response, 'response'), Webhook::ACTIVATED);
 
             return true;
         }
@@ -465,7 +426,7 @@ class SubsForWoo
 
             }
 
-        } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = self::ppsfwoo_paypal_data("/v1/billing/subscriptions/$subs_id")) {
+        } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")) {
 
             if(true === $this->ppsfwoo_reactivate_subscriber($response)) {
 
@@ -477,40 +438,11 @@ class SubsForWoo
         return $redirect ? esc_url($redirect): esc_attr("false");
     }
 
-    protected function ppsfwoo_list_webhooks()
-    {
-        if($this->ppsfwoo_webhook_id && $webhooks = $this->ppsfwoo_subscribed_webhooks) {
-
-            $subscribed = $webhooks;
-
-        } else if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
-
-            $subscribed = [];
-
-            if(isset($webhooks['response']['webhooks'])) {
-
-                foreach($webhooks['response']['webhooks'] as $key => $webhook)
-                {
-                    if($webhook['id'] === $this->ppsfwoo_webhook_id) {
-
-                        $subscribed = $webhook;
-
-                    }
-                }
-
-            }
-
-            update_option('ppsfwoo_subscribed_webhooks', $subscribed);
-        }
-
-        return isset($subscribed['event_types']) ? wp_json_encode($subscribed['event_types']): "";
-    }
-
     protected function ppsfwoo_refresh()
     {
         $success = "false";
 
-        if($plan_data = self::ppsfwoo_paypal_data("/v1/billing/plans")) {
+        if($plan_data = PayPal::request("/v1/billing/plans")) {
 
             $plans = [];
 
@@ -526,11 +458,11 @@ class SubsForWoo
 
                     }
 
-                    $plan_freq = self::ppsfwoo_paypal_data("/v1/billing/plans/{$plan['id']}");
+                    $plan_freq = PayPal::request("/v1/billing/plans/{$plan['id']}");
 
                     if(!in_array($plan['product_id'], array_keys($products))) {
                     
-                        $product_data = self::ppsfwoo_paypal_data("/v1/catalogs/products/{$plan['product_id']}");
+                        $product_data = PayPal::request("/v1/catalogs/products/{$plan['product_id']}");
 
                         $product_name = $product_data['response']['name'];
 
@@ -560,6 +492,13 @@ class SubsForWoo
     protected function ppsfwoo_list_plans()
     {
         return wp_json_encode($this->ppsfwoo_plans);
+    }
+
+    public function ppsfwoo_list_webhooks()
+    {
+        $Webhook = new Webhook();
+
+        return $Webhook->list();
     }
 
     public function ppsfwoo_admin_ajax_callback()
@@ -629,7 +568,7 @@ class SubsForWoo
 
             self::ppsfwoo_display_template("subscriber-table-settings-page", [
                 'results'    => $results,
-                'paypal_url' => self::ppsfwoo_get_env()['paypal_url']
+                'paypal_url' => PayPal::env()['paypal_url']
             ]);
 
             if($email === "" && $total_pages > 1) {
@@ -657,9 +596,9 @@ class SubsForWoo
 
     public function ppsfwoo_wc_declare_compatibility()
     {
-        if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+        if (class_exists(FeaturesUtil::class)) {
 
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', PPSFWOO_PLUGIN_PATH);
+            FeaturesUtil::declare_compatibility('custom_order_tables', PPSFWOO_PLUGIN_PATH);
             
         }
     }
@@ -817,9 +756,11 @@ class SubsForWoo
 
         $this->ppsfwoo_create_thank_you_page();
 
-        if(!$this->ppsfwoo_webhook_id) {
+        $Webhook = new Webhook();
 
-            $this->ppsfwoo_create_webhooks();
+        if(!$Webhook->id()) {
+
+            $Webhook->create();
 
         }
     }
@@ -833,7 +774,9 @@ class SubsForWoo
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
             $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ppsfwoo_subscriber");
 
-            $this->ppsfwoo_delete_webhooks();
+            $Webhook = new Webhook();
+
+            $Webhook->delete();
             
             wp_delete_post($this->ppsfwoo_thank_you_page_id, true);
             
@@ -843,80 +786,6 @@ class SubsForWoo
 
             }
         }
-    }
-
-    protected function ppsfwoo_create_webhooks()
-    {
-        $response = self::ppsfwoo_paypal_data("/v1/notifications/webhooks", [
-            'url' => $this->listen_address,
-            'event_types' => [
-                ['name' => self::ACTIVATED],
-                ['name' => self::EXPIRED],
-                ['name' => self::CANCELLED],
-                ['name' => self::SUSPENDED],
-                ['name' => self::PAYMENT_FAILED]
-            ]
-        ], "POST");
-
-        if(isset($response['response']['id'])) {
-
-            update_option('ppsfwoo_webhook_id', $response['response']['id']);
-        
-        }
-
-        $this->ppfswoo_replace_webhooks();
-
-        return $response['response'] ?? false;
-    }
-
-    protected function ppfswoo_replace_webhooks()
-    {
-        if($webhooks = self::ppsfwoo_paypal_data("/v1/notifications/webhooks")) {
-
-            if(isset($webhooks['response']['webhooks'])) {
-
-                foreach($webhooks['response']['webhooks'] as $key => $webhook)
-                {
-                    if($this->listen_address !== $webhooks['response']['webhooks'][$key]['url']) {
-
-                        $webhook_id = $webhooks['response']['webhooks'][$key]['id'];
-
-                        $types = [];
-
-                        foreach($webhooks['response']['webhooks'][$key]['event_types'] as $type_key => $type)
-                        {
-                            if(strpos($type['name'], self::WEBHOOK_PREFIX) === 0) {
-
-                                unset($webhooks['response']['webhooks'][$key]['event_types'][$type_key]);
-                                    
-                            }
-                        }
-
-                        foreach ($webhooks['response']['webhooks'][$key]['event_types'] as $type)
-                        {
-                            array_push($types, ['name' => $type['name']]);
-                        }
-
-                        $data = [
-                            "op"    => "replace",
-                            "path"  => "/event_types",
-                            "value" => $types
-                        ];
-
-                        self::ppsfwoo_paypal_data("/v1/notifications/webhooks/$webhook_id", [$data], "PATCH");
-                    }
-                }
-            }
-        }
-    }
-
-    protected function ppsfwoo_delete_webhooks($webhook_id = "")
-    {
-        $webhook_id = $webhook_id ?: $this->ppsfwoo_webhook_id;
-
-        $response = self::ppsfwoo_paypal_data("/v1/notifications/webhooks/$webhook_id", [], "DELETE");
-
-        return $response['response'] ?? false;
     }
 
     protected function ppsfwoo_db_install()
@@ -947,32 +816,6 @@ class SubsForWoo
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query($create_table);
-    }
-
-    public function ppsfwoo_rest_api_init()
-    {
-        register_rest_route(
-            self::$api_namespace,
-            self::$endpoint, [
-                [
-                    'methods'             => \WP_REST_Server::CREATABLE,
-                    'permission_callback' => '__return_true',
-                    'callback'            => [$this, 'ppsfwoo_subscription_webhook'],
-                    'args'                => [
-                        'event_type' => [
-                            'validate_callback' => function($param, $request, $key) {
-                                return strpos($param, self::WEBHOOK_PREFIX) === 0;
-                            }
-                        ]
-                    ]
-                ],
-                [
-                    'methods' => \WP_REST_Server::READABLE,
-                    'permission_callback' => '__return_true',
-                    'callback' => [$this, 'ppsfwoo_subscription_webhook']
-                ]
-            ]
-        );
     }
 
     public function ppsfwoo_plugin_row_meta($links, $file)
@@ -1069,82 +912,6 @@ class SubsForWoo
         return $product_id && isset($this->ppsfwoo_plans[$plan_id]['frequency']) ? $this->ppsfwoo_plans[$plan_id]['frequency']: "";
     }
 
-    public static function ppsfwoo_get_env()
-    {
-        $env = [
-            'paypal_api_url' => '',
-            'paypal_url'     => '',
-            'client_id'      => ''
-        ];
-
-        if($settings = get_option('woocommerce-ppcp-settings')) {
-
-            if(isset($settings['sandbox_on']) && $settings['sandbox_on']) {
-
-                $env['paypal_api_url'] = "https://api-m.sandbox.paypal.com";
-
-                $env['paypal_url'] = "https://www.sandbox.paypal.com";
-
-                $env['client_id'] = $settings['client_id_sandbox'];
-
-            } else if(isset($settings['client_id_production'])) {
-
-                $env['paypal_api_url'] = "https://api-m.paypal.com";
-
-                $env['paypal_url'] = "https://www.paypal.com";
-
-                $env['client_id'] = $settings['client_id_production'];
-
-            }
-        }
-
-        return $env;
-
-    }
-
-    public function ppsfwoo_respond($response = [])
-    {
-        header('Content-Type: application/json; charset=utf-8');
-
-        $response = $this->response ?? $response;
-
-        if(!empty($response['status'])) {
-
-            http_response_code($response['status']);
-
-        }
-
-        die(wp_json_encode($response));
-    }
-
-    public static function ppsfwoo_get_paypal_access_token()
-    {
-        try {
-
-            $ppcp = new \WooCommerce\PayPalCommerce\PPCP();
-                    
-            $container = $ppcp->container();
-
-            $PayPalBearer = new \WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer(
-                new \WooCommerce\PayPalCommerce\ApiClient\Helper\Cache('ppcp-paypal-bearer'),
-                $container->get('api.host'),
-                $container->get('api.key'),
-                $container->get('api.secret'),
-                $container->get('woocommerce.logger.woocommerce'),
-                $container->get('wcgateway.settings')
-            );
-
-            return $PayPalBearer->bearer()->token();
-
-        } catch(\Exception $e) {
-
-            wc_get_logger()->error($e->getMessage(), ['source' => self::$instance->plugin_name]);
-
-            return false;
-
-        }
-    }
-
     public function ppsfwoo_log_paypal_buttons_error()
     {
         $logged_error = false;
@@ -1163,89 +930,6 @@ class SubsForWoo
         return wp_json_encode(['logged_error' => $logged_error]);
     }
 
-    public static function ppsfwoo_paypal_data($api, $payload = [], $method = "GET")
-    {    
-        if(!$token = self::ppsfwoo_get_paypal_access_token()) {
-
-            return false;
-            
-        }
-
-        $args = [
-            'method'  => $method,
-            'headers' => [
-                'Authorization' => 'Bearer ' . $token,
-                'Content-Type' => 'application/json'
-            ]
-        ];
-
-        if($payload) {
-
-            $args['body'] = wp_json_encode($payload);
-
-        }
-
-        $url = self::ppsfwoo_get_env()['paypal_api_url'] . $api;
-
-        $remote_response = wp_remote_request($url, $args);
-
-        $response_body = wp_remote_retrieve_body($remote_response);
-
-        $response_array = json_decode($response_body, true);
-
-        if (isset($response_array['name']) && isset($response_array['message'])) {
-
-            $error_name = $response_array['name'];
-
-            $error_message = $response_array['message'];
-
-            wc_get_logger()->error("PayPal API Error: $error_name - $error_message", ['source' => self::$instance->plugin_name]);
-        }
-
-        return [
-            'response' => $response_array,
-            'status'   => $remote_response['response']['code']
-        ];
-    }
-
-    protected function ppsfwoo_request_is_from_paypal()
-    {
-        $request_body = file_get_contents('php://input');
-
-        if(!$request_body) {
-
-            return false;
-
-        }
-
-        $headers = array_change_key_case(getallheaders(), CASE_UPPER);
-
-        if(
-            (!array_key_exists('PAYPAL-AUTH-ALGO', $headers)) ||
-            (!array_key_exists('PAYPAL-TRANSMISSION-ID', $headers)) ||
-            (!array_key_exists('PAYPAL-CERT-URL', $headers)) ||
-            (!array_key_exists('PAYPAL-TRANSMISSION-SIG', $headers)) ||
-            (!array_key_exists('PAYPAL-TRANSMISSION-TIME', $headers)) 
-        )
-        {
-            return false;
-        }
-
-        $response = self::ppsfwoo_paypal_data("/v1/notifications/verify-webhook-signature", [
-            'auth_algo'         => $headers['PAYPAL-AUTH-ALGO'],
-            'cert_url'          => $headers['PAYPAL-CERT-URL'],
-            'transmission_id'   => $headers['PAYPAL-TRANSMISSION-ID'],
-            'transmission_sig'  => $headers['PAYPAL-TRANSMISSION-SIG'],
-            'transmission_time' => $headers['PAYPAL-TRANSMISSION-TIME'],
-            'webhook_id'        => $this->ppsfwoo_webhook_id,
-            'webhook_event'     => json_decode($request_body)
-        ], "POST");
-
-        $success = isset($response['response']['verification_status']) ? $response['response']['verification_status']: false;
-
-        return $success === "SUCCESS";
-    }
-
     protected function ppsfwoo_create_wp_user($user_data)
     {
         $user_id = wp_insert_user($user_data);
@@ -1262,31 +946,6 @@ class SubsForWoo
 
             return false;
         }
-    }
-
-    protected function ppsfwoo_create_woocommerce_customer()
-    {
-        $customer = new \WC_Customer($this->user->user_id);
-
-        $customer->set_billing_first_name($this->user->first_name);
-
-        $customer->set_billing_last_name($this->user->last_name);
-
-        $customer->set_billing_email($this->user->email);
-
-        $customer->set_billing_address_1($this->user->address_line_1);
-
-        $customer->set_billing_address_2($this->user->address_line_2);
-
-        $customer->set_billing_city($this->user->city);
-
-        $customer->set_billing_state($this->user->state);
-
-        $customer->set_billing_postcode($this->user->postal_code);
-
-        $customer->set_billing_country($this->user->country_code);
-
-        $customer->save();
     }
 
     protected function ppsfwoo_get_order_id_by_subscription_id($subs_id)
@@ -1323,7 +982,7 @@ class SubsForWoo
                 'role'       => 'customer'
             ]);
 
-            $this->ppsfwoo_create_woocommerce_customer();
+            $this->user->create_woocommerce_customer();
 
         }
 
@@ -1383,11 +1042,11 @@ class SubsForWoo
         ];
     }
 
-    protected function ppsfwoo_cancel_subscriber()
+    protected function ppsfwoo_cancel_subscriber($user, $event_type)
     {
         global $wpdb;
 
-        if($order_id = $this->ppsfwoo_get_order_id_by_subscription_id($this->user->subscription_id)) {
+        if($order_id = $this->ppsfwoo_get_order_id_by_subscription_id($user->subscription_id)) {
         
             $this->ppsfwoo_update_download_permissions($order_id, 'revoke');
 
@@ -1399,8 +1058,8 @@ class SubsForWoo
         $wpdb->query(
             $wpdb->prepare(
                 "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET `event_type` = %s WHERE `id` = %s;",
-                $this->event_type,
-                $this->user->subscription_id
+                $event_type,
+                $user->subscription_id
             )
         );
 
@@ -1547,9 +1206,13 @@ class SubsForWoo
         return $order->get_id();
     }
 
-    protected function ppsfwoo_subs()
+    public function ppsfwoo_subs($user, $event_type)
     {
         global $wpdb;
+
+        $this->user = $user;
+
+        $this->event_type = $event_type;
 
         $response = $this->ppsfwoo_insert_subscriber();
 
@@ -1572,81 +1235,6 @@ class SubsForWoo
             );
         }
 
-        if($this->is_rest_request) {
-
-            $this->ppsfwoo_respond([
-                "status"    => 200,
-                "id"        => $this->user->subscription_id
-            ]);
-
-        }
-    }
-
-    public function ppsfwoo_create_user_object_from_request($request, $type = 'resource')
-    {
-        $user = new \stdClass();
-
-        $user->subscription_id  = $request[$type]['id'];
-
-        $user->plan_id          = $request[$type]['plan_id'];
-
-        $user->email            = $request[$type]['subscriber']['email_address'];
-
-        $user->first_name       = $request[$type]['subscriber']['name']['given_name'];
-
-        $user->last_name        = $request[$type]['subscriber']['name']['surname'];
-
-        $user->address_line_1   = $request[$type]['subscriber']['shipping_address']['address']['address_line_1'];
-
-        $user->address_line_2   = $request[$type]['subscriber']['shipping_address']['address']['address_line_2'] ?? "";
-
-        $user->city             = $request[$type]['subscriber']['shipping_address']['address']['admin_area_2'];
-
-        $user->state            = $request[$type]['subscriber']['shipping_address']['address']['admin_area_1'];
-
-        $user->postal_code      = $request[$type]['subscriber']['shipping_address']['address']['postal_code'];
-
-        $user->country_code     = $request[$type]['subscriber']['shipping_address']['address']['country_code'];
-
-        $this->user = $user;
-    }
-
-    public function ppsfwoo_subscription_webhook(\WP_REST_Request $request)
-    {
-        if(\WP_REST_Server::READABLE === $request->get_method()) {
-
-            $this->ppsfwoo_respond([
-                'status'=> 200
-            ]);
-
-        }
-
-        if (!$this->ppsfwoo_request_is_from_paypal()) {
-
-            $this->ppsfwoo_respond([
-                'status'=> 403,
-                'error' => 'Signature invalid'
-            ]);
-
-        }
-
-        $this->is_rest_request = true;
-
-        $this->event_type = $request['event_type'] ?? "";
-
-        $this->ppsfwoo_create_user_object_from_request($request);
-
-        switch($this->event_type)
-        {
-            case self::ACTIVATED:
-                $this->ppsfwoo_subs();
-                break;
-            case self::EXPIRED:
-            case self::CANCELLED:
-            case self::SUSPENDED:
-            case self::PAYMENT_FAILED:
-                $this->ppsfwoo_cancel_subscriber();
-                break;
-        }
+        return $this->user->subscription_id ?? false;
     }
 }

@@ -1,4 +1,10 @@
-<?php if (!defined('ABSPATH')) exit; ?>
+<?php
+
+use PPSFWOO\Webhook;
+
+if (!defined('ABSPATH')) exit;
+
+?>
 
 <table id="subscribers" class="pp-inner-table">
     
@@ -25,7 +31,7 @@
 
         $order_link = admin_url("admin.php?page=wc-orders&action=edit&id=$row->order_id");
 
-        $class = $row->event_type === self::ACTIVATED ? "status green": "status red";
+        $class = $row->event_type === Webhook::ACTIVATED ? "status green": "status red";
 
         $date = gmdate("F j, Y", strtotime($row->created));
 
