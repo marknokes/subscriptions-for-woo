@@ -35,6 +35,6 @@ define('PPSFWOO_PLUGIN_PATH', __FILE__);
 
 define('PPSFWOO_PLUGIN_EXTRAS', class_exists(\PPSFWOO\PluginExtras::class));
 
-new \PPSFWOO\PluginMain();
+$PluginMain = \PPSFWOO\PluginMain::get_instance();
 
 $PluginExtras = PPSFWOO_PLUGIN_EXTRAS ? new \PPSFWOO\PluginExtras(): NULL;

@@ -19,8 +19,10 @@ class User
 		   $postal_code,
 		   $country_code;
 
-	public function __construct($request, $type = 'resource')
+	public function __construct($request)
 	{
+        $type = isset($request['response']) ? "response": "resource";
+
 		$this->user_id          = NULL;
 
         $this->subscription_id  = $request[$type]['id'];

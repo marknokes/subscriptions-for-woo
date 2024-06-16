@@ -3,13 +3,14 @@
 namespace PPSFWOO;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
+use PPSFWOO\AjaxActions;
 use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
 use PPSFWOO\User;
 
 class PluginMain
 {
-    public static $instance;
+    private static $instance = NULL;
 
     public static $options_group = "ppsfwoo_options_group";
 
@@ -73,7 +74,7 @@ class PluginMain
            $template_dir,
            $plugin_dir_url;
 
-    public function __construct()
+    protected function __construct()
     {
         $env = PayPal::env();
 
@@ -97,8 +98,17 @@ class PluginMain
         $this->add_actions();
 
         $this->add_filters();
+    }
 
-        self::$instance = $this;
+    public static function get_instance()
+    {
+        if (self::$instance === null) {
+
+            self::$instance = new self();
+
+        }
+
+        return self::$instance;
     }
 
     protected function add_actions()
@@ -111,9 +121,9 @@ class PluginMain
 
         add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
 
-        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$this, 'admin_ajax_callback']);
+        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [new AjaxActions(), 'admin_ajax_callback']);
 
-        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [$this, 'admin_ajax_callback']);
+        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [new AjaxActions(), 'admin_ajax_callback']);
 
         add_action('edit_user_profile', [$this, 'add_custom_user_fields']);
         
@@ -353,157 +363,16 @@ class PluginMain
         update_post_meta($post_id, 'ppsfwoo_plan_id', $plan_id);
     }
 
-    protected function search_subscribers()
-    {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): "";
-
-        if(empty($email)) { 
-
-            return "";
-
-        }
-
-        if(!$this->display_subs($email)) {
-
-            return "false";
-
-        }
-    }
-
-    protected function reactivate_subscriber($response)
+    protected function activate_subscriber($response)
     {
         if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
 
-            $this->subscribe(new User($response, 'response'), Webhook::ACTIVATED);
+            $this->subscribe(new User($response));
 
             return true;
         }
 
         return false;
-    }
-
-    protected function get_sub()
-    {
-        global $wpdb;
-
-        if(!session_id()) session_start();
-        
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $subs_id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): NULL;
-
-        $redirect = false;
-
-        if(!isset($subs_id)) {
-
-            return "";
-
-        }
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT `wp_customer_id`, `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
-                $subs_id
-            )
-        );
-
-        $order_id = $results[0]->order_id ?? NULL;
-
-        if ($order_id && $order = wc_get_order($order_id)) {
-
-            $redirect = $order->get_checkout_order_received_url();
-
-            if ($user = get_user_by('id', $results[0]->wp_customer_id)) {
-
-                wp_set_auth_cookie($user->ID);
-
-            }
-
-        } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")) {
-
-            if(true === $this->reactivate_subscriber($response)) {
-
-                unset($_SESSION['ppsfwoo_customer_nonce']);
-
-            }
-        }
-
-        return $redirect ? esc_url($redirect): esc_attr("false");
-    }
-
-    protected function refresh_plans()
-    {
-        $success = "false";
-
-        if($plan_data = PayPal::request("/v1/billing/plans")) {
-
-            $plans = [];
-
-            if(isset($plan_data['response']['plans'])) {
-
-                $products = [];
-
-                foreach($plan_data['response']['plans'] as $plan)
-                {
-                    if($plan['status'] !== "ACTIVE") {
-
-                        continue;
-
-                    }
-
-                    $plan_freq = PayPal::request("/v1/billing/plans/{$plan['id']}");
-
-                    if(!in_array($plan['product_id'], array_keys($products))) {
-                    
-                        $product_data = PayPal::request("/v1/catalogs/products/{$plan['product_id']}");
-
-                        $product_name = $product_data['response']['name'];
-
-                        $products[$plan['product_id']] = $product_name;
-
-                    } else {
-
-                        $product_name = $products[$plan['product_id']];
-                    }
-
-                    $plans[$plan['id']] = [
-                        'plan_name'     => $plan['name'],
-                        'product_name'  => $product_name,
-                        'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit']
-                    ];
-                }
-            
-                update_option('ppsfwoo_plans', $plans);
-
-                $success = "true";
-            }
-        }
-
-        return $success;
-    }
-
-    protected function list_plans()
-    {
-        return wp_json_encode($this->ppsfwoo_plans);
-    }
-
-    public function list_webhooks()
-    {
-        $Webhook = new Webhook();
-
-        return $Webhook->list();
-    }
-
-    public function admin_ajax_callback()
-    {  
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])): "";
-
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo method_exists($this, $method) ? call_user_func([$this, $method]): "";
-
-        wp_die();
     }
 
     public function display_subs($email = "")
@@ -599,7 +468,9 @@ class PluginMain
 
     protected static function display_template($template = "", $args = [])
     {
-        $template = self::$instance->template_dir . "/$template.php";
+        $instance = PluginMain::get_instance();
+
+        $template = $instance->template_dir . "/$template.php";
 
         if(!file_exists($template)) {
 
@@ -1175,13 +1046,13 @@ class PluginMain
         return $order->get_id();
     }
 
-    public function subscribe($user, $event_type)
+    public function subscribe($user)
     {
         global $wpdb;
 
         $this->user = $user;
 
-        $this->event_type = $event_type;
+        $this->event_type = Webhook::ACTIVATED;
 
         $response = $this->insert_subscriber();
 

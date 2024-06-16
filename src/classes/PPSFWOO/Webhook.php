@@ -60,8 +60,8 @@ class Webhook
 
         }
 
-        $PluginMain = PluginMain::$instance;
-
+        $PluginMain = PluginMain::get_instance();
+        
         $user = new User($request);
 
         $event_type = $request['event_type'] ?? "";
@@ -69,7 +69,7 @@ class Webhook
         switch($event_type)
         {
             case Webhook::ACTIVATED:
-                $PluginMain->subscribe($user, $event_type);
+                $PluginMain->subscribe($user);
                 break;
             case Webhook::EXPIRED:
             case Webhook::CANCELLED:
