@@ -95,9 +95,17 @@ class PayPal
 
         $remote_response = wp_remote_request($url, $args);
 
-        $response_body = wp_remote_retrieve_body($remote_response);
+        if (is_wp_error($remote_response)) {
 
-        $response_array = json_decode($response_body, true);
+            $error_message = $remote_response->get_error_message();
+
+            wc_get_logger()->error("wp_remote_request() error: $error_message", ['source' => PluginMain::plugin_data("Name")]);
+
+            return false;
+
+        }
+
+        $response_array = json_decode(wp_remote_retrieve_body($remote_response), true);
 
         if (isset($response_array['name']) && isset($response_array['message'])) {
 
@@ -106,6 +114,8 @@ class PayPal
             $error_message = $response_array['message'];
 
             wc_get_logger()->error("PayPal API Error: $error_name - $error_message", ['source' => PluginMain::plugin_data("Name")]);
+
+            return false;
         }
 
         return [
