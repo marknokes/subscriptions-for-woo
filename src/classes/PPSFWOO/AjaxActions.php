@@ -37,6 +37,28 @@ class AjaxActions
         return $Webhook->list();
     }
 
+    public function subs_id_redirect_nonce()
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing 
+        $is_ajax = isset($_POST['action'], $_POST['method']) && $_POST['method'] === __FUNCTION__;
+
+        $nonce_name = "";
+
+        if(!session_id()) session_start();
+
+        if (!isset($_SESSION['ppsfwoo_customer_nonce'])) {
+
+            $nonce_name = $_SESSION['ppsfwoo_customer_nonce'] = wp_generate_password(24, false);
+
+        } else {
+
+            $nonce_name = $_SESSION['ppsfwoo_customer_nonce'];
+
+        }
+
+        return $is_ajax ? wp_json_encode(['nonce' => wp_create_nonce($nonce_name)]): $nonce_name;
+    }
+
     protected function get_sub()
     {
         global $wpdb;

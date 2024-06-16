@@ -232,28 +232,6 @@ class PluginMain
         exit();
     }
 
-    public function subs_id_redirect_nonce()
-    {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing 
-        $is_ajax = isset($_POST['action'], $_POST['method']) && $_POST['method'] === __FUNCTION__;
-
-        $nonce_name = "";
-
-        if(!session_id()) session_start();
-
-        if (!isset($_SESSION['ppsfwoo_customer_nonce'])) {
-
-            $nonce_name = $_SESSION['ppsfwoo_customer_nonce'] = wp_generate_password(24, false);
-
-        } else {
-
-            $nonce_name = $_SESSION['ppsfwoo_customer_nonce'];
-
-        }
-
-        return $is_ajax ? wp_json_encode(['nonce' => wp_create_nonce($nonce_name)]): $nonce_name;
-    }
-
     public function enqueue_frontend()
     {
         if(!is_admin()) {
@@ -264,9 +242,11 @@ class PluginMain
         
         $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): NULL;
 
+        $AjaxActions = new AjaxActions();
+
         if (
             !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
-            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $this->subs_id_redirect_nonce())
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $AjaxActions->subs_id_redirect_nonce())
         ) {
 
             return;
@@ -363,7 +343,7 @@ class PluginMain
         update_post_meta($post_id, 'ppsfwoo_plan_id', $plan_id);
     }
 
-    protected function activate_subscriber($response)
+    public function activate_subscriber($response)
     {
         if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
 
