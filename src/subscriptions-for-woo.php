@@ -7,7 +7,7 @@
  * Author URI: https://wp-subscriptions.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Version: 1.7
+ * Version: 1.8
  * WC requires at least: 8.6.0
  * WC tested up to: 8.9.2
  * Requires at least: 6.4.3
@@ -17,24 +17,18 @@
 
 if (!defined('ABSPATH')) exit;
 
-require_once 'classes/WooCustomProduct.php';
+require_once 'classes/class-ppsfwoo-custom-product.php';
 
-spl_autoload_register(function ($class_name) {
+require_once 'autoload.php';
 
-    $file =  __DIR__ . DIRECTORY_SEPARATOR . "classes" . DIRECTORY_SEPARATOR  . preg_replace("~[\\\\/]~", DIRECTORY_SEPARATOR, $class_name) . ".php";
-    
-    if(file_exists($file)) {
-
-    	require_once $file;
-
-    }
-    
-});
+spl_autoload_register('ppsfwoo_autoload');
 
 define('PPSFWOO_PLUGIN_PATH', __FILE__);
 
 define('PPSFWOO_PLUGIN_EXTRAS', class_exists(\PPSFWOO\PluginExtras::class));
 
-$PluginMain = \PPSFWOO\PluginMain::get_instance();
+\PPSFWOO\PluginMain::get_instance();
 
-$PluginExtras = PPSFWOO_PLUGIN_EXTRAS ? new \PPSFWOO\PluginExtras(): NULL;
+\PPSFWOO\Product::get_instance();
+
+if(PPSFWOO_PLUGIN_EXTRAS) { new \PPSFWOO\PluginExtras(); };

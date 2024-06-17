@@ -6,7 +6,6 @@ use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use PPSFWOO\AjaxActions;
 use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
-use PPSFWOO\User;
 
 class PluginMain
 {
@@ -69,12 +68,10 @@ class PluginMain
            $ppsfwoo_thank_you_page_id,
            $ppsfwoo_rows_per_page,
            $ppsfwoo_delete_plugin_data,
-           $user,
-           $event_type,
            $template_dir,
            $plugin_dir_url;
 
-    protected function __construct()
+    protected function __construct($do_wp = true)
     {
         $env = PayPal::env();
 
@@ -91,13 +88,16 @@ class PluginMain
             $this->$option = get_option($option);
         }
 
-        register_activation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_activation']);
+        if($do_wp) {
 
-        register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_deactivation']);
+            register_activation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_activation']);
 
-        $this->add_actions();
+            register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_deactivation']);
 
-        $this->add_filters();
+            $this->add_actions();
+
+            $this->add_filters();
+        }
     }
 
     public static function get_instance()
@@ -111,9 +111,15 @@ class PluginMain
         return self::$instance;
     }
 
-    protected function add_actions()
+    private function add_actions()
     {
         $AjaxActions = AjaxActions::get_instance();
+
+        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$AjaxActions, 'admin_ajax_callback']);
+
+        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [$AjaxActions, 'admin_ajax_callback']);
+
+        add_action('wp_enqueue_scripts', function() use ($AjaxActions) { $this->enqueue_frontend($AjaxActions); });
 
         add_action('admin_init', [$this, 'register_settings']);
 
@@ -122,47 +128,27 @@ class PluginMain
         add_action('admin_menu', [$this, 'register_options_page']);
 
         add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
-
-        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$AjaxActions, 'admin_ajax_callback']);
-
-        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [$AjaxActions, 'admin_ajax_callback']);
-
+        
         add_action('edit_user_profile', [$this, 'add_custom_user_fields']);
         
         add_action('rest_api_init', [Webhook::get_instance(), 'rest_api_init']);
         
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
 
-        add_action('woocommerce_product_meta_start', [$this, 'add_custom_paypal_button']);
-
         add_action('plugins_loaded', 'ppsfwoo_register_product_type');
-        
-        add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
-        
-        add_action('woocommerce_process_product_meta_ppsfwoo', [$this, 'save_option_field']);
-
-        add_action('admin_head', [$this, 'edit_product_css']);
-
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend']);
 
         add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'shutdown']);
 
         add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'shutdown'], 999);
     }
 
-    protected function add_filters()
+    private function add_filters()
     {
         add_filter('plugin_action_links_subscriptions-for-woo/subscriptions-for-woo.php', [$this, 'settings_link']);
 
         add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 2);
 
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
-
-        add_filter('woocommerce_get_price_html', [$this, 'change_product_price_display']);
-
-        add_filter('product_type_selector', [$this, 'add_product']);
-
-        add_filter('woocommerce_product_data_tabs', [$this, 'custom_product_tabs']);
     }
 
     public static function plugin_data($data)
@@ -234,7 +220,7 @@ class PluginMain
         exit();
     }
 
-    public function enqueue_frontend()
+    public function enqueue_frontend($AjaxActions)
     {
         if(!is_admin()) {
             
@@ -243,8 +229,6 @@ class PluginMain
         }
         
         $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): NULL;
-
-        $AjaxActions = AjaxActions::get_instance();
 
         if (
             !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
@@ -260,101 +244,6 @@ class PluginMain
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
             'subs_id' => $subs_id
         ]);
-    }
-
-    public static function add_product($types)
-    {
-        if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
-
-            return $types;
-        }
-
-        $types['ppsfwoo'] = "Subscription";
-
-        return $types;
-    }
-
-    public static function edit_product_css()
-    {
-        echo '<style>ul.wc-tabs li.ppsfwoo_options a::before {
-          content: "\f515" !important;
-        }</style>';
-    }
-
-    public static function custom_product_tabs($tabs)
-    {
-        if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
-
-            return $tabs;
-        }
-        
-        $tabs['ppsfwoo'] = [
-            'label'     => 'Subscription Plan',
-            'target'    => 'ppsfwoo_options',
-            'class'     => [
-                'show_if_ppsfwoo'
-            ],
-            'priority' => 11
-        ];
-
-        return $tabs;
-    }
-
-    public function options_product_tab_content()
-    {
-        ?><div id='ppsfwoo_options' class='panel woocommerce_options_panel'><?php
-
-            ?><div class='options_group'><?php
-
-                if($plans = $this->ppsfwoo_plans) {
-
-                    foreach($plans as $plan_id => $plan_data)
-                    {
-                        $plans[$plan_id] = "{$plan_data['product_name']} [{$plan_data['plan_name']}] [{$plan_data['frequency']}]";
-                    }
-
-                    wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false);
-
-                    woocommerce_wp_select([
-                        'id'          => 'ppsfwoo_plan_id',
-                        'label'       => 'PayPal Subscription Plan',
-                        'options'     => $plans,
-                        'desc_tip'    => true,
-                        'description' => 'Subscription plans created in your PayPal account will be listed here in the format:<br />"Product [Plan] [Frequency]"',
-                    ]);
-                }
-
-            ?></div>
-
-        </div><?php
-    }
-
-    public function save_option_field($post_id)
-    {
-        if (!isset($_POST['ppsfwoo_plan_id']) ||
-            !isset($_POST['ppsfwoo_plan_id_nonce']) ||
-            !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ppsfwoo_plan_id_nonce'])), 'ppsfwoo_plan_id_nonce')
-        ) {
-
-            wp_die("Security check failed");
-
-        }
-
-        $plan_id = sanitize_text_field(wp_unslash($_POST['ppsfwoo_plan_id']));
-
-        update_post_meta($post_id, 'ppsfwoo_plan_id', $plan_id);
-    }
-
-    public function activate_subscriber($response)
-    {
-        if(isset($response['response']['status']) && "ACTIVE" === $response['response']['status']) {
-
-            $this->subscribe(new User($response));
-
-            return true;
-        }
-
-        return false;
     }
 
     public function display_subs($email = "")
@@ -448,11 +337,9 @@ class PluginMain
         }
     }
 
-    protected static function display_template($template = "", $args = [])
+    public static function display_template($template = "", $args = [])
     {
-        $instance = PluginMain::get_instance();
-
-        $template = $instance->template_dir . "/$template.php";
+        $template = self::get_instance()->template_dir . "/$template.php";
 
         if(!file_exists($template)) {
 
@@ -463,66 +350,6 @@ class PluginMain
         extract($args);
             
         include $template;
-    }
-
-    public function add_custom_paypal_button()
-    {
-        global $product;
-
-        if(!$product->is_type('ppsfwoo')) {
-
-            return;
-        }
-        
-        if($plan_id = self::get_plan_id_by_product_id(get_the_ID())) {
-
-            self::display_template("paypal-button", [
-                'plan_id' => $plan_id
-            ]);
-
-            wp_enqueue_script('paypal-sdk', $this->plugin_dir_url . "js/paypal-button.min.js", [], self::plugin_data('Version'), true);
-
-            wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
-                'client_id' => $this->client_id,
-                'plan_id'   => $plan_id,
-                'redirect'  => get_permalink($this->ppsfwoo_thank_you_page_id)
-            ]);
-        }
-    }
-
-    public function change_product_price_display($price)
-    {
-        global $product;
-
-        $product_id = $product ? $product->get_id(): false;
-
-        if(false === $product_id || !$product->is_type('ppsfwoo')) {
-
-            return $price;
-
-        }
-
-        if ($frequency = $this->get_plan_frequency_by_product_id($product_id)) {
-
-            $dom = new \DOMDocument();
-
-            @$dom->loadHTML($price, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-            $span = $dom->getElementsByTagName('span');
-
-            foreach ($span as $tag)
-            {
-                $current = $tag->nodeValue;
-
-                $new = $current . "/" . ucfirst(strtolower($frequency));
-
-                $tag->nodeValue = $new;
-            }
-
-            return $dom->saveHTML();
-        }
-
-        return $price;
     }
 
     public function new_user_notification_email($notification_email, $user, $blogname)
@@ -745,18 +572,6 @@ class PluginMain
         include $this->template_dir . "/options-page.php";
     }
 
-    public static function get_plan_id_by_product_id($product_id)
-    {
-        return $product_id ? get_post_meta($product_id, 'ppsfwoo_plan_id', true): "";
-    }
-
-    public function get_plan_frequency_by_product_id($product_id)
-    {
-        $plan_id = get_post_meta($product_id, 'ppsfwoo_plan_id', true);
-
-        return $product_id && isset($this->ppsfwoo_plans[$plan_id]['frequency']) ? $this->ppsfwoo_plans[$plan_id]['frequency']: "";
-    }
-
     public function log_paypal_buttons_error()
     {
         $logged_error = false;
@@ -773,288 +588,5 @@ class PluginMain
         }
 
         return wp_json_encode(['logged_error' => $logged_error]);
-    }
-
-    protected function get_order_id_by_subscription_id($subs_id)
-    {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $result = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
-                $subs_id
-            )
-        );
-
-        return isset($result[0]->order_id) ? $result[0]->order_id: false;
-    }
-
-    protected function insert_subscriber()
-    {
-        global $wpdb;
-
-        $wp_user = !empty($this->user->email) ? get_user_by('email', $this->user->email): false;
-
-        $this->user->user_id = $wp_user->ID ?? false;
-
-        if(!$this->user->user_id) {
-
-            $this->user->user_id = $this->user->create_wp_user();
-
-            $this->user->create_woocommerce_customer();
-
-        }
-
-        $order_id = $this->get_order_id_by_subscription_id($this->user->subscription_id);
-
-        if(false === $order_id) {
-
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->query('SET time_zone = "+00:00"');
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->query(
-                $wpdb->prepare(
-                    "INSERT INTO {$wpdb->prefix}ppsfwoo_subscriber (
-                        `id`,
-                        `wp_customer_id`,
-                        `paypal_plan_id`,
-                        `event_type`
-                    )
-                    VALUES (%s,%d,%s,%s)",
-                    [
-                        $this->user->subscription_id,
-                        $this->user->user_id,
-                        $this->user->plan_id,
-                        $this->event_type
-                    ]
-                )
-            );
-
-        } else {
-
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->query('SET time_zone = "+00:00"');
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->query(
-                $wpdb->prepare(
-                    "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET
-                        `paypal_plan_id` = %s,
-                        `event_type` = %s,
-                        `canceled_date` = '0000-00-00 00:00:00'
-                    WHERE `id` = %s;",
-                    [
-                        $this->user->plan_id,
-                        $this->event_type,
-                        $this->user->subscription_id
-                    ]
-                )
-            );
-
-            $this->update_download_permissions($order_id, 'grant');
-        }
-
-        $errors = !empty($wpdb->last_error) ? $wpdb->last_error: false;
-
-        return [
-            'errors' => $errors,
-            'action' => false === $order_id ? 'insert': 'update'
-        ];
-    }
-
-    public function cancel_subscriber($user, $event_type)
-    {
-        global $wpdb;
-
-        if($order_id = $this->get_order_id_by_subscription_id($user->subscription_id)) {
-        
-            $this->update_download_permissions($order_id, 'revoke');
-
-        }
-        
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $wpdb->query('SET time_zone = "+00:00"');
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $wpdb->query(
-            $wpdb->prepare(
-                "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET `event_type` = %s WHERE `id` = %s;",
-                $event_type,
-                $user->subscription_id
-            )
-        );
-
-        return [
-            'errors' => $wpdb->last_error
-        ];
-    }
-
-    protected function get_download_count($download_id, $order_id)
-    {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT `download_count` FROM {$wpdb->prefix}woocommerce_downloadable_product_permissions
-                WHERE `download_id` = %s
-                AND `order_id` = %d;",
-                $download_id,
-                $order_id
-            )
-        );
-
-        return isset($results[0]->download_count) ? $results[0]->download_count: 0;
-    }
-
-    public function update_download_permissions($order_id, $action = "grant") {
-
-        global $wpdb;
-
-        if (class_exists('\WC_Product')) {
-
-            $order = wc_get_order($order_id);
-
-            if(!$order) {
-
-                return;
-
-            }
-
-            foreach ($order->get_items() as $item)
-            {
-                $product = $item->get_product(); 
-
-                if ($product && $product->exists() && $product->is_downloadable()) {
-
-                    $default_download_limit = get_post_meta($product->get_id(), '_download_limit', true);
-                    
-                    $downloads = $product->get_downloads();
-
-                    foreach (array_keys($downloads) as $download_id)
-                    {
-                        $download_count = $this->get_download_count($download_id, $order_id);
-
-                        if($action === 'grant' && $default_download_limit === "-1") {
-
-                            $downloads_remaining = "";
-
-                        } else if($action === 'revoke') {
-
-                            $downloads_remaining = "0";
-
-                        } else {
-
-                            $downloads_remaining = (int) $default_download_limit - (int) $download_count;
-
-                        }
-
-                        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                        $wpdb->query(
-                            $wpdb->prepare(
-                                "UPDATE {$wpdb->prefix}woocommerce_downloadable_product_permissions
-                                SET `downloads_remaining` = %s
-                                WHERE `download_id` = %s
-                                AND `order_id` = %d;",
-                                (string) $downloads_remaining,
-                                $download_id,
-                                $order_id
-                            )
-                        );              
-                    } 
-                } 
-            }
-        }
-    }
-
-    protected function get_product_id_by_plan_id()
-    {
-        $query = new \WP_Query ([
-            'post_type'      => 'product',
-            'posts_per_page' => 1, 
-            'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-                [
-                    'key'     => 'ppsfwoo_plan_id',
-                    'value'   => $this->user->plan_id,
-                    'compare' => '='
-                ],
-            ],
-        ]);
-
-        $products = $query->get_posts();
-
-        return $products ? $products[0]->ID: 0;
-    }
-
-    protected function insert_order()
-    {   
-        $order = wc_create_order();
-
-        $order->set_customer_id($this->user->user_id);
-
-        $order->add_product(wc_get_product($this->get_product_id_by_plan_id()));
-
-        $address = [
-            'first_name' => $this->user->first_name,
-            'last_name'  => $this->user->last_name,
-            'company'    => '',
-            'email'      => $this->user->email,
-            'phone'      => '',
-            'address_1'  => $this->user->address_line_1,
-            'address_2'  => $this->user->address_line_2,
-            'city'       => $this->user->city,
-            'state'      => $this->user->state,
-            'postcode'   => $this->user->postal_code,
-            'country'    => $this->user->country_code
-        ];
-
-        $order->set_address($address, 'billing');
-
-        $order->set_address($address, 'shipping');
-
-        $order->set_payment_method('paypal');
-
-        $order->set_payment_method_title('Online');
-
-        $order->calculate_shipping();
-        
-        $order->calculate_totals();
-        
-        $order->set_status('wc-completed', 'Order created programmatically.');
-
-        $order->save();
-
-        return $order->get_id();
-    }
-
-    public function subscribe($user)
-    {
-        global $wpdb;
-
-        $this->user = $user;
-
-        $this->event_type = Webhook::ACTIVATED;
-
-        $response = $this->insert_subscriber();
-
-        if(false === $response['errors'] && 'insert' === $response['action']) {
-
-            $order_id = $this->insert_order();
-
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->query('SET time_zone = "+00:00"');
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->query(
-                $wpdb->prepare(
-                    "UPDATE {$wpdb->prefix}ppsfwoo_subscriber SET
-                        `order_id` = %d,
-                        `canceled_date` = '0000-00-00 00:00:00'
-                        WHERE `id` = %s;",
-                    $order_id,
-                    $this->user->subscription_id
-                )
-            );
-        }
-
-        return $this->user->subscription_id ?? false;
     }
 }

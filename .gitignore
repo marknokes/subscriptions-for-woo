@@ -1,7 +1,6 @@
-*Permissions.php
-*PluginExtras.php
+src/classes/PPSFWOO/class-ppsfwoo-plugin-extras.php
 dist
-*users-table-settings-page.php
-*subscriber-table-my-account.php
-*my-account.js
-*my-account.min.js
+src/templates/users-table-settings-page.php
+src/templates/subscriber-table-my-account.php
+src/js/my-account.js
+src/js/my-account.min.js

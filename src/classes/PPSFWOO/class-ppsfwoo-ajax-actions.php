@@ -5,14 +5,11 @@ namespace PPSFWOO;
 use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
 use PPSFWOO\PluginMain;
+use PPSFWOO\Subscriber;
 
 class AjaxActions
 {
     private static $instance = NULL;
-
-    public function __construct()
-    {
-    }
 
     public static function get_instance()
     {
@@ -109,9 +106,9 @@ class AjaxActions
 
         } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")) {
 
-            $PluginMain = PluginMain::get_instance();
+            $Subscriber = new Subscriber();
 
-            if(true === $PluginMain->activate_subscriber($response)) {
+            if(true === $Subscriber->activate($response)) {
 
                 unset($_SESSION['ppsfwoo_customer_nonce']);
 
