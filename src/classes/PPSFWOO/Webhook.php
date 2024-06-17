@@ -20,6 +20,8 @@ class Webhook
 
     const PAYMENT_FAILED = 'BILLING.SUBSCRIPTION.PAYMENT.FAILED';
 
+    private static $instance = NULL;
+
     public static $api_namespace = "subscriptions-for-woo/v1";
 
     public static $endpoint = "/incoming";
@@ -38,6 +40,17 @@ class Webhook
     	$this->webhook_id = get_option('ppsfwoo_webhook_id');
 
     	$this->subscribed_webhooks = get_option('ppsfwoo_subscribed_webhooks');
+    }
+
+    public static function get_instance()
+    {
+        if (self::$instance === null) {
+
+            self::$instance = new self();
+
+        }
+
+        return self::$instance;
     }
 
     public function handle_request(\WP_REST_Request $request)
@@ -209,25 +222,25 @@ class Webhook
 
                         foreach($webhooks['response']['webhooks'][$key]['event_types'] as $type_key => $type)
                         {
-                            if(strpos($type['name'], self::WEBHOOK_PREFIX) === 0) {
+                            if(strpos($type['name'], self::WEBHOOK_PREFIX) !== 0) {
 
-                                unset($webhooks['response']['webhooks'][$key]['event_types'][$type_key]);
+                                array_push($types, [
+                                    'name' => $type['name']
+                                ]);
                                     
                             }
                         }
 
-                        foreach ($webhooks['response']['webhooks'][$key]['event_types'] as $type)
-                        {
-                            array_push($types, ['name' => $type['name']]);
+                        if(sizeof($webhooks['response']['webhooks'][$key]['event_types']) !== sizeof($types)) {
+
+                            $data = [
+                                "op"    => "replace",
+                                "path"  => "/event_types",
+                                "value" => $types
+                            ];
+
+                            PayPal::request("/v1/notifications/webhooks/$webhook_id", [$data], "PATCH");
                         }
-
-                        $data = [
-                            "op"    => "replace",
-                            "path"  => "/event_types",
-                            "value" => $types
-                        ];
-
-                        PayPal::request("/v1/notifications/webhooks/$webhook_id", [$data], "PATCH");
                     }
                 }
             }

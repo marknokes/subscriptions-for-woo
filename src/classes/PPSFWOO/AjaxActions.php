@@ -8,8 +8,21 @@ use PPSFWOO\PluginMain;
 
 class AjaxActions
 {
+    private static $instance = NULL;
+
     public function __construct()
     {
+    }
+
+    public static function get_instance()
+    {
+        if (self::$instance === null) {
+
+            self::$instance = new self();
+
+        }
+
+        return self::$instance;
     }
 
 	public function admin_ajax_callback()
@@ -32,9 +45,7 @@ class AjaxActions
 
     protected function list_webhooks()
     {
-        $Webhook = new Webhook();
-
-        return $Webhook->list();
+        return Webhook::get_instance()->list();
     }
 
     public function subs_id_redirect_nonce()

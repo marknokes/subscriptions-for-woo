@@ -261,7 +261,7 @@ if (!defined('ABSPATH')) exit;
 				<th>Description</th>
 			</tr>
 		</table>
-		<p>Listen Address: <code><?php $Webhook = new Webhook(); echo esc_url($Webhook->listen_address()); ?></code></p>
+		<p>Listen Address: <code><?php echo esc_url(Webhook::get_instance()->listen_address()); ?></code></p>
 		<a class="button" id="resubscribe" href="<?php echo esc_url(admin_url(self::$ppcp_settings_url) . "#field-webhooks_list"); ?>">Resubscribe webhooks</a>
 		<h3>Users and Capabilities</h3>
 		<?php

@@ -113,6 +113,8 @@ class PluginMain
 
     protected function add_actions()
     {
+        $AjaxActions = AjaxActions::get_instance();
+
         add_action('admin_init', [$this, 'register_settings']);
 
         add_action('admin_init', [$this, 'handle_export_action']);
@@ -121,13 +123,13 @@ class PluginMain
 
         add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
 
-        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [new AjaxActions(), 'admin_ajax_callback']);
+        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$AjaxActions, 'admin_ajax_callback']);
 
-        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [new AjaxActions(), 'admin_ajax_callback']);
+        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [$AjaxActions, 'admin_ajax_callback']);
 
         add_action('edit_user_profile', [$this, 'add_custom_user_fields']);
         
-        add_action('rest_api_init', [new Webhook(), 'rest_api_init']);
+        add_action('rest_api_init', [Webhook::get_instance(), 'rest_api_init']);
         
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
 
@@ -175,7 +177,7 @@ class PluginMain
 
     public function shutdown()
     {
-        add_action('shutdown', [new Webhook(), 'resubscribe']);
+        add_action('shutdown', [Webhook::get_instance(), 'resubscribe']);
     }
 
     public function handle_export_action()
@@ -242,7 +244,7 @@ class PluginMain
         
         $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): NULL;
 
-        $AjaxActions = new AjaxActions();
+        $AjaxActions = AjaxActions::get_instance();
 
         if (
             !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
@@ -601,7 +603,7 @@ class PluginMain
 
         $this->create_thank_you_page();
 
-        $Webhook = new Webhook();
+        $Webhook = Webhook::get_instance();
 
         if(!$Webhook->id()) {
 
@@ -619,9 +621,7 @@ class PluginMain
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
             $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ppsfwoo_subscriber");
 
-            $Webhook = new Webhook();
-
-            $Webhook->delete();
+            Webhook::get_instance()->delete();
             
             wp_delete_post($this->ppsfwoo_thank_you_page_id, true);
             
