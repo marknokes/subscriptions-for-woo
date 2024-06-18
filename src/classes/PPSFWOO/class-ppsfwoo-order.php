@@ -3,25 +3,19 @@
 namespace PPSFWOO;
 
 use PPSFWOO\Product;
+use PPSFWOO\Subscriber;
+use PPSFWOO\DatabaseQuery;
 
 class Order
 {
 	public static function get_order_id_by_subscription_id($subs_id)
     {
-        global $wpdb;
+        $results = new DatabaseQuery("SELECT `order_id` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber WHERE `id` = %s", [$subs_id]);
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $result = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
-                $subs_id
-            )
-        );
-
-        return isset($result[0]->order_id) ? $result[0]->order_id: false;
+        return $results->result[0]->order_id ?? false;
     }
 
-    public static function insert_order($user)
+    public static function insert_order(Subscriber $user)
     {   
         $order = wc_create_order();
 

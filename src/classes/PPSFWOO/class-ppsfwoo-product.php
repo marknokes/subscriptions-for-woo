@@ -3,6 +3,7 @@
 namespace PPSFWOO;
 
 use PPSFWOO\PluginMain;
+use PPSFWOO\DatabaseQuery;
 
 class Product
 {
@@ -227,26 +228,21 @@ class Product
 
     protected static function get_download_count($download_id, $order_id)
     {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT `download_count` FROM {$wpdb->prefix}woocommerce_downloadable_product_permissions
-                WHERE `download_id` = %s
-                AND `order_id` = %d;",
+        $results = new DatabaseQuery(
+            "SELECT `download_count` FROM {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
+             WHERE `download_id` = %s
+             AND `order_id` = %d;",
+            [
                 $download_id,
                 $order_id
-            )
+            ]
         );
 
-        return isset($results[0]->download_count) ? $results[0]->download_count: 0;
+        return isset($results->result[0]->download_count) ? $results->result[0]->download_count: 0;
     }
 
     public static function update_download_permissions($order_id, $action = "grant")
     {
-        global $wpdb;
-
         if (class_exists('\WC_Product')) {
 
             $order = wc_get_order($order_id);
@@ -285,18 +281,17 @@ class Product
 
                         }
 
-                        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-                        $wpdb->query(
-                            $wpdb->prepare(
-                                "UPDATE {$wpdb->prefix}woocommerce_downloadable_product_permissions
-                                SET `downloads_remaining` = %s
-                                WHERE `download_id` = %s
-                                AND `order_id` = %d;",
+                        new DatabaseQuery(
+                            "UPDATE {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
+                             SET `downloads_remaining` = %s
+                             WHERE `download_id` = %s
+                             AND `order_id` = %d;",
+                            [
                                 (string) $downloads_remaining,
                                 $download_id,
                                 $order_id
-                            )
-                        );              
+                            ]
+                        );
                     } 
                 } 
             }

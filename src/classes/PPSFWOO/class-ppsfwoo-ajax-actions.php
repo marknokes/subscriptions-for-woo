@@ -6,6 +6,7 @@ use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
 use PPSFWOO\PluginMain;
 use PPSFWOO\Subscriber;
+use PPSFWOO\DatabaseQuery;
 
 class AjaxActions
 {
@@ -78,8 +79,6 @@ class AjaxActions
 
     private function get_sub()
     {
-        global $wpdb;
-
         if(!session_id()) session_start();
         
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -93,21 +92,15 @@ class AjaxActions
 
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT `wp_customer_id`, `order_id` FROM {$wpdb->prefix}ppsfwoo_subscriber WHERE `id` = %s",
-                $subs_id
-            )
-        );
+        $results = new DatabaseQuery("SELECT `wp_customer_id`, `order_id` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber WHERE `id` = %s", [$subs_id]);
 
-        $order_id = $results[0]->order_id ?? NULL;
+        $order_id = $results->result[0]->order_id ?? NULL;
 
         if ($order_id && $order = wc_get_order($order_id)) {
 
             $redirect = $order->get_checkout_order_received_url();
 
-            if ($user = get_user_by('id', $results[0]->wp_customer_id)) {
+            if ($user = get_user_by('id', $results->result[0]->wp_customer_id)) {
 
                 wp_set_auth_cookie($user->ID);
 
@@ -115,12 +108,13 @@ class AjaxActions
 
         } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")) {
 
-            $Subscriber = new Subscriber();
-
-            if(true === $Subscriber->activate($response)) {
+            if(Subscriber::is_active($response)) {
 
                 unset($_SESSION['ppsfwoo_customer_nonce']);
 
+                $Subscriber = new Subscriber($response, Webhook::ACTIVATED);
+
+                $Subscriber->subscribe();
             }
         }
 

@@ -4,7 +4,6 @@ namespace PPSFWOO;
 
 use PPSFWOO\PayPal;
 use PPSFWOO\Subscriber;
-use PPSFWOO\User;
 
 class Webhook
 {
@@ -72,13 +71,10 @@ class Webhook
       		return $response;
 
         }
-
-        
-        $user = new User($request);
         
         $event_type = $request['event_type'] ?? "";
 
-        $Subscriber = new Subscriber($user, $event_type);
+        $Subscriber = new Subscriber($request, $event_type);
 
         switch($event_type)
         {

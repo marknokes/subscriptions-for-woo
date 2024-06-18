@@ -6,6 +6,7 @@ use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use PPSFWOO\AjaxActions;
 use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
+use PPSFWOO\DatabaseQuery;
 
 class PluginMain
 {
@@ -182,40 +183,12 @@ class PluginMain
 
         }
 
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $data = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber", ARRAY_A);
-
-        if(!isset($data[0])) {
-
-            exit;
-
-        }
-
-        $columns = array_keys($data[0]);
-
-        $values = array();
-
-        foreach ($data as $row)
-        {
-            $row_values = array_map([$wpdb, 'prepare'], array_fill(0, count($row), '%s'), $row);
-
-            $values[] = '(' . implode(', ', $row_values) . ')';
-        }
-
-        $db_name = DB_NAME;
-
-        $sql_content = "INSERT INTO `$db_name`.`{$wpdb->prefix}ppsfwoo_subscriber` (`" . implode('`, `', $columns) . "`) VALUES \n";
-            
-        $sql_content .= implode(",\n", $values) . ";\n";
-
         header('Content-Type: application/sql');
 
         header('Content-Disposition: attachment; filename="table_backup.sql"');
 
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo $sql_content;
+        echo DatabaseQuery::export();
 
         exit();
     }
@@ -256,8 +229,6 @@ class PluginMain
 
         }
 
-        global $wpdb;
-
         $per_page = $this->ppsfwoo_rows_per_page ?: 10;
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
@@ -269,34 +240,32 @@ class PluginMain
 
         if($email) {
 
-            $stmt = $wpdb->prepare(
-                "SELECT `s`.*
-                FROM {$wpdb->prefix}ppsfwoo_subscriber `s`
-                JOIN {$wpdb->prefix}users `u`
-                    ON `s`.`wp_customer_id` = `u`.`ID`
-                WHERE `u`.`user_email` = %s;",
-                $email
+            $result = new DatabaseQuery(
+                "SELECT `s`.* FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber `s`
+                 JOIN {$GLOBALS['wpdb']->base_prefix}users `u`
+                 ON `s`.`wp_customer_id` = `u`.`ID`
+                 WHERE `u`.`user_email` = %s;",
+                [$email]
             );
 
         } else {
 
-            $stmt = $wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber ORDER BY order_id DESC LIMIT %d OFFSET %d",
-                $per_page,
-                $offset
+            $result = new DatabaseQuery(
+                "SELECT * FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber ORDER BY order_id DESC LIMIT %d OFFSET %d",
+                [$per_page, $offset]
             );
 
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-        $results = $wpdb->get_results($stmt);
+        $results = $result->result;
 
         $num_subs = is_array($results) ? sizeof($results): 0;
 
         if($num_subs) {
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $total_rows = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}ppsfwoo_subscriber");
+            $row_query = new DatabaseQuery("SELECT COUNT(*) AS `count` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
+
+            $total_rows = $result->result[0]->count ?? 0;
 
             $total_pages = ceil($total_rows / $per_page);
 
@@ -441,12 +410,9 @@ class PluginMain
 
     public function plugin_deactivation()
     {
-        global $wpdb;
-
         if("1" === $this->ppsfwoo_delete_plugin_data) {
             
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-            $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ppsfwoo_subscriber");
+            new DatabaseQuery("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
 
             Webhook::get_instance()->delete();
             
@@ -462,11 +428,7 @@ class PluginMain
 
     protected function db_install()
     {
-        global $wpdb;
-
-        $charset_collate = $wpdb->get_charset_collate();
-
-        $create_table = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}ppsfwoo_subscriber ( 
+        $create_table = "CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber ( 
           id varchar(64) NOT NULL,
           wp_customer_id bigint(20) UNSIGNED NOT NULL,
           paypal_plan_id varchar(64) NOT NULL,
@@ -479,15 +441,14 @@ class PluginMain
           KEY idx_wp_customer_id (wp_customer_id),
           KEY idx_order_id (order_id),
           FOREIGN KEY fk_user_id (wp_customer_id)
-            REFERENCES {$wpdb->prefix}users(ID)
+            REFERENCES {$GLOBALS['wpdb']->base_prefix}users(ID)
             ON UPDATE CASCADE ON DELETE CASCADE,
           FOREIGN KEY fk_order_id (order_id)
-            REFERENCES {$wpdb->prefix}wc_orders(id)
+            REFERENCES {$GLOBALS['wpdb']->base_prefix}wc_orders(id)
             ON UPDATE CASCADE ON DELETE CASCADE
-        ) $charset_collate;";
+        );";
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $wpdb->query($create_table);
+        new DatabaseQuery($create_table);
     }
 
     public function plugin_row_meta($links, $file)
