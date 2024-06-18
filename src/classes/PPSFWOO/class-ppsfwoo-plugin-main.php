@@ -250,7 +250,7 @@ class PluginMain
     {
         if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscriptions')) {
 
-            echo "<p>You're user permissions do not allow you to view this content. Please contact your website administrator.</p>";
+            echo "<p>Your user permissions do not allow you to view this content. Please contact your website administrator.</p>";
 
             return false;
 

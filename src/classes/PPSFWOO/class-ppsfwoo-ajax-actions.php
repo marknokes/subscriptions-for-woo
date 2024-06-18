@@ -27,8 +27,17 @@ class AjaxActions
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])): "";
 
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo method_exists($this, $method) ? call_user_func([$this, $method]): "";
+        if(method_exists($this, $method)) {
+            
+            echo call_user_func([$this, $method]); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+        } else {
+            
+            echo ""; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+            error_log(__CLASS__ . "->$method does not exist.");
+
+        }
 
         wp_die();
     }
