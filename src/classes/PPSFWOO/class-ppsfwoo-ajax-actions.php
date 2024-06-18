@@ -33,14 +33,14 @@ class AjaxActions
         wp_die();
     }
 
-    protected function list_plans()
+    private function list_plans()
     {
         $PluginMain = PluginMain::get_instance();
 
         return wp_json_encode($PluginMain->ppsfwoo_plans);
     }
 
-    protected function list_webhooks()
+    private function list_webhooks()
     {
         return Webhook::get_instance()->list();
     }
@@ -67,7 +67,7 @@ class AjaxActions
         return $is_ajax ? wp_json_encode(['nonce' => wp_create_nonce($nonce_name)]): $nonce_name;
     }
 
-    protected function get_sub()
+    private function get_sub()
     {
         global $wpdb;
 
@@ -118,7 +118,7 @@ class AjaxActions
         return $redirect ? esc_url($redirect): esc_attr("false");
     }
 
-    protected function refresh_plans()
+    private function refresh_plans()
     {
         $success = "false";
 
@@ -169,7 +169,7 @@ class AjaxActions
         return $success;
     }
 
-    protected function search_subscribers()
+    private function search_subscribers()
     {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): "";
@@ -187,5 +187,23 @@ class AjaxActions
             return "false";
 
         }
+    }
+
+    private function log_paypal_buttons_error()
+    {
+        $logged_error = false;
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $message = isset($_POST['message'], $_POST['method']) && $_POST['method'] === __FUNCTION__ ? sanitize_text_field(wp_unslash($_POST['message'])): false;
+        
+        if($message) {
+
+            wc_get_logger()->error("PayPal subscription button error: $message", ['source' => PluginMain::get_instance()::plugin_data('Name')]);
+
+            $logged_error = true;
+
+        }
+
+        return wp_json_encode(['logged_error' => $logged_error]);
     }
 }

@@ -571,22 +571,4 @@ class PluginMain
     {
         include $this->template_dir . "/options-page.php";
     }
-
-    public function log_paypal_buttons_error()
-    {
-        $logged_error = false;
-
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $message = isset($_POST['message'], $_POST['method']) && $_POST['method'] === __FUNCTION__ ? sanitize_text_field(wp_unslash($_POST['message'])): false;
-        
-        if($message) {
-
-            wc_get_logger()->error("PayPal subscription button error: $message", ['source' => self::plugin_data('Name')]);
-
-            $logged_error = true;
-
-        }
-
-        return wp_json_encode(['logged_error' => $logged_error]);
-    }
 }
