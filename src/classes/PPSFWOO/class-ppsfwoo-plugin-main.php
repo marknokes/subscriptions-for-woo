@@ -436,7 +436,7 @@ class PluginMain
           event_type varchar(35) NOT NULL,
           created datetime DEFAULT current_timestamp(),
           last_updated datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-          canceled_date datetime DEFAULT '0000-00-00 00:00:00' ON UPDATE current_timestamp(),
+          canceled_date datetime DEFAULT NULL,
           PRIMARY KEY (id),
           KEY idx_wp_customer_id (wp_customer_id),
           KEY idx_order_id (order_id),

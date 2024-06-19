@@ -99,7 +99,7 @@ class Subscriber
                 "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET
                     `paypal_plan_id` = %s,
                     `event_type` = %s,
-                    `canceled_date` = '0000-00-00 00:00:00'
+                    `canceled_date` = NULL
                 WHERE `id` = %s;",
                 [
                     $this->plan_id,
@@ -128,9 +128,10 @@ class Subscriber
         }
 
         $result = new DatabaseQuery(
-            "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `event_type` = %s WHERE `id` = %s;",
+            "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `event_type` = %s, `canceled_date` = %s WHERE `id` = %s;",
             [
                 $this->event_type,
+                gmdate("Y-m-d H:i:s"),
                 $this->subscription_id
             ]
         );
@@ -151,7 +152,7 @@ class Subscriber
             $order_id = Order::insert_order($this);
 
             new DatabaseQuery(
-                "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `order_id` = %d, `canceled_date` = '0000-00-00 00:00:00' WHERE `id` = %s;",
+                "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `order_id` = %d, `canceled_date` = NULL WHERE `id` = %s;",
                 [
                     $order_id,
                     $this->subscription_id
