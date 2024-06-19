@@ -112,9 +112,15 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 
         $PluginMain = PluginMain::get_instance();
 
-        if(!$PluginMain->display_subs($email)) {
+        $subscriber_table_options_page = $PluginMain->subscriber_table_options_page($email);
+
+        if(!$subscriber_table_options_page['num_subs']) {
 
             return "false";
+
+        } else {
+
+            echo $subscriber_table_options_page['html'];
 
         }
     }

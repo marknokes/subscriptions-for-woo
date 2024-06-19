@@ -31,7 +31,23 @@ if (!defined('ABSPATH')) exit;
 
         $order_link = admin_url("admin.php?page=wc-orders&action=edit&id=$row->order_id");
 
-        $class = $row->event_type === Webhook::ACTIVATED ? "status green": "status red";
+
+        switch ($row->event_type) {
+            case Webhook::ACTIVATED:
+                $class = "status green";
+                break;
+            case Webhook::SUSPENDED:
+                $class = "status orange";
+                break;
+            case Webhook::CANCELLED:
+            case Webhook::PAYMENT_FAILED;
+            case Webhook::EXPIRED:
+                $class = "status red";
+                break;
+            default:
+                $class = "";
+                break;
+        }
 
         $date = gmdate("F j, Y", strtotime($row->created));
 
@@ -46,7 +62,7 @@ if (!defined('ABSPATH')) exit;
 
             <td><?php echo esc_html($date); ?></td>
 
-            <td><span class='<?php echo esc_attr($class); ?>'><?php echo esc_html($row->event_type); ?></span></td>
+            <td><span class='tooltip <?php echo esc_attr($class); ?>'><span class="tooltip-text"><?php echo esc_attr($row->event_type); ?></span></span></td>
 
             <td><a href='<?php echo esc_url($paypal_url); ?>/billing/subscriptions/<?php echo esc_attr($row->id); ?>' target='_blank'>Manage Subscription</a></td>
 

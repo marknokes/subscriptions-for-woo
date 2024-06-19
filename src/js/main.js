@@ -100,12 +100,19 @@ jQuery(document).ready(function($) {
 				$table = $('#plans'),
 				table_data = "";
 			Object.keys(obj).forEach(plan_id => {
-				var vals = Object.values(obj[plan_id]);
-				var paypal_action = "ACTIVE" === vals[3] ?
+				var vals = Object.values(obj[plan_id]),
+					plan_active = "ACTIVE" === vals[3];
+				
+				var paypal_action = plan_active ?
 					`<a href="#" class="deactivate" data-plan-id="${plan_id}">Deactivate</a>`:
 					`<a href="#" class="activate" data-plan-id="${plan_id}">Activate</a>`;
 
-				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td><td>${vals[3]}</td><td>${paypal_action}</td></tr>`;
+				var status_indicator = plan_active ?
+					`<span class="tooltip status green"><span class="tooltip-text">${vals[3]}</span></span>`:
+					`<span class="tooltip status red"><span class="tooltip-text">${vals[3]}</span></span>`;
+	
+
+				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td><td>${status_indicator}</td><td>${paypal_action}</td></tr>`;
 			});
 			$table.find('.plan-row').remove();
 			$table.append(table_data);

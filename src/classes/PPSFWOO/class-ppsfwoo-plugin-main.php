@@ -218,7 +218,7 @@ class PluginMain
         ]);
     }
 
-    public function display_subs($email = "")
+    public function subscriber_table_options_page($email = "")
     {
         if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscriptions')) {
 
@@ -260,7 +260,11 @@ class PluginMain
 
         $num_subs = is_array($results) ? sizeof($results): 0;
 
+        $html = "";
+
         if($num_subs) {
+
+            ob_start();
 
             $row_query = new DatabaseQuery("SELECT COUNT(*) AS `count` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
 
@@ -291,9 +295,14 @@ class PluginMain
 
                 echo "</div>";
             }
+
+            $html = ob_get_clean();
         }
 
-        return $num_subs;
+        return [
+            'num_subs' => $num_subs,
+            'html'     => $html
+        ];
     }
 
     public function wc_declare_compatibility()

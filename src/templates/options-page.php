@@ -1,6 +1,7 @@
 <?php
 
 use PPSFWOO\Webhook;
+use PPSFWOO\PayPal;
 
 if (!defined('ABSPATH')) exit;
 
@@ -28,9 +29,9 @@ if (!defined('ABSPATH')) exit;
 
         <?php
 
-        $num_subs = $this->display_subs();
+        $subscriber_table_options_page = $this->subscriber_table_options_page();
 
-        if($num_subs) {
+        if($subscriber_table_options_page['num_subs']) {
 
         	?>
         	
@@ -41,6 +42,8 @@ if (!defined('ABSPATH')) exit;
 			<br />
         	
         	<?php
+
+        	echo $subscriber_table_options_page['html'];
 
 			$export_url = add_query_arg([
 			    'export_table'  => 'true',
@@ -53,7 +56,7 @@ if (!defined('ABSPATH')) exit;
 	        
 	        <?php 
 
-    	} else if(0 === $num_subs) {
+    	} else if(0 === $num_subs['num_subs']) {
 
     		echo "<p>When you receive a new subscriber, they will appear here. </p>";
 
@@ -248,6 +251,7 @@ if (!defined('ABSPATH')) exit;
 				<tr>
 					<td>
 						<a class="button" id="refresh" href="#">Refresh Plans</a>
+						<a class="button" href="<?php echo esc_url(PayPal::env()['paypal_url']); ?>/billing/plans" target="_blank">Create Plan</a>
 					</td>
 				</tr>
 			</table>
