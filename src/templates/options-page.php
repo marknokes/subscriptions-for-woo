@@ -57,7 +57,7 @@ if (!defined('ABSPATH')) exit;
 	        
 	        <?php 
 
-    	} else if(0 === $num_subs['num_subs']) {
+    	} else if(0 === $subscriber_table_options_page['num_subs']) {
 
     		echo "<p>When you receive a new subscriber, they will appear here. </p>";
 
