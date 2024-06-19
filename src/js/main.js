@@ -2,9 +2,9 @@ jQuery(document).ready(function($) {
 
 	var settingsError = "There has been an error. Please try again and check your <a href='" + ppsfwoo_ajax_var.settings_url + "'>WooCommerce PayPal Payments settings</a>.";
 
-	listPlans();
+	ppsfwooListPlans();
 
-	listWebhooks();
+	ppsfwooListWebhooks();
 
 	$('.nav-tab-wrapper a').click(function(event) {
         event.preventDefault();
@@ -25,7 +25,7 @@ jQuery(document).ready(function($) {
 	/*
 	*	Show a Wordpress UI admin notice
 	*/
-	function showMsg(msg = "", type = "success") {
+	function ppsfwooShowMsg(msg = "", type = "success") {
 		$("#wpcontent").prepend(`<div style="z-index: 9999; position: fixed; width: 82%" class="notice notice-${type} is-dismissible single-cached"><p>${msg}</p><button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button></div>`);
 		setTimeout(function(){
 			$(".notice-dismiss").parent().fadeOut( "slow", function() {
@@ -37,7 +37,7 @@ jQuery(document).ready(function($) {
 		});
 	}
 
-	function do_ajax(action, success, args = {}) {
+	function ppsfwooDoAjax(action, success, args = {}) {
 		var data = {
 			'action': 'ppsfwoo_admin_ajax_callback',
 			'method': action
@@ -59,37 +59,64 @@ jQuery(document).ready(function($) {
     	e.preventDefault();
     	var email = $("#email-input").val();
     	if(!email) return;
-        do_ajax('search_subscribers', function(r) {
+        ppsfwooDoAjax('search_subscribers', function(r) {
 			if("false" !== r) {
 				$("#tab-subscribers .pagination, .button.export-table-data").hide();
 				$("#reset").show();
 				$("#subscribers").replaceWith(r);
 			} else {
-				showMsg("No users found with that email address.", "warning");
+				ppsfwooShowMsg("No users found with that email address.", "warning");
 			}
 		}, {
 			'email': email
 		});
     });
 
-	function listPlans() {
-		do_ajax('list_plans', function(r) {
+    function ppsfwooBindClickHandler() {
+    	$("a.deactivate, a.activate").click(function(e) {
+	    	e.preventDefault();
+	    	ppsfwooShowLoadingMessage('Processing...');
+	    	var plan_id = $(this).data('plan-id'),
+	    		paypal_action = $(this).attr('class');
+	    	ppsfwooDoAjax('modify_plan', function(r) {
+	    		var response = JSON.parse(r);
+	    		if(response.error) {
+	    			alert(response.error);
+	    			ppsfwooHideLoadingMessage();
+	    		} else {
+	    			ppsfwooListPlans();
+	    		}
+	    	}, {
+				'plan_id': plan_id,
+				'paypal_action': paypal_action
+			});
+	    });
+    }
+
+	function ppsfwooListPlans() {
+		ppsfwooDoAjax('list_plans', function(r) {
 			if(!r) return;
 			var obj = JSON.parse(r),
 				$table = $('#plans'),
 				table_data = "";
 			Object.keys(obj).forEach(plan_id => {
 				var vals = Object.values(obj[plan_id]);
-				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td></tr>`;
+				var paypal_action = "ACTIVE" === vals[3] ?
+					`<a href="#" class="deactivate" data-plan-id="${plan_id}">Deactivate</a>`:
+					`<a href="#" class="activate" data-plan-id="${plan_id}">Activate</a>`;
+
+				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td><td>${vals[3]}</td><td>${paypal_action}</td></tr>`;
 			});
 			$table.find('.plan-row').remove();
 			$table.append(table_data);
 			$table.show();
+			ppsfwooBindClickHandler();
+			ppsfwooHideLoadingMessage();
 		});
 	}
 
-	function listWebhooks() {
-		do_ajax('list_webhooks', function(r) {
+	function ppsfwooListWebhooks() {
+		ppsfwooDoAjax('list_webhooks', function(r) {
 			if(!r) return;
 			var obj = JSON.parse(r),
 				$table = $('#webhooks'),
@@ -103,22 +130,18 @@ jQuery(document).ready(function($) {
 		});
 	}
 
-	/*
-	*	Click handler for settings page. Actions are defined by the button element's id
-	*/
 	$("#refresh").click(function(e) {
 		e.preventDefault();
-		var $spinner = $(this).next('.spinner');
-		$spinner.addClass('is-active');
-		do_ajax('refresh_plans', function(r) {
+		ppsfwooShowLoadingMessage('Processing...');
+		ppsfwooDoAjax('refresh_plans', function(r) {
 			var response = JSON.parse(r);
 			if(false !== response) {
-				showMsg("Successfully refreshed active plans.");
-				listPlans();
+				ppsfwooShowMsg("Successfully refreshed plans.");
+				ppsfwooListPlans();
 			} else {
-				showMsg(settingsError, "error");
+				ppsfwooShowMsg(settingsError, "error");
 			}
-			$spinner.removeClass('is-active');
+			ppsfwooHideLoadingMessage();
 		});
 	});
 
@@ -128,11 +151,11 @@ jQuery(document).ready(function($) {
 	*/
 	$('#ppsfwoo_options').submit(function(event) {
         $element = $(this).find('input[name=_wp_http_referer]');
-        var newValue = removeQueryStringParams($element.attr('value'));
+        var newValue = ppsfwooRemoveQueryStringParams($element.attr('value'));
         $element.attr('value', newValue);
     });
 
-    function removeQueryStringParams(url) {
+    function ppsfwooRemoveQueryStringParams(url) {
         var urlParts = url.split('?');
         if (urlParts.length >= 2) {
             var queryString = urlParts[1];
@@ -150,4 +173,37 @@ jQuery(document).ready(function($) {
     		return confirm("Selecting this option will delete plugin options and the subscribers table on plugin deactivation. Are you sure you want to do this?\n\nThe setting will take effect after you 'Save Changes' below.");
     	}
     });
+
+	function ppsfwooShowLoadingMessage(message) {
+	    var overlay = document.createElement('div');
+	    overlay.setAttribute('role', 'overlay');
+	    overlay.style.position = 'fixed';
+	    overlay.style.top = '0';
+	    overlay.style.left = '0';
+	    overlay.style.width = '100%';
+	    overlay.style.height = '100%';
+	    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+	    overlay.style.zIndex = '1000';
+
+	    var messageBox = document.createElement('div');
+	    messageBox.style.position = 'absolute';
+	    messageBox.style.top = '50%';
+	    messageBox.style.left = '50%';
+	    messageBox.style.transform = 'translate(-50%, -50%)';
+	    messageBox.style.backgroundColor = 'white';
+	    messageBox.style.padding = '20px';
+	    messageBox.style.borderRadius = '5px';
+	    messageBox.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
+	    messageBox.textContent = message || 'Please wait...';
+	    overlay.appendChild(messageBox);
+	    document.body.appendChild(overlay);
+	}
+
+	function ppsfwooHideLoadingMessage() {
+	    var overlay = document.querySelector('div[role="overlay"]');
+	    if (overlay) {
+	        overlay.parentNode.removeChild(overlay);
+	    }
+	}
+
 });

@@ -8,6 +8,39 @@ use PPSFWOO\PluginMain;
 
 class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 {
+    protected function modify_plan()
+    {
+        $return = ['error' => true];
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $plan_id = isset($_POST['plan_id']) ? sanitize_text_field(wp_unslash($_POST['plan_id'])): "";
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $paypal_action = isset($_POST['paypal_action']) ? sanitize_text_field(wp_unslash($_POST['paypal_action'])): "";
+
+        try {
+
+            if($plan_id && $response = PayPal::request("/v1/billing/plans/$plan_id/$paypal_action", [], "POST")) {
+
+                if(204 === $response['status']) {
+
+                    $return = ['success' => true];
+
+                    $this->refresh_plans();
+                
+                }
+
+            }
+            
+        } catch(\Exception $e) {
+
+            $return = ['error' => $e->getMessage()];
+
+        }
+
+        return wp_json_encode($return);
+    }
+
 	protected function list_plans()
     {
         $PluginMain = PluginMain::get_instance();
@@ -34,12 +67,6 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 
                 foreach($plan_data['response']['plans'] as $plan)
                 {
-                    if($plan['status'] !== "ACTIVE") {
-
-                        continue;
-
-                    }
-
                     $plan_freq = PayPal::request("/v1/billing/plans/{$plan['id']}");
 
                     if(!in_array($plan['product_id'], array_keys($products))) {
@@ -58,7 +85,8 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
                     $plans[$plan['id']] = [
                         'plan_name'     => $plan['name'],
                         'product_name'  => $product_name,
-                        'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit']
+                        'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit'],
+                        'status'        => $plan['status']
                     ];
                 }
             

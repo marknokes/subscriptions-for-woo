@@ -239,13 +239,15 @@ if (!defined('ABSPATH')) exit;
 								<th>Plan Name</th>
 								<th>Product Name</th>
 								<th>Plan Frequency</th>
+								<th>Status</th>
+								<th>Modify</th>
 							</tr>
 						</table>
 					</td>
 				</tr>
 				<tr>
 					<td>
-						<a class="button" id="refresh" href="#">Refresh Plans</a><span class="spinner"></span>
+						<a class="button" id="refresh" href="#">Refresh Plans</a>
 					</td>
 				</tr>
 			</table>

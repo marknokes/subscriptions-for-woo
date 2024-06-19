@@ -97,9 +97,11 @@ class PayPal
 
         if (is_wp_error($remote_response)) {
 
-            $error_message = $remote_response->get_error_message();
+            $error_message = "wp_remote_request() error: " . $remote_response->get_error_message();
 
-            wc_get_logger()->error("wp_remote_request() error: $error_message", ['source' => PluginMain::plugin_data("Name")]);
+            wc_get_logger()->error($error_message, ['source' => PluginMain::plugin_data("Name")]);
+
+            throw new \Exception($error_message);
 
             return false;
 
@@ -109,11 +111,11 @@ class PayPal
 
         if (isset($response_array['name']) && isset($response_array['message'])) {
 
-            $error_name = $response_array['name'];
+            $error_message = "PayPal API Error: " . $response_array['name'] .  " - " . $response_array['message'];
 
-            $error_message = $response_array['message'];
+            wc_get_logger()->error($error_message, ['source' => PluginMain::plugin_data("Name")]);
 
-            wc_get_logger()->error("PayPal API Error: $error_name - $error_message", ['source' => PluginMain::plugin_data("Name")]);
+            throw new \Exception($error_message);
 
             return false;
         }
