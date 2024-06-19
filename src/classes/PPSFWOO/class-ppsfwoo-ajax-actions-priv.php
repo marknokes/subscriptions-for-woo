@@ -1,0 +1,93 @@
+<?php
+
+namespace PPSFWOO;
+
+use PPSFWOO\Webhook;
+use PPSFWOO\PayPal;
+use PPSFWOO\PluginMain;
+
+class AjaxActionsPriv extends \PPSFWOO\AjaxActions
+{
+	protected function list_plans()
+    {
+        $PluginMain = PluginMain::get_instance();
+
+        return wp_json_encode($PluginMain->ppsfwoo_plans);
+    }
+
+    protected function list_webhooks()
+    {
+        return Webhook::get_instance()->list();
+    }
+
+    protected function refresh_plans()
+    {
+        $success = "false";
+
+        if($plan_data = PayPal::request("/v1/billing/plans")) {
+
+            $plans = [];
+
+            if(isset($plan_data['response']['plans'])) {
+
+                $products = [];
+
+                foreach($plan_data['response']['plans'] as $plan)
+                {
+                    if($plan['status'] !== "ACTIVE") {
+
+                        continue;
+
+                    }
+
+                    $plan_freq = PayPal::request("/v1/billing/plans/{$plan['id']}");
+
+                    if(!in_array($plan['product_id'], array_keys($products))) {
+                    
+                        $product_data = PayPal::request("/v1/catalogs/products/{$plan['product_id']}");
+
+                        $product_name = $product_data['response']['name'];
+
+                        $products[$plan['product_id']] = $product_name;
+
+                    } else {
+
+                        $product_name = $products[$plan['product_id']];
+                    }
+
+                    $plans[$plan['id']] = [
+                        'plan_name'     => $plan['name'],
+                        'product_name'  => $product_name,
+                        'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit']
+                    ];
+                }
+            
+                update_option('ppsfwoo_plans', $plans);
+
+                $success = "true";
+            }
+        }
+
+        return $success;
+    }
+
+    protected function search_subscribers()
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): "";
+
+        if(empty($email)) { 
+
+            return "";
+
+        }
+
+        $PluginMain = PluginMain::get_instance();
+
+        if(!$PluginMain->display_subs($email)) {
+
+            return "false";
+
+        }
+    }
+}

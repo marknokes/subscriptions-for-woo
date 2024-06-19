@@ -4,6 +4,7 @@ namespace PPSFWOO;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use PPSFWOO\AjaxActions;
+use PPSFWOO\AjaxActionsPriv;
 use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
 use PPSFWOO\DatabaseQuery;
@@ -114,13 +115,11 @@ class PluginMain
 
     private function add_actions()
     {
-        $AjaxActions = AjaxActions::get_instance();
+        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [new AjaxActions(), 'admin_ajax_callback']);
+        
+        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [new AjaxActionsPriv(), 'admin_ajax_callback']);
 
-        add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [$AjaxActions, 'admin_ajax_callback']);
-
-        add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [$AjaxActions, 'admin_ajax_callback']);
-
-        add_action('wp_enqueue_scripts', function() use ($AjaxActions) { $this->enqueue_frontend($AjaxActions); });
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend']);
 
         add_action('admin_init', [$this, 'register_settings']);
 
@@ -193,7 +192,7 @@ class PluginMain
         exit();
     }
 
-    public function enqueue_frontend($AjaxActions)
+    public function enqueue_frontend()
     {
         if(!is_admin()) {
             
@@ -205,7 +204,7 @@ class PluginMain
 
         if (
             !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
-            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), $AjaxActions->subs_id_redirect_nonce())
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), AjaxActions::subs_id_redirect_nonce())
         ) {
 
             return;

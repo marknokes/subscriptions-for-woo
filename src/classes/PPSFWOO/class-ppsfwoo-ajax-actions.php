@@ -10,19 +10,6 @@ use PPSFWOO\DatabaseQuery;
 
 class AjaxActions
 {
-    private static $instance = NULL;
-
-    public static function get_instance()
-    {
-        if (self::$instance === null) {
-
-            self::$instance = new self();
-
-        }
-
-        return self::$instance;
-    }
-
 	public function admin_ajax_callback()
     {  
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -43,19 +30,7 @@ class AjaxActions
         wp_die();
     }
 
-    private function list_plans()
-    {
-        $PluginMain = PluginMain::get_instance();
-
-        return wp_json_encode($PluginMain->ppsfwoo_plans);
-    }
-
-    private function list_webhooks()
-    {
-        return Webhook::get_instance()->list();
-    }
-
-    public function subs_id_redirect_nonce()
+    public static function subs_id_redirect_nonce()
     {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing 
         $is_ajax = isset($_POST['action'], $_POST['method']) && $_POST['method'] === __FUNCTION__;
@@ -77,7 +52,7 @@ class AjaxActions
         return $is_ajax ? wp_json_encode(['nonce' => wp_create_nonce($nonce_name)]): $nonce_name;
     }
 
-    private function get_sub()
+    protected function get_sub()
     {
         if(!session_id()) session_start();
         
@@ -121,78 +96,7 @@ class AjaxActions
         return $redirect ? esc_url($redirect): esc_attr("false");
     }
 
-    private function refresh_plans()
-    {
-        $success = "false";
-
-        if($plan_data = PayPal::request("/v1/billing/plans")) {
-
-            $plans = [];
-
-            if(isset($plan_data['response']['plans'])) {
-
-                $products = [];
-
-                foreach($plan_data['response']['plans'] as $plan)
-                {
-                    if($plan['status'] !== "ACTIVE") {
-
-                        continue;
-
-                    }
-
-                    $plan_freq = PayPal::request("/v1/billing/plans/{$plan['id']}");
-
-                    if(!in_array($plan['product_id'], array_keys($products))) {
-                    
-                        $product_data = PayPal::request("/v1/catalogs/products/{$plan['product_id']}");
-
-                        $product_name = $product_data['response']['name'];
-
-                        $products[$plan['product_id']] = $product_name;
-
-                    } else {
-
-                        $product_name = $products[$plan['product_id']];
-                    }
-
-                    $plans[$plan['id']] = [
-                        'plan_name'     => $plan['name'],
-                        'product_name'  => $product_name,
-                        'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit']
-                    ];
-                }
-            
-                update_option('ppsfwoo_plans', $plans);
-
-                $success = "true";
-            }
-        }
-
-        return $success;
-    }
-
-    private function search_subscribers()
-    {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): "";
-
-        if(empty($email)) { 
-
-            return "";
-
-        }
-
-        $PluginMain = PluginMain::get_instance();
-
-        if(!$PluginMain->display_subs($email)) {
-
-            return "false";
-
-        }
-    }
-
-    private function log_paypal_buttons_error()
+    protected function log_paypal_buttons_error()
     {
         $logged_error = false;
 
