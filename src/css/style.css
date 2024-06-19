@@ -94,7 +94,7 @@ div.tab-content {
   border-bottom: 1px solid;
   border-top: 8px solid;
 }
-.status {
+.tooltip.status {
   height: 25px;
   width: 25px;
   border-radius: 50%;
