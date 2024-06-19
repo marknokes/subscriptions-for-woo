@@ -120,6 +120,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 
         } else {
 
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             echo $subscriber_table_options_page['html'];
 
         }

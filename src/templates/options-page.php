@@ -43,6 +43,7 @@ if (!defined('ABSPATH')) exit;
         	
         	<?php
 
+        	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         	echo $subscriber_table_options_page['html'];
 
 			$export_url = add_query_arg([

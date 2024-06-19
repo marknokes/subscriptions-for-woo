@@ -101,7 +101,7 @@ class PayPal
 
             wc_get_logger()->error($error_message, ['source' => PluginMain::plugin_data("Name")]);
 
-            throw new \Exception($error_message);
+            throw new \Exception(esc_html($error_message));
 
             return false;
 
@@ -115,7 +115,7 @@ class PayPal
 
             wc_get_logger()->error($error_message, ['source' => PluginMain::plugin_data("Name")]);
 
-            throw new \Exception($error_message);
+            throw new \Exception(esc_html($error_message));
 
             return false;
         }
