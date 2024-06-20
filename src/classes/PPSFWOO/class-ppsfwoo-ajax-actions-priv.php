@@ -26,7 +26,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 
                     $return = ['success' => true];
 
-                    $this->refresh_plans();
+                    self::refresh_plans();
                 
                 }
 
@@ -53,7 +53,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
         return Webhook::get_instance()->list();
     }
 
-    protected function refresh_plans()
+    public static function refresh_plans()
     {
         $success = "false";
 

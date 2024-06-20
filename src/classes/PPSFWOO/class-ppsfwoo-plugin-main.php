@@ -517,6 +517,12 @@ class PluginMain
             
             register_setting(self::$options_group, $option);
         }
+
+        if(isset($this->ppsfwoo_plans['000']) && PayPal::access_token($log_error = false)) {
+
+            AjaxActionsPriv::refresh_plans();
+
+        }
     }
 
     public function register_options_page()

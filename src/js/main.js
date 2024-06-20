@@ -2,9 +2,39 @@ jQuery(document).ready(function($) {
 
 	var settingsError = "There has been an error. Please try again and check your <a href='" + ppsfwoo_ajax_var.settings_url + "'>WooCommerce PayPal Payments settings</a>.";
 
-	ppsfwooListPlans();
+	ppsfwooOptionsPageInit();
 
-	ppsfwooListWebhooks();
+	$('#subs-search').on('submit', function(e) {
+    	e.preventDefault();
+    	var email = $("#email-input").val();
+    	if(!email) return;
+        ppsfwooDoAjax('search_subscribers', function(r) {
+			if("false" !== r) {
+				$("#tab-subscribers .pagination, .button.export-table-data").hide();
+				$("#reset").show();
+				$("#subscribers").replaceWith(r);
+			} else {
+				ppsfwooShowMsg("No users found with that email address.", "warning");
+			}
+		}, {
+			'email': email
+		});
+    });
+
+    $("#refresh").click(function(e) {
+		e.preventDefault();
+		ppsfwooShowLoadingMessage('Processing...');
+		ppsfwooDoAjax('refresh_plans', function(r) {
+			var response = JSON.parse(r);
+			if(false !== response) {
+				ppsfwooShowMsg("Successfully refreshed plans.");
+				ppsfwooOptionsPageInit();
+			} else {
+				ppsfwooShowMsg(settingsError, "error");
+			}
+			ppsfwooHideLoadingMessage();
+		});
+	});
 
 	$('.nav-tab-wrapper a').click(function(event) {
         event.preventDefault();
@@ -55,23 +85,6 @@ jQuery(document).ready(function($) {
 		});
 	}
 
-	$('#subs-search').on('submit', function(e) {
-    	e.preventDefault();
-    	var email = $("#email-input").val();
-    	if(!email) return;
-        ppsfwooDoAjax('search_subscribers', function(r) {
-			if("false" !== r) {
-				$("#tab-subscribers .pagination, .button.export-table-data").hide();
-				$("#reset").show();
-				$("#subscribers").replaceWith(r);
-			} else {
-				ppsfwooShowMsg("No users found with that email address.", "warning");
-			}
-		}, {
-			'email': email
-		});
-    });
-
     function ppsfwooBindClickHandler() {
     	$("a.deactivate, a.activate").click(function(e) {
 	    	e.preventDefault();
@@ -84,7 +97,7 @@ jQuery(document).ready(function($) {
 	    			alert(response.error);
 	    			ppsfwooHideLoadingMessage();
 	    		} else {
-	    			ppsfwooListPlans();
+	    			ppsfwooOptionsPageInit();
 	    		}
 	    	}, {
 				'plan_id': plan_id,
@@ -93,30 +106,47 @@ jQuery(document).ready(function($) {
 	    });
     }
 
-	function ppsfwooListPlans() {
+	function ppsfwooOptionsPageInit() {
 		ppsfwooDoAjax('list_plans', function(r) {
 			if(!r) return;
 			var obj = JSON.parse(r),
 				$table = $('#plans'),
-				table_data = "";
+				table_data = "",
+				onboarding_complete = false;
 			Object.keys(obj).forEach(plan_id => {
 				var vals = Object.values(obj[plan_id]),
-					plan_active = "ACTIVE" === vals[3];
+					plan_active = "ACTIVE" === vals[3],
+					paypal_action = "",
+					status_indicator = "";
+
+				onboarding_complete = "000" !== plan_id;
 				
-				var paypal_action = plan_active ?
-					`<a href="#" class="deactivate" data-plan-id="${plan_id}">Deactivate</a>`:
-					`<a href="#" class="activate" data-plan-id="${plan_id}">Activate</a>`;
+				if(onboarding_complete) {
+					paypal_action = plan_active ?
+						`<a href="#" class="deactivate" data-plan-id="${plan_id}">Deactivate</a>`:
+						`<a href="#" class="activate" data-plan-id="${plan_id}">Activate</a>`;
 
-				var status_indicator = plan_active ?
-					`<span class="tooltip status green"><span class="tooltip-text">${vals[3]}</span></span>`:
-					`<span class="tooltip status red"><span class="tooltip-text">${vals[3]}</span></span>`;
+					status_indicator = plan_active ?
+						`<span class="tooltip status green"><span class="tooltip-text">${vals[3]}</span></span>`:
+						`<span class="tooltip status red"><span class="tooltip-text">${vals[3]}</span></span>`;
+				}
 	
-
 				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td><td>${status_indicator}</td><td>${paypal_action}</td></tr>`;
 			});
 			$table.find('.plan-row').remove();
 			$table.append(table_data);
 			$table.show();
+			if(onboarding_complete) {
+				ppsfwooListWebhooks();
+			} else {
+				$("#refresh").unbind().click(function(e) {
+					e.preventDefault();
+					var choice = confirm("Click 'OK' to configure your WooCommerce PayPal Payments settings.\nClick 'Cancel' to stay on this page.");
+					if (choice) {
+					    window.location.assign(ppsfwoo_ajax_var.settings_url);
+					}
+				});
+			}
 			ppsfwooBindClickHandler();
 			ppsfwooHideLoadingMessage();
 		});
@@ -136,21 +166,6 @@ jQuery(document).ready(function($) {
 			$table.show();
 		});
 	}
-
-	$("#refresh").click(function(e) {
-		e.preventDefault();
-		ppsfwooShowLoadingMessage('Processing...');
-		ppsfwooDoAjax('refresh_plans', function(r) {
-			var response = JSON.parse(r);
-			if(false !== response) {
-				ppsfwooShowMsg("Successfully refreshed plans.");
-				ppsfwooListPlans();
-			} else {
-				ppsfwooShowMsg(settingsError, "error");
-			}
-			ppsfwooHideLoadingMessage();
-		});
-	});
 
 	/*
 	*	When saving options, reset the query string variables so the subscriber table

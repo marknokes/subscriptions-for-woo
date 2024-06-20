@@ -41,7 +41,7 @@ class PayPal
         return $env;
     }
 
-	protected static function access_token()
+	public static function access_token($log_error = true)
     {
         try {
             
@@ -62,7 +62,30 @@ class PayPal
 
         } catch(\Exception $e) {
 
-            wc_get_logger()->error($e->getMessage(), ['source' => PluginMain::plugin_data("Name")]);
+            if($log_error) {
+
+                $stack_trace = debug_backtrace();
+
+                $message = $e->getMessage() . "\n";
+
+                $message .= "Stack trace:\n";
+                
+                foreach ($stack_trace as $index => $trace)
+                {
+                    $message .= "#{$index} ";
+
+                    if (isset($trace['file'])) {
+
+                        $message .= "{$trace['file']}({$trace['line']}): ";
+
+                    }
+
+                    $message .=  "{$trace['function']}()\n";
+                }
+
+                wc_get_logger()->error($message, ['source' => PluginMain::plugin_data("Name")]);
+
+            }
 
             return false;
 
