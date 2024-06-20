@@ -4,6 +4,7 @@ namespace PPSFWOO;
 
 use PPSFWOO\PluginMain;
 use PPSFWOO\DatabaseQuery;
+use PPSFWOO\PayPal;
 
 class Product
 {
@@ -88,11 +89,20 @@ class Product
 
             ?><div class='options_group'><?php
 
-                if($plans = $this->PluginMain->ppsfwoo_plans) {
+                if($plans = $this->PluginMain->ppsfwoo_plans[PayPal::env()['env']]) {
 
                     foreach($plans as $plan_id => $plan_data)
                     {
-                        $plans[$plan_id] = "{$plan_data['product_name']} [{$plan_data['plan_name']}] [{$plan_data['frequency']}]";
+                        if("ACTIVE" !== $plan_data['status']) {
+
+                            unset($plans[$plan_id]);
+
+                        } else {
+
+                            $plans[$plan_id] = "{$plan_data['product_name']} [{$plan_data['plan_name']}] [{$plan_data['frequency']}]";
+
+                        }
+
                     }
 
                     wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false);
@@ -160,9 +170,11 @@ class Product
 
     public function get_plan_frequency_by_product_id($product_id)
     {
+        $env = PayPal::env()['env'];
+
         $plan_id = get_post_meta($product_id, 'ppsfwoo_plan_id', true);
 
-        return $product_id && isset($this->PluginMain->ppsfwoo_plans[$plan_id]['frequency']) ? $this->PluginMain->ppsfwoo_plans[$plan_id]['frequency']: "";
+        return $product_id && isset($this->PluginMain->ppsfwoo_plans[$env][$plan_id]['frequency']) ? $this->PluginMain->ppsfwoo_plans[$env][$plan_id]['frequency']: "";
     }
 
     public function add_custom_paypal_button()

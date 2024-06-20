@@ -17,6 +17,8 @@ class PayPal
             'client_id'      => ''
         ];
 
+        wp_cache_delete('woocommerce-ppcp-settings');
+
         if($settings = get_option('woocommerce-ppcp-settings')) {
 
             if(isset($settings['sandbox_on']) && $settings['sandbox_on']) {
@@ -27,6 +29,8 @@ class PayPal
 
                 $env['client_id'] = $settings['client_id_sandbox'];
 
+                $env['env'] = "sandbox";
+
             } else if(isset($settings['client_id_production'])) {
 
                 $env['paypal_api_url'] = "https://api-m.paypal.com";
@@ -34,6 +38,8 @@ class PayPal
                 $env['paypal_url'] = "https://www.paypal.com";
 
                 $env['client_id'] = $settings['client_id_production'];
+
+                $env['env'] = "production";
 
             }
         }

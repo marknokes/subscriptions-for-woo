@@ -45,7 +45,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
     {
         $PluginMain = PluginMain::get_instance();
 
-        return wp_json_encode($PluginMain->ppsfwoo_plans);
+        return wp_json_encode($PluginMain->ppsfwoo_plans[PayPal::env()['env']]);
     }
 
     protected function list_webhooks()
@@ -90,7 +90,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
                     ];
                 }
             
-                update_option('ppsfwoo_plans', $plans);
+                update_option('ppsfwoo_plans', [PayPal::env()['env'] => $plans]);
 
                 $success = "true";
             }

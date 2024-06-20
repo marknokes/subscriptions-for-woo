@@ -181,26 +181,34 @@ class Webhook
 
     public function create()
     {
-        $response = PayPal::request("/v1/notifications/webhooks", [
-            'url' => $this->listen_address(),
-            'event_types' => [
-                ['name' => self::ACTIVATED],
-                ['name' => self::EXPIRED],
-                ['name' => self::CANCELLED],
-                ['name' => self::SUSPENDED],
-                ['name' => self::PAYMENT_FAILED]
-            ]
-        ], "POST");
+        try{
 
-        if(isset($response['response']['id'])) {
+            $response = PayPal::request("/v1/notifications/webhooks", [
+                'url' => $this->listen_address(),
+                'event_types' => [
+                    ['name' => self::ACTIVATED],
+                    ['name' => self::EXPIRED],
+                    ['name' => self::CANCELLED],
+                    ['name' => self::SUSPENDED],
+                    ['name' => self::PAYMENT_FAILED]
+                ]
+            ], "POST");
 
-            update_option('ppsfwoo_webhook_id', $response['response']['id']);
-        
+            if(isset($response['response']['id'])) {
+
+                update_option('ppsfwoo_webhook_id', $response['response']['id']);
+            
+            }
+
+            $this->replace();
+
+            return $response['response'] ?? false;
+            
+        } catch(\Exception $e) {
+
+            return false;
+
         }
-
-        $this->replace();
-
-        return $response['response'] ?? false;
     }
 
     protected function replace()

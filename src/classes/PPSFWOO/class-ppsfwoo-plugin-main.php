@@ -53,10 +53,14 @@ class PluginMain
         'ppsfwoo_plans' => [
             'type'    => 'skip_settings_field',
             'default' => [
-                '000' => [
-                    'plan_name'     => 'Refresh required',
-                    'product_name'  => '',
-                    'frequency'     => ''
+                [
+                    'sandbox' => [
+                        '000' => [
+                            'plan_name'     => 'Refresh required',
+                            'product_name'  => '',
+                            'frequency'     => ''
+                        ]
+                    ]
                 ]
             ]
         ]
@@ -125,6 +129,8 @@ class PluginMain
 
         add_action('admin_init', [$this, 'handle_export_action']);
 
+        add_action('admin_init', [$this, 'ppsfwoo_ppcp_updated'], 999);
+
         add_action('admin_menu', [$this, 'register_options_page']);
 
         add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
@@ -140,6 +146,12 @@ class PluginMain
         add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'shutdown']);
 
         add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'shutdown'], 999);
+
+        add_action('update_option_woocommerce-ppcp-settings', function($old_value, $value, $option) {
+
+            set_transient('ppsfwoo_ppcp_updated', true);
+          
+        }, 99, 3);
     }
 
     private function add_filters()
@@ -149,6 +161,27 @@ class PluginMain
         add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 2);
 
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
+    }
+
+    public function ppsfwoo_ppcp_updated()
+    {
+        if(get_transient('ppsfwoo_ppcp_updated')) {
+
+            Webhook::get_instance()->resubscribe();
+
+            AjaxActionsPriv::refresh_plans();
+
+            add_action('admin_notices', function() {
+                ?>
+                <div class="notice notice-warning is-dismissible">
+                    <p><strong><?php echo esc_html(self::plugin_data("Name")); ?>:</strong> If you switched from sandbox to production and have existing subscription products, you must re-save them now.</p>
+                </div>
+                <?php
+            });
+
+            delete_transient('ppsfwoo_ppcp_updated');
+
+        }
     }
 
     public static function plugin_data($data)
@@ -518,7 +551,7 @@ class PluginMain
             register_setting(self::$options_group, $option);
         }
 
-        if(isset($this->ppsfwoo_plans['000']) && PayPal::access_token($log_error = false)) {
+        if(isset($this->ppsfwoo_plans[PayPal::env()['env']]['000']) && PayPal::access_token($log_error = false)) {
 
             AjaxActionsPriv::refresh_plans();
 

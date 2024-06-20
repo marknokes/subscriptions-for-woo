@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) exit;
     	var tab_subs_active = <?php echo isset($_GET['subs_page_num']) ? "true": "false"; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
     </script>
 
-    <h1>Subscriptions for Woo</h1>
+    <h1><?php echo esc_html(self::plugin_data("Name")); ?></h1>
 
 	<h2 class="nav-tab-wrapper">
 	    <a href="tab-subscribers" class="nav-tab subs-list nav-tab-active">Subscribers</a>
