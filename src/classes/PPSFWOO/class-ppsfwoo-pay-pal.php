@@ -14,7 +14,8 @@ class PayPal
         $env = [
             'paypal_api_url' => '',
             'paypal_url'     => '',
-            'client_id'      => ''
+            'client_id'      => '',
+            'env'            => ''
         ];
 
         wp_cache_delete('woocommerce-ppcp-settings');
