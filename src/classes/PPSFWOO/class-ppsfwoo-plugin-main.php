@@ -60,6 +60,13 @@ class PluginMain
                             'product_name'  => '',
                             'frequency'     => ''
                         ]
+                    ],
+                    'production' => [
+                        '000' => [
+                            'plan_name'     => 'Refresh required',
+                            'product_name'  => '',
+                            'frequency'     => ''
+                        ]
                     ]
                 ]
             ]
