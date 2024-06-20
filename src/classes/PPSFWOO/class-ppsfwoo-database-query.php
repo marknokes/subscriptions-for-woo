@@ -57,7 +57,25 @@ class DatabaseQuery
 
         foreach ($data->result as $row)
         {
+            foreach ($row as $key => $value)
+            {
+                if(NULL === $row[$key]) {
+
+                    $row[$key] = "NULL";
+
+                }
+            }
+
             $row_values = array_map([$wpdb, 'prepare'], array_fill(0, count($row), '%s'), $row);
+
+            foreach ($row_values as $row_key => $value)
+            {
+                if("'NULL'" === $value) {
+
+                    $row_values[$row_key] = 'NULL';
+                    
+                } 
+            }
 
             $values[] = '(' . implode(', ', $row_values) . ')';
         }
