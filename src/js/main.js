@@ -106,6 +106,16 @@ jQuery(document).ready(function($) {
 	    });
     }
 
+    function ppsfwooUnbind() {
+    	$("#refresh").unbind().click(function(e) {
+			e.preventDefault();
+			var choice = confirm("Click 'OK' to configure your WooCommerce PayPal Payments settings.\nClick 'Cancel' to stay on this page.");
+			if (choice) {
+			    window.location.assign(ppsfwoo_ajax_var.settings_url);
+			}
+		});
+    }
+
 	function ppsfwooOptionsPageInit() {
 		ppsfwooDoAjax('list_plans', function(r) {
 			if(!r) return;
@@ -113,11 +123,16 @@ jQuery(document).ready(function($) {
 				$table = $('#plans'),
 				table_data = "",
 				onboarding_complete = false;
+			if(null === obj) {
+				ppsfwooUnbind();
+				return;
+			}
 			Object.keys(obj).forEach(plan_id => {
 				var vals = Object.values(obj[plan_id]),
 					plan_active = "ACTIVE" === vals[3],
 					paypal_action = "",
 					status_indicator = "";
+
 
 				onboarding_complete = "000" !== plan_id;
 				
@@ -139,13 +154,7 @@ jQuery(document).ready(function($) {
 			if(onboarding_complete) {
 				ppsfwooListWebhooks();
 			} else {
-				$("#refresh").unbind().click(function(e) {
-					e.preventDefault();
-					var choice = confirm("Click 'OK' to configure your WooCommerce PayPal Payments settings.\nClick 'Cancel' to stay on this page.");
-					if (choice) {
-					    window.location.assign(ppsfwoo_ajax_var.settings_url);
-					}
-				});
+				ppsfwooUnbind();
 			}
 			ppsfwooBindClickHandler();
 			ppsfwooHideLoadingMessage();
