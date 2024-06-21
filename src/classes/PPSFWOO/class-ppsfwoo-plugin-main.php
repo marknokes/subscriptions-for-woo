@@ -84,7 +84,7 @@ class PluginMain
            $template_dir,
            $plugin_dir_url;
 
-    protected function __construct($do_wp = true)
+    protected function __construct($do_wp)
     {
         $env = PayPal::env();
 
@@ -113,11 +113,11 @@ class PluginMain
         }
     }
 
-    public static function get_instance()
+    public static function get_instance($do_wp = false)
     {
         if (self::$instance === null) {
 
-            self::$instance = new self();
+            self::$instance = new self($do_wp);
 
         }
 
@@ -136,7 +136,7 @@ class PluginMain
 
         add_action('admin_init', [$this, 'handle_export_action']);
 
-        add_action('admin_init', [$this, 'ppsfwoo_ppcp_updated'], 999);
+        add_action('admin_init', [$this, 'ppsfwoo_ppcp_updated']);
 
         add_action('admin_menu', [$this, 'register_options_page']);
 
@@ -150,15 +150,15 @@ class PluginMain
 
         add_action('plugins_loaded', 'ppsfwoo_register_product_type');
 
-        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'shutdown']);
+        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'refresh']);
 
-        add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'shutdown'], 999);
+        add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'refresh']);
 
-        add_action('update_option_woocommerce-ppcp-settings', function($old_value, $value, $option) {
+        add_action('update_option_woocommerce-ppcp-settings', function($opt, $old, $new) {
 
             set_transient('ppsfwoo_ppcp_updated', true);
-          
-        }, 99, 3);
+
+        }, 10, 3);
     }
 
     private function add_filters()
@@ -191,6 +191,17 @@ class PluginMain
         }
     }
 
+    public function refresh()
+    {
+        add_action('shutdown', function() {
+
+            Webhook::get_instance()->resubscribe();
+
+            AjaxActionsPriv::refresh_plans();
+
+        });
+    }
+
     public static function plugin_data($data)
     {
         $plugin_data = get_file_data(PPSFWOO_PLUGIN_PATH, [
@@ -199,11 +210,6 @@ class PluginMain
         ], 'plugin');
 
         return $plugin_data[$data];
-    }
-
-    public function shutdown()
-    {
-        add_action('shutdown', [Webhook::get_instance(), 'resubscribe']);
     }
 
     public function handle_export_action()

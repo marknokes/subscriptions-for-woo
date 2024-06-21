@@ -7,6 +7,7 @@ use PPSFWOO\PayPal;
 use PPSFWOO\PluginMain;
 use PPSFWOO\Subscriber;
 use PPSFWOO\DatabaseQuery;
+use PPSFWOO\Exception;
 
 class AjaxActions
 {
@@ -105,7 +106,7 @@ class AjaxActions
         
         if($message) {
 
-            wc_get_logger()->error("PayPal subscription button error: $message", ['source' => PluginMain::get_instance()::plugin_data('Name')]);
+            Exception::log("PayPal subscription button error: $message");
 
             $logged_error = true;
 

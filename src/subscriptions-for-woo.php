@@ -27,7 +27,7 @@ define('PPSFWOO_PLUGIN_PATH', __FILE__);
 
 define('PPSFWOO_PLUGIN_EXTRAS', class_exists(\PPSFWOO\PluginExtras::class));
 
-\PPSFWOO\PluginMain::get_instance();
+\PPSFWOO\PluginMain::get_instance(true);
 
 \PPSFWOO\Product::get_instance();
 

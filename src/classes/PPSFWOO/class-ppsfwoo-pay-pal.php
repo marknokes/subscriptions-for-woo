@@ -2,10 +2,11 @@
 
 namespace PPSFWOO;
 
-use \PPSFWOO\PluginMain;
-use \WooCommerce\PayPalCommerce\PPCP;
-use \WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer;
-use \WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
+use PPSFWOO\PluginMain;
+use PPSFWOO\Exception;
+use WooCommerce\PayPalCommerce\PPCP;
+use WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer;
+use WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
 
 class PayPal
 {
@@ -22,7 +23,7 @@ class PayPal
 
         if($settings = get_option('woocommerce-ppcp-settings')) {
 
-            if(isset($settings['sandbox_on']) && $settings['sandbox_on']) {
+            if(isset($settings['sandbox_on'], $settings['client_id_sandbox']) && $settings['sandbox_on']) {
 
                 $env['paypal_api_url'] = "https://api-m.sandbox.paypal.com";
 
@@ -71,26 +72,7 @@ class PayPal
 
             if($log_error) {
 
-                $stack_trace = debug_backtrace();
-
-                $message = $e->getMessage() . "\n";
-
-                $message .= "Stack trace:\n";
-                
-                foreach ($stack_trace as $index => $trace)
-                {
-                    $message .= "#{$index} ";
-
-                    if (isset($trace['file'])) {
-
-                        $message .= "{$trace['file']}({$trace['line']}): ";
-
-                    }
-
-                    $message .=  "{$trace['function']}()\n";
-                }
-
-                wc_get_logger()->error($message, ['source' => PluginMain::plugin_data("Name")]);
+                Exception::log($e);
 
             }
 
@@ -127,11 +109,7 @@ class PayPal
 
         if (is_wp_error($remote_response)) {
 
-            $error_message = "wp_remote_request() error: " . $remote_response->get_error_message();
-
-            wc_get_logger()->error($error_message, ['source' => PluginMain::plugin_data("Name")]);
-
-            throw new \Exception(esc_html($error_message));
+            Exception::log("wp_remote_request() error: " . $remote_response->get_error_message() . " [$url]");
 
             return false;
 
@@ -141,11 +119,7 @@ class PayPal
 
         if (isset($response_array['name']) && isset($response_array['message'])) {
 
-            $error_message = "PayPal API Error: " . $response_array['name'] .  " - " . $response_array['message'];
-
-            wc_get_logger()->error($error_message, ['source' => PluginMain::plugin_data("Name")]);
-
-            throw new \Exception(esc_html($error_message));
+            Exception::log("PayPal API Error: " . $response_array['name'] .  " - " . $response_array['message']);
 
             return false;
         }

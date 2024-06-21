@@ -6,6 +6,7 @@ use PPSFWOO\Product;
 use PPSFWOO\Order;
 use PPSFWOO\Webhook;
 use PPSFWOO\DatabaseQuery;
+use PPSFWOO\Exception;
 
 class Subscriber
 {
@@ -182,7 +183,7 @@ class Subscriber
 
         } else {
 
-            wc_get_logger()->error("Error creating user", ['source' => PluginMain::plugin_data('Name')]);
+            Exception::log("Error creating user");
 
             return false;
         }
