@@ -154,7 +154,7 @@ class PluginMain
 
         add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'refresh']);
 
-        add_action('update_option_woocommerce-ppcp-settings', function($opt, $old, $new) {
+        add_action('update_option_woocommerce-ppcp-settings', function($old, $new, $opt) {
 
             set_transient('ppsfwoo_ppcp_updated', true);
 
