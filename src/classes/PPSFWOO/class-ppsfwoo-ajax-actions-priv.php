@@ -47,7 +47,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 
         $env = PayPal::env()['env'];
 
-        return $env ? wp_json_encode($PluginMain->ppsfwoo_plans[$env]) : false;
+        return $env && isset($PluginMain->ppsfwoo_plans[$env]) ? wp_json_encode($PluginMain->ppsfwoo_plans[$env]) : false;
     }
 
     protected function list_webhooks()
