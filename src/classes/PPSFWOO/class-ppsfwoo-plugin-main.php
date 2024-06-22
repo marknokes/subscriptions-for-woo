@@ -130,7 +130,7 @@ class PluginMain
         
         add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [new AjaxActionsPriv(), 'admin_ajax_callback']);
 
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend'], 11);
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend']);
 
         add_action('admin_init', [$this, 'register_settings']);
 
@@ -243,20 +243,6 @@ class PluginMain
         if(!is_admin()) {
             
             wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/frontend.min.css", [], self::plugin_data('Version'));
-
-            if (is_product()) {
-
-                global $post;
-
-                $product = wc_get_product($post->ID);
-
-                if ($product && $product->is_type('ppsfwoo') && wp_script_is('ppcp-smart-button', 'enqueued')) {
-
-                    wp_dequeue_script( 'ppcp-smart-button' );
-
-                }
-
-            }
 
         }
         

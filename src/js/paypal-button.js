@@ -39,6 +39,7 @@ function ppsfwooLoadPayPalScript(callback) {
         var script = document.createElement('script');
         script.setAttribute('src', `https://www.paypal.com/sdk/js?client-id=${ppsfwoo_paypal_ajax_var.client_id}&vault=true&intent=subscription`);
         script.setAttribute('data-sdk-integration-source', 'button-factory');
+        script.setAttribute('async', true);
         script.onload = callback;
         document.body.appendChild(script);
     }
