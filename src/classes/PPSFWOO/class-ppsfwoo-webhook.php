@@ -32,7 +32,7 @@ class Webhook
 
     public function __construct()
     {
-    	$this->site_url = network_site_url();
+    	$this->site_url = network_site_url('', 'https');
 
     	$this->listen_address = $this->site_url . "/wp-json/" . self::$api_namespace . self::$endpoint;
 
