@@ -10,11 +10,14 @@ class Product
 {
 	private static $instance = NULL;
 
-    private $PluginMain;
+    private $PluginMain,
+            $env;
 
 	public function __construct()
     {
     	$this->PluginMain = PluginMain::get_instance();
+
+        $this->env = $this->PluginMain->env['env'];
 
     	$this->add_actions();
 
@@ -85,11 +88,13 @@ class Product
 
     public function options_product_tab_content()
     {
-        ?><div id='ppsfwoo_options' class='panel woocommerce_options_panel'><?php
+        ?>
 
-            ?><div class='options_group'><?php
+        <div id='ppsfwoo_options' class='panel woocommerce_options_panel'>
 
-                if($plans = $this->PluginMain->ppsfwoo_plans[PayPal::env()['env']]) {
+            <div class='options_group'><?php
+
+                if($plans = $this->PluginMain->ppsfwoo_plans[$this->env]) {
 
                     foreach($plans as $plan_id => $plan_data)
                     {
@@ -105,11 +110,13 @@ class Product
 
                     }
 
+                    $plans = array_merge(["please_select" => "Select a plan [$this->env]"], $plans);
+
                     wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false);
 
                     woocommerce_wp_select([
-                        'id'          => 'ppsfwoo_plan_id',
-                        'label'       => 'PayPal Subscription Plan',
+                        'id'          => "{$this->env}_ppsfwoo_plan_id",
+                        'label'       => "PayPal Subscription Plan",
                         'options'     => $plans,
                         'desc_tip'    => true,
                         'description' => 'Subscription plans created in your PayPal account will be listed here in the format:<br />"Product [Plan] [Frequency]"',
@@ -130,7 +137,7 @@ class Product
 
     public function save_option_field($post_id)
     {
-        if (!isset($_POST['ppsfwoo_plan_id']) ||
+        if (!isset($_POST["{$this->env}_ppsfwoo_plan_id"]) ||
             !isset($_POST['ppsfwoo_plan_id_nonce']) ||
             !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ppsfwoo_plan_id_nonce'])), 'ppsfwoo_plan_id_nonce')
         ) {
@@ -139,14 +146,14 @@ class Product
 
         }
 
-        $plan_id = sanitize_text_field(wp_unslash($_POST['ppsfwoo_plan_id']));
+        $plan_id = sanitize_text_field(wp_unslash($_POST["{$this->env}_ppsfwoo_plan_id"]));
 
-        update_post_meta($post_id, 'ppsfwoo_plan_id', $plan_id);
+        update_post_meta($post_id, "{$this->env}_ppsfwoo_plan_id", $plan_id);
     }
 
-    public static function get_plan_id_by_product_id($product_id)
+    public function get_plan_id_by_product_id($product_id)
     {
-        return $product_id ? get_post_meta($product_id, 'ppsfwoo_plan_id', true): "";
+        return $product_id ? get_post_meta($product_id, "{$this->env}_ppsfwoo_plan_id", true): "";
     }
 
     public static function get_product_id_by_plan_id($plan_id)
@@ -156,7 +163,7 @@ class Product
             'posts_per_page' => 1, 
             'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
                 [
-                    'key'     => 'ppsfwoo_plan_id',
+                    'key'     => PayPal::env()['env'] . '_ppsfwoo_plan_id',
                     'value'   => $plan_id,
                     'compare' => '='
                 ],
@@ -170,11 +177,9 @@ class Product
 
     public function get_plan_frequency_by_product_id($product_id)
     {
-        $env = PayPal::env()['env'];
+        $plan_id = get_post_meta($product_id, "{$this->env}_ppsfwoo_plan_id", true);
 
-        $plan_id = get_post_meta($product_id, 'ppsfwoo_plan_id', true);
-
-        return $product_id && isset($this->PluginMain->ppsfwoo_plans[$env][$plan_id]['frequency']) ? $this->PluginMain->ppsfwoo_plans[$env][$plan_id]['frequency']: "";
+        return $product_id && isset($this->PluginMain->ppsfwoo_plans[$this->env][$plan_id]['frequency']) ? $this->PluginMain->ppsfwoo_plans[$this->env][$plan_id]['frequency']: "";
     }
 
     public function add_custom_paypal_button()
@@ -187,7 +192,7 @@ class Product
 
         }
 
-        if($plan_id = self::get_plan_id_by_product_id(get_the_ID())) {
+        if($plan_id = $this->get_plan_id_by_product_id(get_the_ID())) {
 
             $this->PluginMain::display_template("paypal-button", [
                 'plan_id' => $plan_id

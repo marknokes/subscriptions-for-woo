@@ -82,19 +82,20 @@ class PluginMain
            $ppsfwoo_rows_per_page,
            $ppsfwoo_delete_plugin_data,
            $template_dir,
-           $plugin_dir_url;
+           $plugin_dir_url,
+           $env;
 
     protected function __construct($do_wp)
     {
-        $env = PayPal::env();
+        $this->env = PayPal::env();
 
         $this->template_dir = plugin_dir_path(PPSFWOO_PLUGIN_PATH) . "templates/";
 
         $this->plugin_dir_url = plugin_dir_url(PPSFWOO_PLUGIN_PATH);
 
-        $this->client_id = $env['client_id'];
+        $this->client_id = $this->env['client_id'];
 
-        $this->paypal_url = $env['paypal_url'];
+        $this->paypal_url = $this->env['paypal_url'];
 
         foreach (self::$options as $option => $option_value)
         {
@@ -318,7 +319,7 @@ class PluginMain
 
             self::display_template("subscriber-table-settings-page", [
                 'results'    => $result->result,
-                'paypal_url' => PayPal::env()['paypal_url']
+                'paypal_url' => $this->env['paypal_url']
             ]);
 
             if($email === "" && $total_pages > 1) {
@@ -562,7 +563,7 @@ class PluginMain
             register_setting(self::$options_group, $option);
         }
 
-        if(isset($this->ppsfwoo_plans[PayPal::env()['env']]['000']) && PayPal::access_token($log_error = false)) {
+        if(isset($this->ppsfwoo_plans[$this->env['env']]['000']) && PayPal::access_token($log_error = false)) {
 
             AjaxActionsPriv::refresh_plans();
 

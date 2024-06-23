@@ -45,7 +45,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
     {
         $PluginMain = PluginMain::get_instance();
 
-        $env = PayPal::env()['env'];
+        $env = $PluginMain->env['env'];
 
         return isset($PluginMain->ppsfwoo_plans[$env]) ? wp_json_encode($PluginMain->ppsfwoo_plans[$env]) : false;
     }
@@ -57,6 +57,10 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 
     public static function refresh_plans()
     {
+        $PluginMain = PluginMain::get_instance();
+
+        $env = $PluginMain->env['env'];
+        
         $success = "false";
 
         if($plan_data = PayPal::request("/v1/billing/plans")) {
@@ -92,7 +96,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
                     ];
                 }
             
-                update_option('ppsfwoo_plans', [PayPal::env()['env'] => $plans]);
+                update_option('ppsfwoo_plans', [$env => $plans]);
 
                 $success = "true";
             }
