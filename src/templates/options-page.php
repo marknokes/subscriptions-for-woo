@@ -252,7 +252,7 @@ if (!defined('ABSPATH')) exit;
 				<tr>
 					<td>
 						<a class="button" id="refresh" href="#">Refresh Plans</a>
-						<a class="button" href="<?php echo esc_url(PayPal::env()['paypal_url']); ?>/billing/plans" target="_blank">Create Plan</a>
+						<a class="button" id="create" href="<?php echo esc_url(PayPal::env()['paypal_url']); ?>/billing/plans" target="_blank">Create Plan</a>
 					</td>
 				</tr>
 			</table>

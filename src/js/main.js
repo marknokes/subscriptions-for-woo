@@ -26,7 +26,9 @@ jQuery(document).ready(function($) {
 		ppsfwooShowLoadingMessage('Processing...');
 		ppsfwooDoAjax('refresh_plans', function(r) {
 			var response = JSON.parse(r);
-			if(false !== response) {
+			if(0 === response.plans.length) {
+				ppsfwooShowMsg("No plans found.", "warning");
+			} else if(response.success) {
 				ppsfwooShowMsg("Successfully refreshed plans.");
 				ppsfwooOptionsPageInit();
 			} else {
@@ -106,25 +108,22 @@ jQuery(document).ready(function($) {
 	    });
     }
 
-    function ppsfwooUnbind() {
-    	$("#refresh").unbind().click(function(e) {
-			e.preventDefault();
-			var choice = confirm("Click 'OK' to configure your WooCommerce PayPal Payments settings.\nClick 'Cancel' to stay on this page.");
-			if (choice) {
-			    window.location.assign(ppsfwoo_ajax_var.settings_url);
-			}
-		});
-    }
-
 	function ppsfwooOptionsPageInit() {
 		ppsfwooDoAjax('list_plans', function(r) {
-			if(!r) return;
-			var obj = JSON.parse(r),
+			var obj = r ? JSON.parse(r) : false,
 				$table = $('#plans'),
 				table_data = "",
-				onboarding_complete = false;
-			if(null === obj) {
-				ppsfwooUnbind();
+				have_plans = false;
+			if(!obj) {
+				$("#refresh, #create")
+					.unbind()
+					.click(function(e) {
+						e.preventDefault();
+						var choice = confirm("Click 'OK' to configure your WooCommerce PayPal Payments settings.\nClick 'Cancel' to stay on this page.");
+						if (choice) {
+						    window.location.assign(ppsfwoo_ajax_var.settings_url);
+						}
+					});
 				return;
 			}
 			Object.keys(obj).forEach(plan_id => {
@@ -132,11 +131,8 @@ jQuery(document).ready(function($) {
 					plan_active = "ACTIVE" === vals[3],
 					paypal_action = "",
 					status_indicator = "";
-
-
-				onboarding_complete = "000" !== plan_id;
-				
-				if(onboarding_complete) {
+				have_plans = "000" !== plan_id;
+				if(have_plans) {
 					paypal_action = plan_active ?
 						`<a href="#" class="deactivate" data-plan-id="${plan_id}">Deactivate</a>`:
 						`<a href="#" class="activate" data-plan-id="${plan_id}">Activate</a>`;
@@ -145,17 +141,12 @@ jQuery(document).ready(function($) {
 						`<span class="tooltip status green"><span class="tooltip-text">${vals[3]}</span></span>`:
 						`<span class="tooltip status red"><span class="tooltip-text">${vals[3]}</span></span>`;
 				}
-	
 				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td><td>${status_indicator}</td><td>${paypal_action}</td></tr>`;
 			});
 			$table.find('.plan-row').remove();
 			$table.append(table_data);
 			$table.show();
-			if(onboarding_complete) {
-				ppsfwooListWebhooks();
-			} else {
-				ppsfwooUnbind();
-			}
+			ppsfwooListWebhooks();
 			ppsfwooBindClickHandler();
 			ppsfwooHideLoadingMessage();
 		});

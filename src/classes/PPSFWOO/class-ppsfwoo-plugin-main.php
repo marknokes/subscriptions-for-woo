@@ -302,9 +302,7 @@ class PluginMain
 
         }
 
-        $results = $result->result;
-
-        $num_subs = is_array($results) ? sizeof($results): 0;
+        $num_subs = is_array($result->result) ? sizeof($result->result): 0;
 
         $html = "";
 
@@ -319,7 +317,7 @@ class PluginMain
             $total_pages = ceil($total_rows / $per_page);
 
             self::display_template("subscriber-table-settings-page", [
-                'results'    => $results,
+                'results'    => $result->result,
                 'paypal_url' => PayPal::env()['paypal_url']
             ]);
 
