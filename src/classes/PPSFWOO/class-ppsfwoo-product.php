@@ -94,7 +94,9 @@ class Product
 
             <div class='options_group'><?php
 
-                if($plans = $this->PluginMain->ppsfwoo_plans[$this->env]) {
+                $plans = isset($this->PluginMain->ppsfwoo_plans[$this->env]) ? $this->PluginMain->ppsfwoo_plans[$this->env]: false;
+
+                if($plans) {
 
                     foreach($plans as $plan_id => $plan_data)
                     {
@@ -121,6 +123,20 @@ class Product
                         'desc_tip'    => true,
                         'description' => 'Subscription plans created in your PayPal account will be listed here in the format:<br />"Product [Plan] [Frequency]"',
                     ]);
+                } else {
+
+                    ?>
+
+                    <h3 style="padding: 2em">
+
+                        Please be sure your <a href="<?php echo esc_url(admin_url($this->PluginMain::$ppcp_settings_url)); ?>">connection to PayPal</a>
+
+                        is setup and that you've created at least one plan in your <span style="text-decoration: underline;"><?php echo esc_html($this->env); ?></span> environment. <a href="<?php echo esc_url($this->PluginMain->env['paypal_url']); ?>/billing/plans" target="_blank">Create a plan now.</a>
+
+                    </h3>
+
+                <?php
+
                 }
 
             ?></div>
