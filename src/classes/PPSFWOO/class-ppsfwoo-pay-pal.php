@@ -13,10 +13,10 @@ class PayPal
 	public static function env()
     {
         $env = [
-            'paypal_api_url' => '',
-            'paypal_url'     => '',
+            'paypal_api_url' => 'https://api-m.sandbox.paypal.com',
+            'paypal_url'     => 'https://www.sandbox.paypal.com',
             'client_id'      => '',
-            'env'            => ''
+            'env'            => 'sandbox'
         ];
 
         wp_cache_delete('woocommerce-ppcp-settings');
@@ -25,13 +25,7 @@ class PayPal
 
             if(isset($settings['sandbox_on'], $settings['client_id_sandbox']) && $settings['sandbox_on']) {
 
-                $env['paypal_api_url'] = "https://api-m.sandbox.paypal.com";
-
-                $env['paypal_url'] = "https://www.sandbox.paypal.com";
-
                 $env['client_id'] = $settings['client_id_sandbox'];
-
-                $env['env'] = "sandbox";
 
             } else if(isset($settings['client_id_production'])) {
 
