@@ -87,7 +87,7 @@ jQuery(document).ready(function($) {
 		});
 	}
 
-    function ppsfwooBindClickHandler() {
+    function ppsfwooBindClickHandlers() {
     	$("a.deactivate, a.activate").click(function(e) {
 	    	e.preventDefault();
 	    	ppsfwooShowLoadingMessage('Processing...');
@@ -106,6 +106,18 @@ jQuery(document).ready(function($) {
 				'paypal_action': paypal_action
 			});
 	    });
+	    $('.plan-row').on('click', '.copy-button', function(e) {
+			var copyText = $(this).prev('.copy-text'),
+				tempTextarea = $('<textarea>');
+			tempTextarea.val(copyText.text());
+			$('body').append(tempTextarea);
+			tempTextarea.select();
+			tempTextarea[0].setSelectionRange(0, 99999);
+			document.execCommand('copy');
+			tempTextarea.remove();
+			alert('Copied to clipboard: ' + copyText.text());
+			e.preventDefault();
+		});
     }
 
 	function ppsfwooOptionsPageInit() {
@@ -141,13 +153,13 @@ jQuery(document).ready(function($) {
 						`<span class="tooltip status green"><span class="tooltip-text">${vals[3]}</span></span>`:
 						`<span class="tooltip status red"><span class="tooltip-text">${vals[3]}</span></span>`;
 				}
-				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td><td>${status_indicator}</td><td>${paypal_action}</td></tr>`;
+				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td><td><p class="copy-text" style="position: absolute; left: -9999px;">${ppsfwoo_ajax_var.paypal_url}/webapps/billing/plans/subscribe?plan_id=${plan_id}</p><button class="copy-button">Copy to clipboard</button></td><td>${status_indicator}</td><td>${paypal_action}</td></tr>`;
 			});
 			$table.find('.plan-row').remove();
 			$table.append(table_data);
 			$table.show();
 			ppsfwooListWebhooks();
-			ppsfwooBindClickHandler();
+			ppsfwooBindClickHandlers();
 			ppsfwooHideLoadingMessage();
 		});
 	}

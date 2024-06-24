@@ -243,6 +243,7 @@ if (!defined('ABSPATH')) exit;
 								<th>Plan Name</th>
 								<th>Product Name</th>
 								<th>Plan Frequency</th>
+								<th>Share Link</th>
 								<th>Status</th>
 								<th>Modify</th>
 							</tr>

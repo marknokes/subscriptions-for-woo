@@ -53,20 +53,18 @@ class PluginMain
         'ppsfwoo_plans' => [
             'type'    => 'skip_settings_field',
             'default' => [
-                [
-                    'sandbox' => [
-                        '000' => [
-                            'plan_name'     => 'Refresh required',
-                            'product_name'  => '',
-                            'frequency'     => ''
-                        ]
-                    ],
-                    'production' => [
-                        '000' => [
-                            'plan_name'     => 'Refresh required',
-                            'product_name'  => '',
-                            'frequency'     => ''
-                        ]
+                'sandbox' => [
+                    '000' => [
+                        'plan_name'     => 'Refresh required',
+                        'product_name'  => '',
+                        'frequency'     => ''
+                    ]
+                ],
+                'production' => [
+                    '000' => [
+                        'plan_name'     => 'Refresh required',
+                        'product_name'  => '',
+                        'frequency'     => ''
                     ]
                 ]
             ]
@@ -182,7 +180,7 @@ class PluginMain
             add_action('admin_notices', function() {
                 ?>
                 <div class="notice notice-warning is-dismissible">
-                    <p><strong><?php echo esc_html(self::plugin_data("Name")); ?>:</strong> If you switched from sandbox to production and have existing subscription products, you must re-save them now.</p>
+                    <p><strong><?php echo esc_html(self::plugin_data("Name")); ?>:</strong> If you switched from sandbox to production and have existing subscription products, please resave them now with their corresponding plan (if necessary) and republish.</p>
                 </div>
                 <?php
             });
@@ -550,7 +548,8 @@ class PluginMain
         wp_enqueue_script('ppsfwoo-scripts', $this->plugin_dir_url . "js/main.min.js", ['jquery'], self::plugin_data('Version'), true);
 
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
-            'settings_url' => admin_url(self::$ppcp_settings_url)
+            'settings_url' => admin_url(self::$ppcp_settings_url),
+            'paypal_url'   => $this->env['paypal_url']
         ]);
     }
 
