@@ -63,9 +63,9 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
         
         $success = "false";
 
+        $plans = [];
+        
         if($plan_data = PayPal::request("/v1/billing/plans")) {
-
-            $plans = [];
 
             if(isset($plan_data['response']['plans'])) {
 
