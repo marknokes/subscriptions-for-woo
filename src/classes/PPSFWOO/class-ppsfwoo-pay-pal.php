@@ -97,13 +97,7 @@ class PayPal
 
         }
 
-        if(!$paypal_url = self::env()['paypal_api_url']) {
-
-            return false;
-
-        }
-
-        $url = $paypal_url . $api;
+        $url = self::env()['paypal_api_url'] . $api;
 
         $remote_response = wp_remote_request($url, $args);
 

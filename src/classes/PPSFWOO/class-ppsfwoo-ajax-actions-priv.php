@@ -5,49 +5,32 @@ namespace PPSFWOO;
 use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
 use PPSFWOO\PluginMain;
+use PPSFWOO\Plan;
 
 class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 {
     protected function modify_plan()
     {
-        $return = ['error' => true];
+        $Plan = new Plan();
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $plan_id = isset($_POST['plan_id']) ? sanitize_text_field(wp_unslash($_POST['plan_id'])): "";
+        $response = $Plan->modify_plan();
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $paypal_action = isset($_POST['paypal_action']) ? sanitize_text_field(wp_unslash($_POST['paypal_action'])): "";
+        if(isset($response['success']) && true === $response['success']) {
 
-        try {
-
-            if($plan_id && $response = PayPal::request("/v1/billing/plans/$plan_id/$paypal_action", [], "POST")) {
-
-                if(204 === $response['status']) {
-
-                    $return = ['success' => true];
-
-                    self::refresh_plans();
-                
-                }
-
-            }
-            
-        } catch(\Exception $e) {
-
-            $return = ['error' => $e->getMessage()];
+            self::refresh_plans();
 
         }
 
-        return wp_json_encode($return);
+        return wp_json_encode($response);
     }
 
 	protected function list_plans()
     {
-        $PluginMain = PluginMain::get_instance();
+        $Plan = new Plan();
 
-        $env = $PluginMain->env['env'];
+        $plans = $Plan->get_plans();
 
-        return isset($PluginMain->ppsfwoo_plans[$env]) ? wp_json_encode($PluginMain->ppsfwoo_plans[$env]) : false;
+        return $plans ? wp_json_encode($plans) : false;
     }
 
     protected function list_webhooks()
@@ -57,53 +40,12 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 
     public static function refresh_plans()
     {
-        $PluginMain = PluginMain::get_instance();
+        $Plan = new Plan();
 
-        $env = $PluginMain->env['env'];
-        
-        $success = "false";
-
-        $plans = [];
-        
-        if($plan_data = PayPal::request("/v1/billing/plans")) {
-
-            if(isset($plan_data['response']['plans'])) {
-
-                $products = [];
-
-                foreach($plan_data['response']['plans'] as $plan)
-                {
-                    $plan_freq = PayPal::request("/v1/billing/plans/{$plan['id']}");
-
-                    if(!in_array($plan['product_id'], array_keys($products))) {
-                    
-                        $product_data = PayPal::request("/v1/catalogs/products/{$plan['product_id']}");
-
-                        $product_name = $product_data['response']['name'];
-
-                        $products[$plan['product_id']] = $product_name;
-
-                    } else {
-
-                        $product_name = $products[$plan['product_id']];
-                    }
-
-                    $plans[$plan['id']] = [
-                        'plan_name'     => $plan['name'],
-                        'product_name'  => $product_name,
-                        'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit'],
-                        'status'        => $plan['status']
-                    ];
-                }
-            
-                update_option('ppsfwoo_plans', [$env => $plans]);
-
-                $success = "true";
-            }
-        }
+        $plans = $Plan->get_plans($update = true);
 
         return wp_json_encode([
-            "success" => $success,
+            "success" => sizeof($plans) ? "true": "false",
             "plans"   => $plans
         ]);
     }

@@ -5,6 +5,7 @@ namespace PPSFWOO;
 use PPSFWOO\PluginMain;
 use PPSFWOO\DatabaseQuery;
 use PPSFWOO\PayPal;
+use PPSFWOO\Plan;
 
 class Product
 {
@@ -94,9 +95,9 @@ class Product
 
             <div class='options_group'><?php
 
-                $plans = isset($this->PluginMain->ppsfwoo_plans[$this->env]) ? $this->PluginMain->ppsfwoo_plans[$this->env]: false;
+                $Plan = new Plan();
 
-                if($plans) {
+                if($plans = $Plan->get_plans()) {
 
                     foreach($plans as $plan_id => $plan_data)
                     {
@@ -106,7 +107,7 @@ class Product
 
                         } else {
 
-                            $plans[$plan_id] = "{$plan_data['product_name']} [{$plan_data['plan_name']}] [{$plan_data['frequency']}]";
+                            $plans[$plan_id] = "{$plan_data['plan_name']} [{$plan_data['product_name']}] [{$plan_data['frequency']}]";
 
                         }
 
@@ -167,19 +168,16 @@ class Product
         update_post_meta($post_id, "{$this->env}_ppsfwoo_plan_id", $plan_id);
     }
 
-    public function get_plan_id_by_product_id($product_id)
-    {
-        return $product_id ? get_post_meta($product_id, "{$this->env}_ppsfwoo_plan_id", true): "";
-    }
-
     public static function get_product_id_by_plan_id($plan_id)
     {
+        $env = PayPal::env()['env'];
+
         $query = new \WP_Query ([
             'post_type'      => 'product',
             'posts_per_page' => 1, 
             'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
                 [
-                    'key'     => PayPal::env()['env'] . '_ppsfwoo_plan_id',
+                    'key'     => "{$env}_ppsfwoo_plan_id",
                     'value'   => $plan_id,
                     'compare' => '='
                 ],
@@ -189,13 +187,6 @@ class Product
         $products = $query->get_posts();
 
         return $products ? $products[0]->ID: 0;
-    }
-
-    public function get_plan_frequency_by_product_id($product_id)
-    {
-        $plan_id = get_post_meta($product_id, "{$this->env}_ppsfwoo_plan_id", true);
-
-        return $product_id && isset($this->PluginMain->ppsfwoo_plans[$this->env][$plan_id]['frequency']) ? $this->PluginMain->ppsfwoo_plans[$this->env][$plan_id]['frequency']: "";
     }
 
     public function add_custom_paypal_button()
@@ -208,17 +199,19 @@ class Product
 
         }
 
-        if($plan_id = $this->get_plan_id_by_product_id(get_the_ID())) {
+        $Plan = new Plan(get_the_ID());
+
+        if($Plan->id) {
 
             $this->PluginMain::display_template("paypal-button", [
-                'plan_id' => $plan_id
+                'plan_id' => $Plan->id
             ]);
 
             wp_enqueue_script('paypal-sdk', $this->PluginMain->plugin_dir_url . "js/paypal-button.min.js", [], $this->PluginMain::plugin_data('Version'), true);
 
             wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
                 'client_id' => $this->PluginMain->client_id,
-                'plan_id'   => $plan_id,
+                'plan_id'   => $Plan->id,
                 'redirect'  => get_permalink($this->PluginMain->ppsfwoo_thank_you_page_id)
             ]);
         }
@@ -236,7 +229,9 @@ class Product
 
         }
 
-        if ($frequency = $this->get_plan_frequency_by_product_id($product_id)) {
+        $Plan = new Plan($product_id);
+
+        if ($Plan->frequency) {
 
             $dom = new \DOMDocument();
 
@@ -248,7 +243,7 @@ class Product
             {
                 $current = $tag->nodeValue;
 
-                $new = $current . "/" . ucfirst(strtolower($frequency));
+                $new = $current . "/" . ucfirst(strtolower($Plan->frequency));
 
                 $tag->nodeValue = $new;
             }
@@ -329,57 +324,5 @@ class Product
                 } 
             }
         }
-    }
-
-    public static function create_test_plan()
-    {
-        $product = PayPal::request("/v1/catalogs/products", [
-            "name"        => "Video Streaming Service",
-            "type"        => "SERVICE",
-            "description" => "Video streaming service",
-            "category"    => "SOFTWARE",
-            "image_url"   => "https://example.com/streaming.jpg",
-            "home_url"    => "https://example.com/home"
-        ], "POST");
-
-        if(isset($product['response']['id'])) {
-
-            $plan = PayPal::request("/v1/billing/plans",
-            [
-                "product_id"      => $product['response']['id'],
-                "name"            => "Video Streaming Service Plan",
-                "billing_cycles"  => [
-                    [
-                        "frequency" => [
-                            "interval_unit"  => "YEAR",
-                            "interval_count" => "1"
-                        ],
-                        "tenure_type"       => "REGULAR",
-                        "sequence"          => "1",
-                        "total_cycles"      => "1",
-                        "pricing_scheme"    => [
-                            "fixed_price" => [
-                                "value"         => "149",
-                                "currency_code" => "USD"
-                            ]
-                        ]
-                    ]
-                ],
-                "payment_preferences" => [
-                    "auto_bill_outstanding" => "true",
-                        "setup_fee"             => [
-                            "value"         => "0",
-                            "currency_code" => "USD"
-                        ],
-                    "setup_fee_failure_action"  => "CANCEL",
-                    "payment_failure_threshold" => "0"
-                ],
-                "description" => "Video Streaming Service basic plan",
-                "status"      => "ACTIVE"
-            ], "POST");
-
-            return $plan;
-        }
-        
     }
 }
