@@ -71,7 +71,7 @@ class Plan extends \PPSFWOO\PluginMain
 	{
 		if(false === $update) {
 
-			return $this->ppsfwoo_plans[$this->env['env']];
+			return $this->ppsfwoo_plans[$this->env['env']] ?? [];
 
 		}
 

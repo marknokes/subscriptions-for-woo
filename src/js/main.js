@@ -123,22 +123,14 @@ jQuery(document).ready(function($) {
 	function ppsfwooOptionsPageInit() {
 		ppsfwooDoAjax('list_plans', function(r) {
 			var obj = r ? JSON.parse(r) : false,
+				keys = false !== obj ? Object.keys(obj): [],
 				$table = $('#plans'),
 				table_data = "",
 				have_plans = false;
-			if(!obj) {
-				$("#refresh, #create")
-					.unbind()
-					.click(function(e) {
-						e.preventDefault();
-						var choice = confirm("Click 'OK' to configure your WooCommerce PayPal Payments settings.\nClick 'Cancel' to stay on this page.");
-						if (choice) {
-						    window.location.assign(ppsfwoo_ajax_var.settings_url);
-						}
-					});
+			if(keys.length === 0 || keys[0] === "000") {
 				return;
 			}
-			Object.keys(obj).forEach(plan_id => {
+			keys.forEach(plan_id => {
 				var vals = Object.values(obj[plan_id]),
 					plan_active = "ACTIVE" === vals[3],
 					paypal_action = "",

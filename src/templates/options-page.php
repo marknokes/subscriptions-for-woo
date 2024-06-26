@@ -71,6 +71,8 @@ if (!defined('ABSPATH')) exit;
 
 		<h2>General Settings</h2>
 
+		<a class="button" href="<?php echo esc_url(admin_url(self::$ppcp_settings_url)); ?>">Manage PayPal Connection</a>
+
 		<?php
 		
 		$settings_class = "";
