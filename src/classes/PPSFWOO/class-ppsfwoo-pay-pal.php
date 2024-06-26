@@ -77,7 +77,7 @@ class PayPal
 
 	public static function request($api, $payload = [], $method = "GET")
     {
-        if(!$token = self::access_token()) {
+        if(empty(self::env()['client_id']) || !$token = self::access_token()) {
 
             return false;
             

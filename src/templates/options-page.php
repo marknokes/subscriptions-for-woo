@@ -1,7 +1,6 @@
 <?php
 
 use PPSFWOO\Webhook;
-use PPSFWOO\PayPal;
 
 if (!defined('ABSPATH')) exit;
 
