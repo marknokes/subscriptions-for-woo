@@ -42,6 +42,11 @@ class PluginMain
             'type'    => 'checkbox',
             'default' => 0
         ],
+        'ppsfwoo_hide_inactive_plans' => [
+            'name'    => 'Hide inactive plans',
+            'type'    => 'checkbox',
+            'default' => 0
+        ],
         'ppsfwoo_subscribed_webhooks' => [
             'type'    => 'skip_settings_field',
             'default' => ''
@@ -75,6 +80,7 @@ class PluginMain
            $paypal_url,
            $ppsfwoo_webhook_id,
            $ppsfwoo_subscribed_webhooks,
+           $ppsfwoo_hide_inactive_plans,
            $ppsfwoo_plans,
            $ppsfwoo_thank_you_page_id,
            $ppsfwoo_rows_per_page,
@@ -156,6 +162,12 @@ class PluginMain
         add_action('update_option_woocommerce-ppcp-settings', function($old, $new, $opt) {
 
             set_transient('ppsfwoo_ppcp_updated', true);
+
+        }, 10, 3);
+
+        add_action('update_option_ppsfwoo_hide_inactive_plans', function($old, $new, $opt) {
+
+            AjaxActionsPriv::refresh_plans();
 
         }, 10, 3);
     }

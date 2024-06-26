@@ -85,6 +85,12 @@ class Plan extends \PPSFWOO\PluginMain
 
                 foreach($plan_data['response']['plans'] as $plan)
                 {
+                    if($this->ppsfwoo_hide_inactive_plans && "ACTIVE" !== $plan['status']) {
+
+                        continue;
+
+                    }
+
                     $plan_freq = PayPal::request("/v1/billing/plans/{$plan['id']}");
 
                     if(!in_array($plan['product_id'], array_keys($products))) {
