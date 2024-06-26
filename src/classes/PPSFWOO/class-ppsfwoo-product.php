@@ -97,7 +97,9 @@ class Product
 
                 $Plan = new Plan();
 
-                if($plans = $Plan->get_plans()) {
+                $plans = $Plan->get_plans();
+
+                if($plans && !isset($plans['000'])) {
 
                     foreach($plans as $plan_id => $plan_data)
                     {
