@@ -38,21 +38,22 @@ jQuery(document).ready(function($) {
 		});
 	});
 
-	$('.nav-tab-wrapper a').click(function(event) {
-        event.preventDefault();
+	var selected_tab;
+
+	$('.nav-tab-wrapper a').click(function(e) {
+        e.preventDefault();
         $('.nav-tab').removeClass('nav-tab-active');
         $(this).addClass('nav-tab-active');
         $('.tab-content').hide();
-        var selected_tab = $(this).attr('href');
+        selected_tab = $(this).attr('href');
         $("#" + selected_tab).fadeIn();
     });
 
-    if(tab_subs_active) {
-    	$('.tab-content').hide();
-		$('.nav-tab-wrapper a.subs-list').click();
-	} else {
-		$('.nav-tab-wrapper a.nav-tab-active').click();
-	}
+    if(!$('.nav-tab-wrapper a').hasClass('nav-tab-active')) {
+    	$('.nav-tab-wrapper a:first-child').click();
+    } else {
+    	$('.nav-tab-wrapper a.nav-tab-active').click();
+    }
 
 	/*
 	*	Show a Wordpress UI admin notice
@@ -175,10 +176,10 @@ jQuery(document).ready(function($) {
 	*	When saving options, reset the query string variables so the subscriber table
 	*	loads the new ppsfwoo_rows_per_page
 	*/
-	$('#ppsfwoo_options').submit(function(event) {
+	$('#ppsfwoo_options').submit(function(e) {
         $element = $(this).find('input[name=_wp_http_referer]');
         var newValue = ppsfwooRemoveQueryStringParams($element.attr('value'));
-        $element.attr('value', newValue);
+        $element.attr('value', newValue + '&tab=' + selected_tab);
     });
 
     function ppsfwooRemoveQueryStringParams(url) {

@@ -10,16 +10,12 @@ if (!defined('ABSPATH')) exit;
 	
 <div class="wrap <?php echo PPSFWOO_PLUGIN_EXTRAS ? 'full-width': 'partial-width'; ?>">
 
-	<script type="text/javascript">
-    	var tab_subs_active = <?php echo isset($_GET['subs_page_num']) ? "true": "false"; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-    </script>
-
     <h1><?php echo esc_html(self::plugin_data("Name")); ?></h1>
 
 	<h2 class="nav-tab-wrapper">
-	    <a href="tab-subscribers" class="nav-tab subs-list nav-tab-active">Subscribers</a>
-	    <a href="tab-general" class="nav-tab">General Settings</a>
-	    <a href="tab-advanced" class="nav-tab">Advanced</a>
+	    <a href="tab-subscribers" class="nav-tab subs-list <?php echo isset($_GET['tab']) && "tab-subscribers" === $_GET['tab'] ? "nav-tab-active": ""; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">Subscribers</a>
+	    <a href="tab-general" class="nav-tab <?php echo isset($_GET['tab']) && "tab-general" === $_GET['tab'] ? "nav-tab-active": ""; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">General Settings</a>
+	    <a href="tab-advanced" class="nav-tab <?php echo isset($_GET['tab']) && "tab-advanced" === $_GET['tab'] ? "nav-tab-active": ""; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">Advanced</a>
 	</h2>
 	
 	<div id="tab-subscribers" class="tab-content">

@@ -324,7 +324,7 @@ class PluginMain
 
             $row_query = new DatabaseQuery("SELECT COUNT(*) AS `count` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
 
-            $total_rows = $result->result[0]->count ?? 0;
+            $total_rows = $row_query->result[0]->count ?? 0;
 
             $total_pages = ceil($total_rows / $per_page);
 
@@ -339,14 +339,14 @@ class PluginMain
 
                 for ($i = 1; $i <= $total_pages; $i++)
                 {
-                    $href = esc_url(add_query_arg([
-                        'page'          => 'subscriptions_for_woo',
+                    $query_string = http_build_query([
+                        'tab'           => 'tab-subscribers',
                         'subs_page_num' => $i
-                    ]));
+                    ]);
 
                     $class = $i === $page ? " current": "";
 
-                    echo "<a href='" . esc_attr($href) . "' class='pagination-link" . esc_attr($class) . "'>" . esc_attr($i) . "</a>";
+                    echo "<a href='" . esc_url(admin_url('admin.php?page=subscriptions_for_woo&') . $query_string) . "' class='pagination-link" . esc_attr($class) . "'>" . esc_attr($i) . "</a>";
                 }
 
                 echo "</div>";
