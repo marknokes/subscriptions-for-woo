@@ -3,7 +3,7 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.1.9
+Stable tag: 2.2
 WC requires at least: 8.6.0
 WC tested up to: 8.9.2
 Requires at least: 6.4.3
@@ -93,5 +93,5 @@ If you encounter issues with the PayPal buttons not appearing after an update, p
 
 == Changelog ==
 
-= 2.1.9 =
+= 2.2 =
 * Initial release.
