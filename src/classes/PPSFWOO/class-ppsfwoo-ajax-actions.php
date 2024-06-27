@@ -24,7 +24,7 @@ class AjaxActions
             
             echo ""; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
-            error_log(__CLASS__ . "->$method does not exist.");
+            Exception::log(__CLASS__ . "->$method does not exist.");
 
         }
 
@@ -55,46 +55,11 @@ class AjaxActions
 
     protected function get_sub()
     {
-        if(!session_id()) session_start();
-        
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $subs_id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): NULL;
 
-        $redirect = false;
+        return Subscriber::get($subs_id);
 
-        if(!isset($subs_id)) {
-
-            return "";
-
-        }
-
-        $results = new DatabaseQuery("SELECT `wp_customer_id`, `order_id` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber WHERE `id` = %s", [$subs_id]);
-
-        $order_id = $results->result[0]->order_id ?? NULL;
-
-        if ($order_id && $order = wc_get_order($order_id)) {
-
-            $redirect = $order->get_checkout_order_received_url();
-
-            if ($user = get_user_by('id', $results->result[0]->wp_customer_id)) {
-
-                wp_set_auth_cookie($user->ID);
-
-            }
-
-        } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")) {
-
-            if(Subscriber::is_active($response)) {
-
-                unset($_SESSION['ppsfwoo_customer_nonce']);
-
-                $Subscriber = new Subscriber($response, Webhook::ACTIVATED);
-
-                $Subscriber->subscribe();
-            }
-        }
-
-        return $redirect ? esc_url($redirect): esc_attr("false");
     }
 
     protected function log_paypal_buttons_error()

@@ -14,7 +14,7 @@ class PayPal
     {
         $env = [
             'paypal_api_url' => 'https://api-m.sandbox.paypal.com',
-            'paypal_url'     => 'https://www.sandbox.paypal.com',
+            'paypal_url'     => 'https://sandbox.paypal.com',
             'client_id'      => '',
             'env'            => 'sandbox'
         ];

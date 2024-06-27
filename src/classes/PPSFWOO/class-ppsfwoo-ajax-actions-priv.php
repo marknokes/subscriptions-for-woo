@@ -17,7 +17,7 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
 
         if(isset($response['success']) && true === $response['success']) {
 
-            self::refresh_plans();
+            $Plan->refresh_plans();
 
         }
 
@@ -42,10 +42,10 @@ class AjaxActionsPriv extends \PPSFWOO\AjaxActions
     {
         $Plan = new Plan();
 
-        $plans = $Plan->get_plans($update = true);
+        $plans = $Plan->refresh_plans();
 
         return wp_json_encode([
-            "success" => sizeof($plans) ? "true": "false",
+            "success" => !empty($plans),
             "plans"   => $plans
         ]);
     }

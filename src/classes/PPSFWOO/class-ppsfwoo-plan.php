@@ -67,17 +67,11 @@ class Plan extends \PPSFWOO\PluginMain
         return $response;
 	}
 
-	public function get_plans($update = false)
-	{
-		if(false === $update) {
+    public function refresh_plans()
+    {
+        $plans = [];
 
-			return $this->ppsfwoo_plans[$this->env['env']] ?? [];
-
-		}
-
-		$plans = [];
-
-		if($plan_data = PayPal::request("/v1/billing/plans")) {
+        if($plan_data = PayPal::request("/v1/billing/plans")) {
 
             if(isset($plan_data['response']['plans'])) {
 
@@ -113,6 +107,10 @@ class Plan extends \PPSFWOO\PluginMain
                         'status'        => $plan['status']
                     ];
                 }
+
+                uasort($plans, function ($a, $b) {
+                    return strcmp($a['status'], $b['status']);
+                });
             
                 update_option('ppsfwoo_plans', [$this->env['env'] => $plans]);
 
@@ -121,5 +119,10 @@ class Plan extends \PPSFWOO\PluginMain
         }
 
         return $plans;
+    }
+
+	public function get_plans($update = false)
+	{
+		return $this->ppsfwoo_plans[$this->env['env']] ?? [];
 	}
 }
