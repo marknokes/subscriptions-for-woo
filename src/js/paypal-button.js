@@ -83,7 +83,8 @@ function ppsfwooRender(nonce) {
 function ppsfwooInitializePayPalSubscription() {
     ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
         'action': 'ppsfwoo_admin_ajax_callback',
-        'method': 'subs_id_redirect_nonce'
+        'method': 'subs_id_redirect_nonce',
+        'nonce' : ppsfwoo_paypal_ajax_var.nonce
     })
     .then(response => {
         ppsfwooRender(response.nonce);

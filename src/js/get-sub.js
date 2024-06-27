@@ -7,7 +7,8 @@ function ppsfwooSendAjaxRequest() {
             data: {
                 'action': 'ppsfwoo_admin_ajax_callback',
                 'method': 'get_sub',
-                'id'    : ppsfwoo_ajax_var.subs_id
+                'id'    : ppsfwoo_ajax_var.subs_id,
+                'nonce' : ppsfwoo_ajax_var.nonce
             },
             success: function(response) {
                 if("false" !== response) {

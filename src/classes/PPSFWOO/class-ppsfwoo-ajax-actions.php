@@ -31,10 +31,16 @@ class AjaxActions
         wp_die();
     }
 
-    public static function subs_id_redirect_nonce()
+    public static function subs_id_redirect_nonce($is_ajax = true)
     {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing 
-        $is_ajax = isset($_POST['action'], $_POST['method']) && $_POST['method'] === __FUNCTION__;
+        if(
+            $is_ajax &&
+            (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'ajax_subs_id_redirect_nonce'))
+        ) {
+
+            wp_die('Security check failed.');
+
+        }
 
         $nonce_name = "";
 
@@ -55,10 +61,13 @@ class AjaxActions
 
     protected function get_sub()
     {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $subs_id = isset($_POST['id']) ? sanitize_text_field(wp_unslash($_POST['id'])): NULL;
+        if(!isset($_POST['nonce'], $_POST['id']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'ajax_get_sub')) {
 
-        return Subscriber::get($subs_id);
+            wp_die('Security check failed.');
+
+        }
+
+        return Subscriber::get(sanitize_text_field(wp_unslash($_POST['id'])));
 
     }
 

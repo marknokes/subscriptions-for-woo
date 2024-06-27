@@ -233,7 +233,7 @@ class PluginMain
 
         }
 
-        if (!isset($_GET['_wpnonce'] ) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
 
             wp_die('Security check failed.');
 
@@ -261,7 +261,7 @@ class PluginMain
 
         if (
             !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
-            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), AjaxActions::subs_id_redirect_nonce())
+            !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['subs_id_redirect_nonce'])), AjaxActions::subs_id_redirect_nonce(false))
         ) {
 
             return;
@@ -271,7 +271,8 @@ class PluginMain
         wp_enqueue_script('ppsfwoo-scripts', $this->plugin_dir_url . "js/get-sub.min.js", ['jquery'], self::plugin_data('Version'), true);
 
         wp_localize_script('ppsfwoo-scripts', 'ppsfwoo_ajax_var', [
-            'subs_id' => $subs_id
+            'subs_id' => $subs_id,
+            'nonce'   => wp_create_nonce('ajax_get_sub')
         ]);
     }
 
