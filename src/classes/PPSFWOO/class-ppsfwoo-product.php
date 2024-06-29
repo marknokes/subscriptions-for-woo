@@ -214,8 +214,7 @@ class Product
             wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
                 'client_id' => $this->PluginMain->client_id,
                 'plan_id'   => $Plan->id,
-                'redirect'  => get_permalink($this->PluginMain->ppsfwoo_thank_you_page_id),
-                'nonce'     => wp_create_nonce('ajax_subs_id_redirect_nonce')
+                'redirect'  => get_permalink($this->PluginMain->ppsfwoo_thank_you_page_id)
             ]);
         }
     }

@@ -18,11 +18,13 @@ class AjaxActions
 
         if(method_exists($this, $method)) {
             
-            echo call_user_func([$this, $method]); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            echo call_user_func([$this, $method]);
 
         } else {
             
-            echo ""; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            echo "";
 
             Exception::log(__CLASS__ . "->$method does not exist.");
 
@@ -33,15 +35,6 @@ class AjaxActions
 
     public static function subs_id_redirect_nonce($is_ajax = true)
     {
-        if(
-            $is_ajax &&
-            (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'ajax_subs_id_redirect_nonce'))
-        ) {
-
-            wp_die('Security check failed.');
-
-        }
-
         $nonce_name = "";
 
         if(!session_id()) session_start();
