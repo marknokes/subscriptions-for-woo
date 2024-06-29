@@ -4,6 +4,7 @@ namespace PPSFWOO;
 
 use PPSFWOO\PayPal;
 use PPSFWOO\Subscriber;
+use PPSFWOO\PluginMain;
 
 class Webhook
 {
@@ -36,9 +37,9 @@ class Webhook
 
     	$this->listen_address = $this->site_url . "/wp-json/" . self::$api_namespace . self::$endpoint;
 
-    	$this->webhook_id = get_option('ppsfwoo_webhook_id');
+    	$this->webhook_id = PluginMain::get_option('ppsfwoo_webhook_id');
 
-    	$this->subscribed_webhooks = get_option('ppsfwoo_subscribed_webhooks');
+    	$this->subscribed_webhooks = PluginMain::get_option('ppsfwoo_subscribed_webhooks');
     }
 
     public static function get_instance()

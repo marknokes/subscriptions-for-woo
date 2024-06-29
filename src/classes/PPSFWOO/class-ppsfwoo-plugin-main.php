@@ -101,9 +101,11 @@ class PluginMain
 
         $this->paypal_url = $this->env['paypal_url'];
 
-        foreach (self::$options as $option => $option_value)
+        foreach (self::$options as $option_name => $option_value)
         {
-            $this->$option = get_option($option);
+            add_action("update_option_$option_name", [$this, 'clear_option_cache'], 10, 3);
+
+            $this->$option_name = self::get_option($option_name);
         }
 
         if($do_wp) {
@@ -115,6 +117,38 @@ class PluginMain
             $this->add_actions();
 
             $this->add_filters();
+        }
+    }
+
+    public static function get_option($option_name)
+    {
+        $cached_value = wp_cache_get($option_name, self::$options_group);
+        
+        if ($cached_value === false) {
+
+            $option_value = get_option($option_name);
+
+            if ($option_value !== false) {
+
+                wp_cache_set($option_name, $option_value, self::$options_group);
+
+            }
+
+            return $option_value;
+
+        } else {
+
+            return $cached_value;
+
+        }
+    }
+
+    public function clear_option_cache($old_value, $new_value, $option_name)
+    {
+        if (array_key_exists($option_name, self::$options)) {
+            
+            wp_cache_delete($option_name, self::$options_group);
+
         }
     }
 
@@ -468,9 +502,9 @@ class PluginMain
 
     public function plugin_activation()
     {
-        foreach (self::$options as $option => $option_value)
+        foreach (self::$options as $option_name => $option_value)
         {
-            add_option($option, $option_value['default']);
+            add_option($option_name, $option_value['default']);
         }
 
         $this->db_install();
@@ -496,9 +530,11 @@ class PluginMain
             
             wp_delete_post($this->ppsfwoo_thank_you_page_id, true);
             
-            foreach(self::$options as $option => $option_value) {
+            foreach(self::$options as $option_name => $option_value) {
 
-                delete_option($option);
+                delete_option($option_name);
+
+                wp_cache_delete($option_name, self::$options_group);
 
             }
         }
@@ -582,11 +618,11 @@ class PluginMain
 
     public function register_settings()
     {
-        foreach (self::$options as $option => $option_value)
+        foreach (self::$options as $option_name => $option_value)
         {
             if('skip_settings_field' === $option_value['type']) continue;
             
-            register_setting(self::$options_group, $option);
+            register_setting(self::$options_group, $option_name);
         }
 
         if(isset($this->ppsfwoo_plans[$this->env['env']]['000']) && PayPal::access_token($log_error = false)) {
