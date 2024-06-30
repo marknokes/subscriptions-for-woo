@@ -52,7 +52,9 @@ class PayPal
 
         $results = new DatabaseQuery("SELECT `option_value` FROM {$GLOBALS['wpdb']->base_prefix}options WHERE `option_name` = 'woocommerce-ppcp-settings'");
 
-        $settings = isset($results->result[0]->option_value) ? unserialize($results->result[0]->option_value): false;
+        $settings = isset($results->result[0]->option_value)
+            ? unserialize($results->result[0]->option_value)
+            : false;
 
         if($settings) {
 
