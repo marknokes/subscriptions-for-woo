@@ -7,7 +7,7 @@
  * Author URI: https://wp-subscriptions.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Version: 2.2.1
+ * Version: 2.2.2
  * WC requires at least: 8.6.0
  * WC tested up to: 8.9.2
  * Requires at least: 6.4.3
@@ -17,6 +17,10 @@
 
 if (!defined('ABSPATH')) exit;
 
+use PPSFWOO\PluginMain;
+use PPSFWOO\Product;
+use PPSFWOO\PluginExtras;
+
 require_once 'classes/class-ppsfwoo-custom-product.php';
 
 require_once 'autoload.php';
@@ -25,10 +29,10 @@ spl_autoload_register('ppsfwoo_autoload');
 
 define('PPSFWOO_PLUGIN_PATH', __FILE__);
 
-define('PPSFWOO_PLUGIN_EXTRAS', class_exists(\PPSFWOO\PluginExtras::class));
+define('PPSFWOO_PLUGIN_EXTRAS', class_exists(PluginExtras::class));
 
-\PPSFWOO\PluginMain::get_instance(true);
+PluginMain::get_instance(true);
 
-\PPSFWOO\Product::get_instance();
+new Product();
 
-if(PPSFWOO_PLUGIN_EXTRAS) { new \PPSFWOO\PluginExtras(); };
+if(PPSFWOO_PLUGIN_EXTRAS) { new PluginExtras(); };

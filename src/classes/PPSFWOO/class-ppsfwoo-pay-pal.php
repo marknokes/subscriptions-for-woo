@@ -3,6 +3,7 @@
 namespace PPSFWOO;
 
 use PPSFWOO\PluginMain;
+use PPSFWOO\Plan;
 use PPSFWOO\Exception;
 use WooCommerce\PayPalCommerce\PPCP;
 use WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer;
@@ -10,6 +11,36 @@ use WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
 
 class PayPal
 {
+    public static function button()
+    {
+        global $product;
+
+        if(!$product->is_type('ppsfwoo')) {
+
+            return;
+
+        }
+
+        $Plan = new Plan(get_the_ID());
+
+        if($Plan->id) {
+
+            $PluginMain = PluginMain::get_instance();
+
+            $PluginMain::display_template("paypal-button", [
+                'plan_id' => $Plan->id
+            ]);
+
+            wp_enqueue_script('paypal-sdk', $PluginMain->plugin_dir_url . "js/paypal-button.min.js", [], $PluginMain::plugin_data('Version'), true);
+
+            wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
+                'client_id' => $PluginMain->client_id,
+                'plan_id'   => $Plan->id,
+                'redirect'  => get_permalink($PluginMain->ppsfwoo_thank_you_page_id)
+            ]);
+        }
+    }
+
 	public static function env()
     {
         $env = [
@@ -19,9 +50,11 @@ class PayPal
             'env'            => 'sandbox'
         ];
 
-        wp_cache_delete('woocommerce-ppcp-settings');
+        $results = new DatabaseQuery("SELECT `option_value` FROM {$GLOBALS['wpdb']->base_prefix}options WHERE `option_name` = 'woocommerce-ppcp-settings'");
 
-        if($settings = get_option('woocommerce-ppcp-settings')) {
+        $settings = isset($results->result[0]->option_value) ? unserialize($results->result[0]->option_value): false;
+
+        if($settings) {
 
             if(isset($settings['sandbox_on'], $settings['client_id_sandbox']) && $settings['sandbox_on']) {
 

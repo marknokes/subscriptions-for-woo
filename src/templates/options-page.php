@@ -1,6 +1,7 @@
 <?php
 
 use PPSFWOO\Webhook;
+use PPSFWOO\PluginExtras;
 
 if (!defined('ABSPATH')) exit;
 
@@ -272,7 +273,7 @@ if (!defined('ABSPATH')) exit;
 		<?php
 		if(PPSFWOO_PLUGIN_EXTRAS) {
 
-			\PPSFWOO\PluginExtras::get_users_by_capabilities(true);
+			PluginExtras::get_users_by_capabilities(true);
 
 		} else {
 

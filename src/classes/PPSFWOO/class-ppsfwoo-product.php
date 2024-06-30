@@ -9,8 +9,6 @@ use PPSFWOO\Plan;
 
 class Product
 {
-	private static $instance = NULL;
-
     private $PluginMain,
             $env;
 
@@ -27,9 +25,11 @@ class Product
 
     private function add_actions()
     {
-		add_action('admin_head', [$this, 'edit_product_css']);
+        add_action('plugins_loaded', 'ppsfwoo_register_product_type');
 
-    	add_action('woocommerce_product_meta_start', [$this, 'add_custom_paypal_button']);
+        add_action('woocommerce_product_meta_start', ['PPSFWOO\PayPal', 'button']);
+
+		add_action('admin_head', [$this, 'edit_product_css']);
         
         add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
         
@@ -43,17 +43,6 @@ class Product
         add_filter('product_type_selector', [$this, 'add_product']);
 
         add_filter('woocommerce_product_data_tabs', [$this, 'custom_product_tabs']);
-    }
-
-	public static function get_instance()
-    {
-        if (self::$instance === null) {
-
-            self::$instance = new self();
-
-        }
-
-        return self::$instance;
     }
 
 	public static function add_product($types)
@@ -189,34 +178,6 @@ class Product
         $products = $query->get_posts();
 
         return $products ? $products[0]->ID: 0;
-    }
-
-    public function add_custom_paypal_button()
-    {
-        global $product;
-
-        if(!$product->is_type('ppsfwoo')) {
-
-            return;
-
-        }
-
-        $Plan = new Plan(get_the_ID());
-
-        if($Plan->id) {
-
-            $this->PluginMain::display_template("paypal-button", [
-                'plan_id' => $Plan->id
-            ]);
-
-            wp_enqueue_script('paypal-sdk', $this->PluginMain->plugin_dir_url . "js/paypal-button.min.js", [], $this->PluginMain::plugin_data('Version'), true);
-
-            wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
-                'client_id' => $this->PluginMain->client_id,
-                'plan_id'   => $Plan->id,
-                'redirect'  => get_permalink($this->PluginMain->ppsfwoo_thank_you_page_id)
-            ]);
-        }
     }
 
 	public function change_product_price_display($price)

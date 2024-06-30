@@ -6,8 +6,9 @@ use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
 use PPSFWOO\PluginMain;
 use PPSFWOO\Plan;
+use PPSFWOO\AjaxActions;
 
-class AjaxActionsPriv extends \PPSFWOO\AjaxActions
+class AjaxActionsPriv extends AjaxActions
 {
     protected function modify_plan()
     {

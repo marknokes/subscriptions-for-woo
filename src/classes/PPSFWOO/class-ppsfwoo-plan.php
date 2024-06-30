@@ -3,8 +3,9 @@
 namespace PPSFWOO;
 
 use PPSFWOO\PayPal;
+use PPSFWOO\PluginMain;
 
-class Plan extends \PPSFWOO\PluginMain
+class Plan extends PluginMain
 {
 	public $id,
 		   $frequency;

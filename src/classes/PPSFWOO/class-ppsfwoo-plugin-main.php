@@ -187,8 +187,6 @@ class PluginMain
         
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
 
-        add_action('plugins_loaded', 'ppsfwoo_register_product_type');
-
         add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'refresh']);
 
         add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'refresh']);
