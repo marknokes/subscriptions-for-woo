@@ -15,13 +15,13 @@
  * Requires PHP: 7.4
  */
 
-if (!defined('ABSPATH')) exit;
-
 use PPSFWOO\PluginMain;
 use PPSFWOO\Product;
 use PPSFWOO\PluginExtras;
 
-require_once 'classes/class-ppsfwoo-custom-product.php';
+if (!defined('ABSPATH')) exit;
+
+add_action('plugins_loaded', 'ppsfwoo_init', 11);
 
 require_once 'autoload.php';
 
@@ -31,8 +31,29 @@ define('PPSFWOO_PLUGIN_PATH', __FILE__);
 
 define('PPSFWOO_PLUGIN_EXTRAS', class_exists(PluginExtras::class));
 
-PluginMain::get_instance(true);
+function ppsfwoo_init()
+{
+	if(!class_exists('WC_Product') || !class_exists('WooCommerce\PayPalCommerce\PPCP')) {
 
-new Product();
+		return;
 
-if(PPSFWOO_PLUGIN_EXTRAS) { new PluginExtras(); };
+	}
+
+	class WC_Product_ppsfwoo extends \WC_Product
+    {
+        public $product_type;
+        
+        public function __construct($product)
+        {
+            $this->product_type = 'ppsfwoo';
+
+            parent::__construct($product);
+        }
+    }
+
+	PluginMain::get_instance(true);
+
+	new Product();
+
+	if(PPSFWOO_PLUGIN_EXTRAS) { new PluginExtras(); };
+}

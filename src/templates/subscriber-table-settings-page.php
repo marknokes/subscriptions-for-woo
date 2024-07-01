@@ -31,7 +31,6 @@ if (!defined('ABSPATH')) exit;
 
         $order_link = admin_url("admin.php?page=wc-orders&action=edit&id=$row->order_id");
 
-
         switch ($row->event_type) {
             case Webhook::ACTIVATED:
                 $class = "status green";

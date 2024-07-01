@@ -25,8 +25,6 @@ class Product
 
     private function add_actions()
     {
-        add_action('plugins_loaded', 'ppsfwoo_register_product_type');
-
         add_action('woocommerce_product_meta_start', ['PPSFWOO\PayPal', 'button']);
 
 		add_action('admin_head', [$this, 'edit_product_css']);

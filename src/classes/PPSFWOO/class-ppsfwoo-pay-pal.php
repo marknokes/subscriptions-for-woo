@@ -43,37 +43,20 @@ class PayPal
 
 	public static function env()
     {
+        $ppcp = new PPCP();
+                    
+        $container = $ppcp->container();
+
+        $settings = $container->get('wcgateway.settings');
+
+        $sandbox_on = $settings->has('sandbox_on') && $settings->get('sandbox_on');
+
         $env = [
-            'paypal_api_url' => 'https://api-m.sandbox.paypal.com',
-            'paypal_url'     => 'https://sandbox.paypal.com',
-            'client_id'      => '',
-            'env'            => 'sandbox'
+            'paypal_api_url' => $sandbox_on ? 'https://api-m.sandbox.paypal.com': 'https://api-m.paypal.com',
+            'paypal_url'     => $sandbox_on ? 'https://sandbox.paypal.com': 'https://www.paypal.com',
+            'client_id'      => $settings->has('client_id') && $settings->get('client_id') ? $settings->get('client_id'): '',
+            'env'            => $sandbox_on ? 'sandbox': 'production'
         ];
-
-        $results = new DatabaseQuery("SELECT `option_value` FROM {$GLOBALS['wpdb']->base_prefix}options WHERE `option_name` = 'woocommerce-ppcp-settings'");
-
-        $settings = isset($results->result[0]->option_value)
-            ? unserialize($results->result[0]->option_value)
-            : false;
-
-        if($settings) {
-
-            if(isset($settings['sandbox_on'], $settings['client_id_sandbox']) && $settings['sandbox_on']) {
-
-                $env['client_id'] = $settings['client_id_sandbox'];
-
-            } else if(isset($settings['client_id_production'])) {
-
-                $env['paypal_api_url'] = "https://api-m.paypal.com";
-
-                $env['paypal_url'] = "https://www.paypal.com";
-
-                $env['client_id'] = $settings['client_id_production'];
-
-                $env['env'] = "production";
-
-            }
-        }
 
         return $env;
     }
