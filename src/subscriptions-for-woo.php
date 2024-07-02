@@ -11,7 +11,7 @@
  * WC requires at least: 8.6.0
  * WC tested up to: 8.9.2
  * Requires at least: 6.4.3
- * Tested up to: 6.5.4
+ * Tested up to: 6.5.5
  * Requires PHP: 7.4
  */
 
@@ -22,6 +22,10 @@ use PPSFWOO\PluginExtras;
 if (!defined('ABSPATH')) exit;
 
 add_action('plugins_loaded', 'ppsfwoo_init', 11);
+
+add_action('wc_ajax_ppc-webhooks-resubscribe', function() { set_transient('ppsfwoo_ppcp_updated', true, 60); });
+
+add_action('update_option_woocommerce-ppcp-settings', function() { set_transient('ppsfwoo_ppcp_updated', true, 60); });
 
 require_once 'autoload.php';
 

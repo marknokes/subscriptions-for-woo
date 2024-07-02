@@ -191,16 +191,6 @@ class PluginMain
         
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
 
-        add_action('wc_ajax_ppc-webhooks-resubscribe', [$this, 'refresh']);
-
-        add_action('woocommerce_paypal_payments_gateway_migrate_on_update', [$this, 'refresh']);
-
-        add_action('update_option_woocommerce-ppcp-settings', function($old, $new, $opt) {
-
-            set_transient('ppsfwoo_ppcp_updated', true);
-
-        }, 10, 3);
-
         add_action('update_option_ppsfwoo_hide_inactive_plans', function($old, $new, $opt) {
 
             AjaxActionsPriv::refresh_plans();
@@ -219,7 +209,9 @@ class PluginMain
 
     public function ppsfwoo_ppcp_updated()
     {
-        if(get_transient('ppsfwoo_ppcp_updated')) {
+        if(false === get_transient('ppsfwoo_ppcp_updated_ran') && get_transient('ppsfwoo_ppcp_updated')) {
+
+            set_transient('ppsfwoo_ppcp_updated_ran', true, 60);
 
             Webhook::get_instance()->resubscribe();
 
@@ -233,20 +225,7 @@ class PluginMain
                 <?php
             });
 
-            delete_transient('ppsfwoo_ppcp_updated');
-
         }
-    }
-
-    public function refresh()
-    {
-        add_action('shutdown', function() {
-
-            Webhook::get_instance()->resubscribe();
-
-            AjaxActionsPriv::refresh_plans();
-
-        });
     }
 
     public static function plugin_data($data)
