@@ -39,7 +39,7 @@ function ppsfwoo_init()
 
 	}
 
-	class WC_Product_ppsfwoo extends \WC_Product
+	class WC_Product_ppsfwoo extends WC_Product
     {
         public $product_type;
         
