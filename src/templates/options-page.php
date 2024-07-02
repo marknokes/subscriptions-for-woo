@@ -2,6 +2,7 @@
 
 use PPSFWOO\Webhook;
 use PPSFWOO\PluginExtras;
+use PPSFWOO\Plan;
 
 if (!defined('ABSPATH')) exit;
 
@@ -15,6 +16,7 @@ if (!defined('ABSPATH')) exit;
 
 	<h2 class="nav-tab-wrapper">
 	    <a href="tab-subscribers" class="nav-tab subs-list <?php echo isset($_GET['tab']) && "tab-subscribers" === $_GET['tab'] ? "nav-tab-active": ""; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">Subscribers</a>
+	    <a href="tab-plans" class="nav-tab <?php echo isset($_GET['tab']) && "tab-plans" === $_GET['tab'] ? "nav-tab-active": ""; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">Plans</a>
 	    <a href="tab-general" class="nav-tab <?php echo isset($_GET['tab']) && "tab-general" === $_GET['tab'] ? "nav-tab-active": ""; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">General Settings</a>
 	    <a href="tab-advanced" class="nav-tab <?php echo isset($_GET['tab']) && "tab-advanced" === $_GET['tab'] ? "nav-tab-active": ""; // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>">Advanced</a>
 	</h2>
@@ -61,17 +63,39 @@ if (!defined('ABSPATH')) exit;
 
         ?>
         <a class="button" style="display: none;" id="reset" href="<?php echo esc_url(admin_url('admin.php?page=subscriptions_for_woo')); ?>">Reset</a>
-    </div>	
+    </div>
+
+    <div id="tab-plans" class="tab-content">
+
+		<h2>PayPal Subscription Plans</h2>
+		<?php
+
+		$Plan = new Plan();
+
+		$plans = $Plan->get_plans();
+
+		if(sizeof($plans)) {
+
+			self::display_template("table-plans", [
+                'plans'      => $plans,
+            	'paypal_url' => $this->env['paypal_url']
+            ]);
+
+		}
+
+		?>
+	
+		<a class="button" id="refresh" href="#">Refresh Plans</a>
+
+		<a class="button" id="create" href="<?php echo esc_url($this->env['paypal_url']); ?>/billing/plans" target="_blank">Create Plan</a>
+					
+    </div>
 
 	<div id="tab-general" class="tab-content">
 
 		<h2>General Settings</h2>
 
-		<a class="button" href="<?php echo esc_url(admin_url(self::$ppcp_settings_url)); ?>">Manage PayPal Connection</a>
-
 		<?php
-		
-		$settings_class = "";
 
 		$wp_keses_options = [
 			'option' => [
@@ -84,11 +108,13 @@ if (!defined('ABSPATH')) exit;
 
 			echo "<p>You do not have permission to edit plugin settings.</p>";
 
-			$settings_class = "hide";
-		}
+		} else {
+
 		?>
 
-		<form class="<?php echo esc_attr($settings_class); ?>" id="ppsfwoo_options" method="post" action="options.php">
+		<a class="button" href="<?php echo esc_url(admin_url(self::$ppcp_settings_url)); ?>">Manage PayPal Connection</a>
+
+		<form id="ppsfwoo_options" method="post" action="options.php">
 
 			<?php settings_fields(self::$options_group); ?>
 
@@ -232,41 +258,29 @@ if (!defined('ABSPATH')) exit;
 
 				}
 				?>
-				<tr>
-					<td>
-						<h2>PayPal Subscription Plans</h2>
-						<table id="plans" class="pp-inner-table">
-							<tr>
-								<th>Plan ID</th>
-								<th>Plan Name</th>
-								<th>Product Name</th>
-								<th>Plan Frequency</th>
-								<th>Share Link</th>
-								<th>Status</th>
-								<th>Modify</th>
-							</tr>
-						</table>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<a class="button" id="refresh" href="#">Refresh Plans</a>
-						<a class="button" id="create" href="<?php echo esc_url($this->env['paypal_url']); ?>/billing/plans" target="_blank">Create Plan</a>
-					</td>
-				</tr>
 			</table>
 			<?php submit_button(); ?>
 		</form>
+
+		<?php
+		}
+		?>
 	</div>
 
     <div id="tab-advanced" class="tab-content">
     	<h3>Subscribed Webhooks</h3>
-		<table id="webhooks" class="pp-inner-table">
-			<tr>
-				<th>Subscribed Webhook</th>
-				<th>Description</th>
-			</tr>
-		</table>
+		<?php
+
+		$webhooks = Webhook::get_instance()->list();
+
+		if(is_array($webhooks) && sizeof($webhooks)) {
+
+			self::display_template("table-webhooks", [
+                'webhooks' => $webhooks
+            ]);
+
+		}
+		?>
 		<p>Listen Address: <code><?php echo esc_url(Webhook::get_instance()->listen_address()); ?></code></p>
 		<a class="button" id="resubscribe" href="<?php echo esc_url(admin_url(self::$ppcp_settings_url) . "#field-webhooks_list"); ?>">Resubscribe webhooks</a>
 		<h3>Users and Capabilities</h3>

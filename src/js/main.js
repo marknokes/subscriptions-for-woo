@@ -2,6 +2,11 @@ jQuery(document).ready(function($) {
 
 	var settingsError = "There has been an error. Please try again and check your <a href='" + ppsfwoo_ajax_var.settings_url + "'>WooCommerce PayPal Payments settings</a>.";
 
+	function ppsfwooOptionsPageInit() {
+		ppsfwooBindClickHandlers();
+		ppsfwooHideLoadingMessage();
+	}
+
 	ppsfwooOptionsPageInit();
 
 	$('#subs-search').on('submit', function(e) {
@@ -9,12 +14,13 @@ jQuery(document).ready(function($) {
     	var email = $("#email-input").val();
     	if(!email) return;
         ppsfwooDoAjax('search_subscribers', function(r) {
-			if("false" !== r) {
+        	var response = JSON.parse(r);
+			if(!response.error) {
 				$("#tab-subscribers .pagination, .button.export-table-data").hide();
 				$("#reset").show();
-				$("#subscribers").replaceWith(r);
+				$("#subscribers").replaceWith(response.html);
 			} else {
-				ppsfwooShowMsg("No users found with that email address.", "warning");
+				ppsfwooShowMsg(response.error, "warning");
 			}
 		}, {
 			'email': email
@@ -30,7 +36,7 @@ jQuery(document).ready(function($) {
 				ppsfwooShowMsg("No plans found.", "warning");
 			} else if(response.success) {
 				ppsfwooShowMsg("Successfully refreshed plans.");
-				ppsfwooOptionsPageInit();
+				ppsfwooRefreshPage();
 			} else {
 				ppsfwooShowMsg(settingsError, "error");
 			}
@@ -46,7 +52,7 @@ jQuery(document).ready(function($) {
         $(this).addClass('nav-tab-active');
         $('.tab-content').hide();
         selected_tab = $(this).attr('href');
-        $("#" + selected_tab).fadeIn();
+        $("#" + selected_tab).show();
     });
 
     if(!$('.nav-tab-wrapper a').hasClass('nav-tab-active')) {
@@ -88,6 +94,12 @@ jQuery(document).ready(function($) {
 		});
 	}
 
+	function ppsfwooRefreshPage(tab = "tab-plans") {
+		let currentUrl = ppsfwooRemoveQueryStringParams(window.location.href);
+    	let newUrl = currentUrl + '&tab=' + tab;
+    	window.location.href = newUrl;
+	}
+
     function ppsfwooBindClickHandlers() {
     	$("a.deactivate, a.activate").click(function(e) {
 	    	e.preventDefault();
@@ -100,7 +112,7 @@ jQuery(document).ready(function($) {
 	    			alert(response.error);
 	    			ppsfwooHideLoadingMessage();
 	    		} else {
-	    			ppsfwooOptionsPageInit();
+	    			ppsfwooRefreshPage();
 	    		}
 	    	}, {
 				'plan_id': plan_id,
@@ -121,57 +133,6 @@ jQuery(document).ready(function($) {
 		});
     }
 
-	function ppsfwooOptionsPageInit() {
-		ppsfwooDoAjax('list_plans', function(r) {
-			var obj = r ? JSON.parse(r) : false,
-				keys = false !== obj ? Object.keys(obj): [],
-				$table = $('#plans'),
-				table_data = "",
-				have_plans = false;
-			if(keys.length === 0 || keys[0] === "000") {
-				return;
-			}
-			keys.forEach(plan_id => {
-				var vals = Object.values(obj[plan_id]),
-					plan_active = "ACTIVE" === vals[3],
-					paypal_action = "",
-					status_indicator = "";
-				have_plans = "000" !== plan_id;
-				if(have_plans) {
-					paypal_action = plan_active ?
-						`<a href="#" class="deactivate" data-plan-id="${plan_id}">Deactivate</a>`:
-						`<a href="#" class="activate" data-plan-id="${plan_id}">Activate</a>`;
-
-					status_indicator = plan_active ?
-						`<span class="tooltip status green"><span class="tooltip-text">${vals[3]}</span></span>`:
-						`<span class="tooltip status red"><span class="tooltip-text">${vals[3]}</span></span>`;
-				}
-				table_data += `<tr class="plan-row"><td>${plan_id}</td><td>${vals[0]}</td><td>${vals[1]}</td><td>${vals[2]}</td><td><p class="copy-text" style="position: absolute; left: -9999px;">${ppsfwoo_ajax_var.paypal_url}/webapps/billing/plans/subscribe?plan_id=${plan_id}</p><button class="copy-button">Copy to clipboard</button></td><td>${status_indicator}</td><td>${paypal_action}</td></tr>`;
-			});
-			$table.find('.plan-row').remove();
-			$table.append(table_data);
-			$table.show();
-			ppsfwooListWebhooks();
-			ppsfwooBindClickHandlers();
-			ppsfwooHideLoadingMessage();
-		});
-	}
-
-	function ppsfwooListWebhooks() {
-		ppsfwooDoAjax('list_webhooks', function(r) {
-			if(!r) return;
-			var obj = JSON.parse(r),
-				$table = $('#webhooks'),
-				table_data = "";
-			Object.values(obj).forEach(hook => {
-				table_data += `<tr class="webhook-row"><td>${hook['name']}</td><td>${hook['description']}</td></tr>`;
-			});
-			$table.find('.webhook-row').remove();
-			$table.append(table_data);
-			$table.show();
-		});
-	}
-
 	/*
 	*	When saving options, reset the query string variables so the subscriber table
 	*	loads the new ppsfwoo_rows_per_page
@@ -188,7 +149,7 @@ jQuery(document).ready(function($) {
             var queryString = urlParts[1];
             var queryParams = queryString.split('&');
             var filteredParams = queryParams.filter(function(param) {
-                return !param.startsWith('subs_page_num=') && !param.startsWith('var2=');
+                return !param.startsWith('subs_page_num=') && !param.startsWith('tab=');
             });
             return urlParts[0] + '?' + filteredParams.join('&');
         }

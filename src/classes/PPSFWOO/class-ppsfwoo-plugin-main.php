@@ -64,14 +64,16 @@ class PluginMain
                     '000' => [
                         'plan_name'     => 'Refresh required',
                         'product_name'  => '',
-                        'frequency'     => ''
+                        'frequency'     => '',
+                        'status'        => ''
                     ]
                 ],
                 'production' => [
                     '000' => [
                         'plan_name'     => 'Refresh required',
                         'product_name'  => '',
-                        'frequency'     => ''
+                        'frequency'     => '',
+                        'status'        => ''
                     ]
                 ]
             ]
@@ -111,8 +113,6 @@ class PluginMain
         }
 
         if(self::$do_wp) {
-
-            register_activation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_activation']);
 
             register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_deactivation']);
 
@@ -452,7 +452,7 @@ class PluginMain
         return $notification_email;
     }
 
-    protected function get_page_by_title($title)
+    protected static function get_page_by_title($title)
     {
         $query = new \WP_Query([
             'post_type'      => 'page',
@@ -478,15 +478,15 @@ class PluginMain
         }
     }
 
-    protected function create_thank_you_page()
+    protected static function create_thank_you_page()
     {
         $title = "Thank you for your order";
 
-        $page_id = $this->get_page_by_title($title);
+        $page_id = self::get_page_by_title($title);
 
         if (!$page_id) {
 
-            $thank_you_template = $this->plugin_dir_url . "templates/thank-you.php";
+            $thank_you_template = plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "templates/thank-you.php";
 
             $response = wp_remote_get($thank_you_template);
 
@@ -502,16 +502,16 @@ class PluginMain
         update_option('ppsfwoo_thank_you_page_id', $page_id);
     }
 
-    public function plugin_activation()
+    public static function plugin_activation()
     {
         foreach (self::$options as $option_name => $option_value)
         {
             add_option($option_name, $option_value['default']);
         }
 
-        $this->db_install();
+        self::db_install();
 
-        $this->create_thank_you_page();
+        self::create_thank_you_page();
 
         $Webhook = Webhook::get_instance();
 
@@ -542,7 +542,7 @@ class PluginMain
         }
     }
 
-    protected function db_install()
+    protected static function db_install()
     {
         $create_table = "CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber ( 
           id varchar(64) NOT NULL,

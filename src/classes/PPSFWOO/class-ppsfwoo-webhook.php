@@ -177,7 +177,7 @@ class Webhook
             update_option('ppsfwoo_subscribed_webhooks', $subscribed);
         }
 
-        return isset($subscribed['event_types']) ? wp_json_encode($subscribed['event_types']): "";
+        return isset($subscribed['event_types']) ? $subscribed['event_types']: "";
     }
 
     public function create()
