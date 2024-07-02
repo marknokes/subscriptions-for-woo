@@ -27,39 +27,40 @@ if (!defined('ABSPATH')) exit;
 
         <?php
 
-        $subscriber_table_options_page = $this->subscriber_table_options_page();
+        if($subscriber_table_options_page = $this->subscriber_table_options_page()) {
 
-        if($subscriber_table_options_page['num_subs']) {
+	        if($subscriber_table_options_page['num_subs']) {
 
-        	?>
-        	
-        	<form id="subs-search">
-				<input type="email" id="email-input" placeholder="Search by email address" />
-	        	<input type="submit" name="search" value="Search">
-	        </form>
-			<br />
-        	
-        	<?php
+	        	?>
+	        	
+	        	<form id="subs-search">
+					<input type="email" id="email-input" placeholder="Search by email address" />
+		        	<input type="submit" name="search" value="Search">
+		        </form>
+				<br />
+	        	
+	        	<?php
 
-        	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        	echo $subscriber_table_options_page['html'];
+	        	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	        	echo $subscriber_table_options_page['html'];
 
-			$export_url = add_query_arg([
-			    'export_table'  => 'true',
-			    '_wpnonce' 		=> wp_create_nonce('db_export_nonce')
-			], admin_url('admin.php?page=subscriptions_for_woo'));
-			
-			?>
+				$export_url = add_query_arg([
+				    'export_table'  => 'true',
+				    '_wpnonce' 		=> wp_create_nonce('db_export_nonce')
+				], admin_url('admin.php?page=subscriptions_for_woo'));
+				
+				?>
 
-			<a class="button export-table-data" href="<?php echo esc_url($export_url); ?>" target="_blank">Export Table Data</a>
-	        
-	        <?php 
+				<a class="button export-table-data" href="<?php echo esc_url($export_url); ?>" target="_blank">Export Table Data</a>
+		        
+		        <?php 
 
-    	} else if(0 === $subscriber_table_options_page['num_subs']) {
+	    	} else if(0 === $subscriber_table_options_page['num_subs']) {
 
-    		echo "<p>When you receive a new subscriber, they will appear here. </p>";
+	    		echo "<p>When you receive a new subscriber, they will appear here. </p>";
 
-    	}
+	    	}
+        }
 
         ?>
         <a class="button" style="display: none;" id="reset" href="<?php echo esc_url(admin_url('admin.php?page=subscriptions_for_woo')); ?>">Reset</a>
