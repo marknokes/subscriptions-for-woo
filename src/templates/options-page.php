@@ -273,7 +273,7 @@ if (!defined('ABSPATH')) exit;
 
 		$webhooks = Webhook::get_instance()->list();
 
-		if(is_array($webhooks) && sizeof($webhooks)) {
+		if($webhooks && sizeof($webhooks)) {
 
 			self::display_template("table-webhooks", [
                 'webhooks' => $webhooks
