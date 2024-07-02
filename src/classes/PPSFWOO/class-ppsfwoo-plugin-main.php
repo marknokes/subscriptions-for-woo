@@ -107,9 +107,7 @@ class PluginMain
 
         foreach (self::$options as $option_name => $option_value)
         {
-            add_action("update_option_$option_name", [$this, 'clear_option_cache'], 10, 3);
-
-            $this->$option_name = self::get_option($option_name);
+            $this->$option_name = get_option($option_name);
         }
 
         if(self::$do_wp) {
@@ -119,38 +117,6 @@ class PluginMain
             $this->add_actions();
 
             $this->add_filters();
-        }
-    }
-
-    public static function get_option($option_name)
-    {
-        $cached_value = wp_cache_get($option_name, self::$options_group);
-        
-        if ($cached_value === false) {
-
-            $option_value = get_option($option_name);
-
-            if ($option_value !== false) {
-
-                wp_cache_set($option_name, $option_value, self::$options_group);
-
-            }
-
-            return $option_value;
-
-        } else {
-
-            return $cached_value;
-
-        }
-    }
-
-    public function clear_option_cache($old_value, $new_value, $option_name)
-    {
-        if (array_key_exists($option_name, self::$options)) {
-            
-            wp_cache_delete($option_name, self::$options_group);
-
         }
     }
 
@@ -514,8 +480,6 @@ class PluginMain
             foreach(self::$options as $option_name => $option_value) {
 
                 delete_option($option_name);
-
-                wp_cache_delete($option_name, self::$options_group);
 
             }
         }

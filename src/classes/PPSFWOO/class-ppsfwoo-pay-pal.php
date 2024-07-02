@@ -123,7 +123,9 @@ class PayPal
 
             Exception::log("wp_remote_request() error: " . $remote_response->get_error_message() . " [$url]");
 
-            return false;
+            return [
+                'error' => $remote_response->get_error_message()
+            ];
 
         }
 
@@ -133,7 +135,9 @@ class PayPal
 
             Exception::log("PayPal API Error: " . $response_array['name'] .  " - " . $response_array['message']);
 
-            return false;
+            return [
+                'error' => $response_array['name']
+            ];
         }
 
         return [

@@ -37,9 +37,9 @@ class Webhook
 
     	$this->listen_address = $this->site_url . "/wp-json/" . self::$api_namespace . self::$endpoint;
 
-    	$this->webhook_id = PluginMain::get_option('ppsfwoo_webhook_id');
+    	$this->webhook_id = get_option('ppsfwoo_webhook_id');
 
-    	$this->subscribed_webhooks = PluginMain::get_option('ppsfwoo_subscribed_webhooks');
+    	$this->subscribed_webhooks = get_option('ppsfwoo_subscribed_webhooks');
     }
 
     public static function get_instance()
@@ -167,7 +167,7 @@ class Webhook
                 {
                     if($webhook['id'] === $this->id()) {
 
-                        $subscribed = $webhook;
+                        $subscribed = $webhook['event_types'];
 
                     }
                 }
@@ -175,9 +175,10 @@ class Webhook
             }
 
             update_option('ppsfwoo_subscribed_webhooks', $subscribed);
+
         }
 
-        return isset($subscribed['event_types']) ? $subscribed['event_types']: "";
+        return $subscribed ?? false;
     }
 
     public function create()
@@ -199,9 +200,13 @@ class Webhook
 
                 update_option('ppsfwoo_webhook_id', $response['response']['id']);
             
+            } else if(isset($response['error']) && $response['error'] === "WEBHOOK_URL_ALREADY_EXISTS") {
+
+                update_option('ppsfwoo_webhook_id', $this->patch(true));
+
             }
 
-            $this->replace();
+            $this->patch();
 
             return $response['response'] ?? false;
             
@@ -212,7 +217,7 @@ class Webhook
         }
     }
 
-    protected function replace()
+    protected function patch($get_id = false)
     {
         if($webhooks = PayPal::request("/v1/notifications/webhooks")) {
 
@@ -220,7 +225,7 @@ class Webhook
 
                 foreach($webhooks['response']['webhooks'] as $key => $webhook)
                 {
-                    if($this->listen_address() !== $webhooks['response']['webhooks'][$key]['url']) {
+                    if(!$get_id && $this->listen_address() !== $webhooks['response']['webhooks'][$key]['url']) {
 
                         $webhook_id = $webhooks['response']['webhooks'][$key]['id'];
 
@@ -247,6 +252,11 @@ class Webhook
 
                             PayPal::request("/v1/notifications/webhooks/$webhook_id", [$data], "PATCH");
                         }
+                        
+                    } else if($get_id && $this->listen_address() === $webhooks['response']['webhooks'][$key]['url']) {
+
+                        return $webhooks['response']['webhooks'][$key]['id'];
+
                     }
                 }
             }
