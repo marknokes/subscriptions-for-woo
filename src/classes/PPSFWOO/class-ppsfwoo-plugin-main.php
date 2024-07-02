@@ -13,6 +13,8 @@ class PluginMain
 {
     private static $instance = NULL;
 
+    private static $do_wp = false;
+
     public static $options_group = "ppsfwoo_options_group";
 
     public static $upgrade_link = "https://wp-subscriptions.com/";
@@ -89,7 +91,7 @@ class PluginMain
            $plugin_dir_url,
            $env;
 
-    protected function __construct($do_wp)
+    protected function __construct()
     {
         $this->env = PayPal::env();
 
@@ -108,7 +110,7 @@ class PluginMain
             $this->$option_name = self::get_option($option_name);
         }
 
-        if($do_wp) {
+        if(self::$do_wp) {
 
             register_activation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_activation']);
 
@@ -154,9 +156,11 @@ class PluginMain
 
     public static function get_instance($do_wp = false)
     {
-        if (self::$instance === null) {
+        self::$do_wp = $do_wp;
 
-            self::$instance = new self($do_wp);
+        if (self::$instance === null) {
+            
+            self::$instance = new self();
 
         }
 

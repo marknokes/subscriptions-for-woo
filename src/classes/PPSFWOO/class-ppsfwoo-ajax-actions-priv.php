@@ -3,7 +3,6 @@
 namespace PPSFWOO;
 
 use PPSFWOO\Webhook;
-use PPSFWOO\PayPal;
 use PPSFWOO\PluginMain;
 use PPSFWOO\Plan;
 use PPSFWOO\AjaxActions;

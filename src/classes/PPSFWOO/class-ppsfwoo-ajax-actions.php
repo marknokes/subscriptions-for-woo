@@ -2,11 +2,7 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Webhook;
-use PPSFWOO\PayPal;
-use PPSFWOO\PluginMain;
 use PPSFWOO\Subscriber;
-use PPSFWOO\DatabaseQuery;
 use PPSFWOO\Exception;
 
 class AjaxActions
