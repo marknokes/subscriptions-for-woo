@@ -125,7 +125,7 @@ if (!defined('ABSPATH')) exit;
 				{
 					if('skip_settings_field' === $array['type']) continue;
 
-					$value = get_option($option);
+					$value = self::get_option($option);
 
 					?>
 

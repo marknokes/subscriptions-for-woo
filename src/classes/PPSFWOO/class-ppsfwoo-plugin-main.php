@@ -107,7 +107,9 @@ class PluginMain
 
         foreach (self::$options as $option_name => $option_value)
         {
-            $this->$option_name = get_option($option_name);
+            $this->$option_name = self::get_option($option_name);
+
+            add_action("update_option_$option_name", [$this, 'after_update_option'], 10, 3);
         }
 
         if(self::$do_wp) {
@@ -156,12 +158,6 @@ class PluginMain
         add_action('rest_api_init', [Webhook::get_instance(), 'rest_api_init']);
         
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
-
-        add_action('update_option_ppsfwoo_hide_inactive_plans', function($old, $new, $opt) {
-
-            AjaxActionsPriv::refresh_plans();
-
-        }, 10, 3);
     }
 
     private function add_filters()
@@ -171,6 +167,49 @@ class PluginMain
         add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 2);
 
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
+    }
+
+    public function after_update_option($old_value, $new_value, $option_name)
+    {
+        if (array_key_exists($option_name, self::$options)) {
+            
+            wp_cache_delete($option_name, self::$options_group);
+
+        }
+
+        if(
+            'ppsfwoo_hide_inactive_plans' === $option_name &&
+            false === get_transient('ppsfwoo_refresh_plans_ran')
+        ) {
+
+            set_transient('ppsfwoo_refresh_plans_ran', true, 10);
+
+            AjaxActionsPriv::refresh_plans();
+
+        }
+    }
+
+    public static function get_option($option_name)
+    {
+        $cached_value = wp_cache_get($option_name, self::$options_group);
+        
+        if ($cached_value === false) {
+
+            $option_value = get_option($option_name);
+
+            if ($option_value !== false) {
+
+                wp_cache_set($option_name, $option_value, self::$options_group);
+
+            }
+
+            return $option_value;
+
+        } else {
+
+            return $cached_value;
+
+        }
     }
 
     public function ppsfwoo_ppcp_updated()
