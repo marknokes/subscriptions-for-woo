@@ -1,3 +1,6 @@
+var ppsfwooSubscribeButton = document.getElementById('subscribeButton'),
+    ppsfwooEllipsis = document.getElementById('lds-ellipsis');
+
 function ppsfwooSendPostRequest(url, data) {
     return new Promise((resolve, reject) => {
         var xhr = new XMLHttpRequest();
@@ -32,20 +35,46 @@ function ppsfwooSendPostRequest(url, data) {
     });
 }
 
-function ppsfwooLoadPayPalScript(callback) {
+function ppsfwooLoadPayPalScript(client_id, nonce, plan_id, callback) {
     if (window.paypal) {
-        callback();
+        callback(nonce, plan_id);
     } else {
         var script = document.createElement('script');
-        script.setAttribute('src', `https://www.paypal.com/sdk/js?client-id=${ppsfwoo_paypal_ajax_var.client_id}&vault=true&intent=subscription`);
+        script.setAttribute('src', `https://www.paypal.com/sdk/js?client-id=${client_id}&vault=true&intent=subscription`);
         script.setAttribute('data-sdk-integration-source', 'button-factory');
-        script.onload = callback;
+        script.onload = function() {            
+            callback(nonce, plan_id);
+        };
+        script.onerror = function() {
+            var error = 'Failed to load PayPal sdk';
+            console.log(error);
+            ppsfwooLogButtonError(error);
+            alert("There has been an unexpeced error. Please refresh and try again.");
+            location.reload();
+        };
         document.body.appendChild(script);
     }
 }
 
-function ppsfwooRender(nonce) {
-    document.getElementById('lds-ellipsis').style.setProperty("display", "none", "important");
+function ppsfwooLogButtonError(msg) {
+    ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
+        'action': 'ppsfwoo_admin_ajax_callback',
+        'method': 'log_paypal_buttons_error',
+        'message': msg
+    })
+    .then(response => {
+        console.log(response);
+    })
+    .catch(error => {
+        console.log(error);
+    });
+}
+
+function ppsfwooRender(nonce, plan_id) {
+    ppsfwooEllipsis.style.setProperty("display", "none", "important");
+    var container = document.createElement('div');
+    container.setAttribute('id', `paypal-button-container-${plan_id}`);
+    ppsfwooSubscribeButton.insertAdjacentElement('afterend', container);
     paypal.Buttons({
         style: {
             shape: 'rect',
@@ -55,7 +84,7 @@ function ppsfwooRender(nonce) {
         },
         createSubscription: function(data, actions) {
             return actions.subscription.create({
-                plan_id: ppsfwoo_paypal_ajax_var.plan_id
+                plan_id: plan_id
             });
         },
         onApprove: function(data, actions) {
@@ -64,38 +93,35 @@ function ppsfwooRender(nonce) {
         },
         onError: function(err) {
             if(err.message) {
-                ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
-                    'action': 'ppsfwoo_admin_ajax_callback',
-                    'method': 'log_paypal_buttons_error',
-                    'message': err.message
-                })
-                .then(response => {
-                    console.log(response);
-                })
-                .catch(error => {
-                    console.log(error);
-                });
+                ppsfwooLogButtonError(err.message);
             }
         }
-    }).render(`#paypal-button-container-${ppsfwoo_paypal_ajax_var.plan_id}`);
+    }).render(`#paypal-button-container-${plan_id}`);
 }
 
 function ppsfwooInitializePayPalSubscription() {
     ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
         'action': 'ppsfwoo_admin_ajax_callback',
-        'method': 'subs_id_redirect_nonce'
+        'method': 'subs_id_redirect_nonce',
+        'product_id': ppsfwoo_paypal_ajax_var.product_id
     })
     .then(response => {
-        ppsfwooRender(response.nonce);
+        if(response.error) {
+            throw new Error("No plan id found for product with ID " + ppsfwoo_paypal_ajax_var.product_id);
+        } else {
+            ppsfwooLoadPayPalScript(response.client_id, response.nonce, response.plan_id, ppsfwooRender);
+        }
     })
     .catch(error => {
         console.log(error);
+        ppsfwooLogButtonError(error);
         alert("There has been an unexpeced error. Please refresh and try again.");
+        location.reload();
     });
 }
 
-document.getElementById('subscribeButton').addEventListener('click', function() {
+ppsfwooSubscribeButton.addEventListener('click', function() {
     this.style.display = 'none';
-    document.getElementById('lds-ellipsis').style.setProperty("display", "inline-block", "important");
-    ppsfwooLoadPayPalScript(ppsfwooInitializePayPalSubscription);
+    ppsfwooEllipsis.style.setProperty("display", "inline-block", "important");
+    ppsfwooInitializePayPalSubscription();
 });

@@ -21,24 +21,16 @@ class PayPal
 
         }
 
-        $Plan = new Plan(get_the_ID());
+        $PluginMain = PluginMain::get_instance();
 
-        if($Plan->id) {
+        $PluginMain::display_template("paypal-button");
 
-            $PluginMain = PluginMain::get_instance();
+        wp_enqueue_script('paypal-sdk', $PluginMain->plugin_dir_url . "js/paypal-button.min.js", [], $PluginMain::plugin_data('Version'), true);
 
-            $PluginMain::display_template("paypal-button", [
-                'plan_id' => $Plan->id
-            ]);
-
-            wp_enqueue_script('paypal-sdk', $PluginMain->plugin_dir_url . "js/paypal-button.min.js", [], $PluginMain::plugin_data('Version'), true);
-
-            wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
-                'client_id' => $PluginMain->client_id,
-                'plan_id'   => $Plan->id,
-                'redirect'  => get_permalink($PluginMain->ppsfwoo_thank_you_page_id)
-            ]);
-        }
+        wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
+            'product_id' => get_the_ID(),
+            'redirect'   => get_permalink($PluginMain->ppsfwoo_thank_you_page_id)
+        ]);
     }
 
 	public static function env()

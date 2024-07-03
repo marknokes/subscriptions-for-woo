@@ -102,7 +102,7 @@ class Product
 
                     }
 
-                    $plans = array_merge(["please_select" => "Select a plan [$this->env]"], $plans);
+                    $plans = array_merge(["" => "Select a plan [$this->env]"], $plans);
 
                     wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false);
 

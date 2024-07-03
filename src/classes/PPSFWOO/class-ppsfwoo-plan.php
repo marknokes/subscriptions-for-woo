@@ -18,7 +18,7 @@ class Plan extends PluginMain
 
 			$this->id = $this->get_id_by_product_id($product_id);
 
-			$this->frequency = $this->get_frequency_by_product_id($product_id);
+			$this->frequency = $this->get_frequency();
 
 		}
 	}
@@ -28,13 +28,11 @@ class Plan extends PluginMain
         return get_post_meta($product_id, "{$this->env['env']}_ppsfwoo_plan_id", true) ?? "";
     }
 
-	private function get_frequency_by_product_id($product_id)
+	private function get_frequency()
     {
-        $plan_id = $this->get_id_by_product_id($product_id);
-
         $plans = $this->get_plans();
 
-        return $plans[$plan_id]['frequency'] ?? "";
+        return $plans[$this->id]['frequency'] ?? "";
     }
 
 	public function modify_plan()

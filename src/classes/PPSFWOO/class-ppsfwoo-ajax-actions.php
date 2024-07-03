@@ -45,7 +45,34 @@ class AjaxActions
 
         }
 
-        return $is_ajax ? wp_json_encode(['nonce' => wp_create_nonce($nonce_name)]): $nonce_name;
+        if($is_ajax) {
+
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing        
+            $Plan = new Plan(absint($_POST['product_id']));
+
+            if($Plan->id) {
+
+                $PluginMain = PluginMain::get_instance();
+
+                $response = [
+                    'client_id' => $PluginMain->client_id,
+                    'nonce'     => wp_create_nonce($nonce_name),
+                    'plan_id'   => $Plan->id
+                ];
+
+            } else {
+
+                $response = ['error' => true];
+
+            }
+
+            return wp_json_encode($response);
+
+        } else {
+
+            return $nonce_name;
+
+        }
     }
 
     protected function get_sub()
