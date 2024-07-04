@@ -1,5 +1,6 @@
 var ppsfwooSubscribeButton = document.getElementById('subscribeButton'),
-    ppsfwooEllipsis = document.getElementById('lds-ellipsis');
+    ppsfwooEllipsis = document.getElementById('lds-ellipsis'),
+    ppsfwooShortcodeContainer = document.getElementById('ppsfwoo-shortcode-button-container');
 
 function ppsfwooSendPostRequest(url, data) {
     return new Promise((resolve, reject) => {
@@ -71,10 +72,18 @@ function ppsfwooLogButtonError(msg) {
 }
 
 function ppsfwooRender(nonce, plan_id) {
-    ppsfwooEllipsis.style.setProperty("display", "none", "important");
+    if(ppsfwooEllipsis) {
+        ppsfwooEllipsis.style.setProperty("display", "none", "important");
+    }
     var container = document.createElement('div');
     container.setAttribute('id', `paypal-button-container-${plan_id}`);
-    ppsfwooSubscribeButton.insertAdjacentElement('afterend', container);
+    if(ppsfwooSubscribeButton) {
+        ppsfwooSubscribeButton.insertAdjacentElement('afterend', container);
+    } else if(ppsfwooShortcodeContainer) {
+        ppsfwooShortcodeContainer.replaceWith(container);
+    } else {
+        alert('Unable to render PayPal button');
+    }
     paypal.Buttons({
         style: {
             shape: 'rect',
@@ -120,8 +129,10 @@ function ppsfwooInitializePayPalSubscription() {
     });
 }
 
-ppsfwooSubscribeButton.addEventListener('click', function() {
-    this.style.display = 'none';
-    ppsfwooEllipsis.style.setProperty("display", "inline-block", "important");
-    ppsfwooInitializePayPalSubscription();
-});
+if(ppsfwooSubscribeButton) {
+    ppsfwooSubscribeButton.addEventListener('click', function() {
+        this.style.display = 'none';
+        ppsfwooEllipsis.style.setProperty("display", "inline-block", "important");
+        ppsfwooInitializePayPalSubscription();
+    });
+}
