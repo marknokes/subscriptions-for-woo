@@ -17,7 +17,7 @@ class PluginMain
 
     public static $options_group = "ppsfwoo_options_group";
 
-    public static $upgrade_link = "https://wp-subscriptions.com/";
+    public static $upgrade_link = "https://wp-subscriptions.com/compare-plans/";
 
     public static $ppcp_settings_url = "admin.php?page=wc-settings&tab=checkout&section=ppcp-gateway&ppcp-tab=ppcp-connection";
 
