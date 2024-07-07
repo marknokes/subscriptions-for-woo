@@ -169,13 +169,25 @@ class PluginMain
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
     }
 
-    public function after_update_option($old_value, $new_value, $option_name)
+    public static function clear_option_cache($option_name)
     {
         if (array_key_exists($option_name, self::$options)) {
             
             wp_cache_delete($option_name, self::$options_group);
 
         }
+    }
+
+    public static function update_option($option, $value)
+    {
+        self::clear_option_cache($option);
+        
+        update_option($option, $value, false);
+    }
+
+    public function after_update_option($old_value, $new_value, $option_name)
+    {
+        self::clear_option_cache($option_name);
 
         if(
             'ppsfwoo_hide_inactive_plans' === $option_name &&
@@ -483,7 +495,7 @@ class PluginMain
 
         }
 
-        update_option('ppsfwoo_thank_you_page_id', $page_id, false);
+        self::update_option('ppsfwoo_thank_you_page_id', $page_id);
     }
 
     public static function plugin_activation()
@@ -519,6 +531,8 @@ class PluginMain
             foreach(self::$options as $option_name => $option_value) {
 
                 delete_option($option_name);
+
+                self::clear_option_cache($option_name);
 
             }
         }
