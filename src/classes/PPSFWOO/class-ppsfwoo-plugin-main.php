@@ -173,7 +173,7 @@ class PluginMain
     {
         if (array_key_exists($option_name, self::$options)) {
             
-            wp_cache_delete($option_name, self::$options_group);
+            wp_cache_delete($option_name);
 
         }
     }
@@ -203,7 +203,7 @@ class PluginMain
 
     public static function get_option($option_name)
     {
-        $cached_value = wp_cache_get($option_name, self::$options_group);
+        $cached_value = wp_cache_get($option_name);
         
         if ($cached_value === false) {
 
@@ -211,7 +211,7 @@ class PluginMain
 
             if ($option_value !== false) {
 
-                wp_cache_set($option_name, $option_value, self::$options_group);
+                wp_cache_set($option_name, $option_value);
 
             }
 
