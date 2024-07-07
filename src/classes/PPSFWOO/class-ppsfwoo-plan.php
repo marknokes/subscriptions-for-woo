@@ -111,7 +111,7 @@ class Plan extends PluginMain
                     return strcmp($a['status'], $b['status']);
                 });
             
-                update_option('ppsfwoo_plans', [$this->env['env'] => $plans]);
+                update_option('ppsfwoo_plans', [$this->env['env'] => $plans], false);
 
             }
 

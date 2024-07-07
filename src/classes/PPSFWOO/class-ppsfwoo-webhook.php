@@ -174,7 +174,7 @@ class Webhook
 
             }
 
-            update_option('ppsfwoo_subscribed_webhooks', $subscribed);
+            update_option('ppsfwoo_subscribed_webhooks', $subscribed, false);
 
         }
 
@@ -198,11 +198,11 @@ class Webhook
 
             if(isset($response['response']['id'])) {
 
-                update_option('ppsfwoo_webhook_id', $response['response']['id']);
+                update_option('ppsfwoo_webhook_id', $response['response']['id'], false);
             
             } else if(isset($response['error']) && $response['error'] === "WEBHOOK_URL_ALREADY_EXISTS") {
 
-                update_option('ppsfwoo_webhook_id', $this->patch(true));
+                update_option('ppsfwoo_webhook_id', $this->patch(true), false);
 
             }
 

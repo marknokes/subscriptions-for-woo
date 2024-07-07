@@ -483,14 +483,14 @@ class PluginMain
 
         }
 
-        update_option('ppsfwoo_thank_you_page_id', $page_id);
+        update_option('ppsfwoo_thank_you_page_id', $page_id, false);
     }
 
     public static function plugin_activation()
     {
         foreach (self::$options as $option_name => $option_value)
         {
-            add_option($option_name, $option_value['default']);
+            add_option($option_name, $option_value['default'], '', false);
         }
 
         self::db_install();
