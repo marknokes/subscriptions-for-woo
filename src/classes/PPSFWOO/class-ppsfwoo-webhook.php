@@ -174,7 +174,9 @@ class Webhook
 
             }
 
-            PluginMain::update_option('ppsfwoo_subscribed_webhooks', $subscribed);
+            PluginMain::clear_option_cache('ppsfwoo_subscribed_webhooks');
+            
+            update_option('ppsfwoo_subscribed_webhooks', $subscribed);
 
         }
 
@@ -216,9 +218,13 @@ class Webhook
 
             }
 
-            PluginMain::update_option('ppsfwoo_webhook_id', $webhook_id);
+            PluginMain::clear_option_cache('ppsfwoo_webhook_id');
 
-            PluginMain::update_option('ppsfwoo_subscribed_webhooks', $event_types);
+            update_option('ppsfwoo_webhook_id', $webhook_id);
+
+            PluginMain::clear_option_cache('ppsfwoo_subscribed_webhooks');
+
+            update_option('ppsfwoo_subscribed_webhooks', $event_types);
 
             $this->patch();
 

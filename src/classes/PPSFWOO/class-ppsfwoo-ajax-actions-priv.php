@@ -24,7 +24,7 @@ class AjaxActionsPriv extends AjaxActions
 
         if(isset($response['success']) && true === $response['success']) {
 
-            $Plan->refresh_plans();
+            $Plan->refresh_all();
 
         }
 
@@ -43,7 +43,7 @@ class AjaxActionsPriv extends AjaxActions
 
         $Plan = new Plan();
 
-        $plans = $Plan->refresh_plans();
+        $plans = $Plan->refresh_all();
 
         return wp_json_encode([
             "success" => !empty($plans),

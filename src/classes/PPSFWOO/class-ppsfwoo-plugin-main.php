@@ -173,16 +173,9 @@ class PluginMain
     {
         if (array_key_exists($option_name, self::$options)) {
             
-            wp_cache_delete($option_name);
+            wp_cache_delete($option_name, 'options');
 
         }
-    }
-
-    public static function update_option($option, $value)
-    {
-        self::clear_option_cache($option);
-        
-        update_option($option, $value, false);
     }
 
     public function after_update_option($old_value, $new_value, $option_name)
@@ -203,7 +196,7 @@ class PluginMain
 
     public static function get_option($option_name)
     {
-        $cached_value = wp_cache_get($option_name);
+        $cached_value = wp_cache_get($option_name, 'options');
         
         if ($cached_value === false) {
 
@@ -211,7 +204,7 @@ class PluginMain
 
             if ($option_value !== false) {
 
-                wp_cache_set($option_name, $option_value);
+                wp_cache_set($option_name, $option_value, 'options');
 
             }
 
@@ -495,14 +488,14 @@ class PluginMain
 
         }
 
-        self::update_option('ppsfwoo_thank_you_page_id', $page_id);
+        update_option('ppsfwoo_thank_you_page_id', $page_id);
     }
 
     public static function plugin_activation()
     {
         foreach (self::$options as $option_name => $option_value)
         {
-            add_option($option_name, $option_value['default'], '', false);
+            update_option($option_name, $option_value['default'], '', false);
         }
 
         self::db_install();
@@ -516,6 +509,8 @@ class PluginMain
             $Webhook->create();
 
         }
+
+        AjaxActionsPriv::refresh_plans();
     }
 
     public function plugin_deactivation()
@@ -621,12 +616,6 @@ class PluginMain
             if('skip_settings_field' === $option_value['type']) continue;
             
             register_setting(self::$options_group, $option_name);
-        }
-
-        if(isset($this->ppsfwoo_plans[$this->env['env']]['000']) && PayPal::access_token($log_error = false)) {
-
-            AjaxActionsPriv::refresh_plans();
-
         }
     }
 

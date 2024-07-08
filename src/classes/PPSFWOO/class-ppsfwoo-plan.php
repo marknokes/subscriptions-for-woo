@@ -66,7 +66,7 @@ class Plan extends PluginMain
         return $response;
 	}
 
-    public function refresh_plans()
+    public function refresh_all()
     {
         $plans = [];
 
@@ -111,7 +111,11 @@ class Plan extends PluginMain
                     return strcmp($a['status'], $b['status']);
                 });
             
-                PluginMain::update_option('ppsfwoo_plans', [$this->env['env'] => $plans]);
+                $env = $this->env['env'];
+
+                update_option('ppsfwoo_plans', [
+                    $env => $plans
+                ]);
 
             }
 
@@ -120,7 +124,7 @@ class Plan extends PluginMain
         return $plans;
     }
 
-	public function get_plans($update = false)
+	public function get_plans()
 	{
 		return $this->ppsfwoo_plans[$this->env['env']] ?? [];
 	}
