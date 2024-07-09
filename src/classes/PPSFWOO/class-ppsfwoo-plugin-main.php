@@ -77,6 +77,11 @@ class PluginMain
                     ]
                 ]
             ]
+        ],
+        'ppsfwoo_button_text' => [
+            'name'    => 'Button Text',
+            'type'    => 'text',
+            'default' => 'Subscribe'
         ]
     ];
 
@@ -91,6 +96,7 @@ class PluginMain
            $ppsfwoo_delete_plugin_data,
            $template_dir,
            $plugin_dir_url,
+           $ppsfwoo_button_text,
            $env;
 
     protected function __construct()

@@ -23,7 +23,9 @@ class PayPal
 
         $PluginMain = PluginMain::get_instance();
 
-        $PluginMain::display_template("paypal-button");
+        $PluginMain::display_template("paypal-button", [
+            'button_text' => $PluginMain->ppsfwoo_button_text
+        ]);
 
         wp_enqueue_script('paypal-sdk', $PluginMain->plugin_dir_url . "js/paypal-button.min.js", [], $PluginMain::plugin_data('Version'), true);
 
