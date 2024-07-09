@@ -81,6 +81,14 @@ Complete onboarding instructions can be found in the [woocommerce documentation]
 4. Click on **Install Now** and wait until the plugin is installed successfully.
 5. You can activate the plugin after WooCommerce and WooCommerce PayPal Payments are installed by clicking on **Activate** now on the success page.
 
+= PayPal Integration =
+
+This plugin integrates with the PayPal SDK to process payments securely. Please note the following:
+
+* This plugin relies on the PayPal SDK to facilitate payment transactions.
+* For more information about PayPal's services, visit [PayPal](https://www.paypal.com/).
+* Before using this plugin, please review PayPal's [Terms of Use](https://www.paypal.com/us/legalhub/home) and [Privacy Policy](https://www.paypal.com/us/legalhub/privacy-full) to understand how PayPal handles your data and transactions.
+
 == Screenshots ==
 1. Main settings screen
 

@@ -1,3 +1,5 @@
+<?php if (!defined('ABSPATH')) exit; ?>
+
 <table id="webhooks" class="pp-inner-table">
 	<tr>
 		<th>Subscribed Webhook</th>

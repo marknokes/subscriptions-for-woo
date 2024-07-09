@@ -41,8 +41,7 @@ if (!defined('ABSPATH')) exit;
 	        	
 	        	<?php
 
-	        	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	        	echo $subscriber_table_options_page['html'];
+	        	echo wp_kses_post($subscriber_table_options_page['html']);
 
 				$export_url = add_query_arg([
 				    'export_table'  => 'true',

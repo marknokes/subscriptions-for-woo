@@ -136,9 +136,9 @@ class Product
 
     public static function edit_product_css()
     {
-        echo '<style>ul.wc-tabs li.ppsfwoo_options a::before {
-          content: "\f515" !important;
-        }</style>';
+        wp_enqueue_style('ppsfwoo-edit_product_css', true, [], '1');
+
+        wp_add_inline_style('ppsfwoo-edit_product_css', 'ul.wc-tabs li.ppsfwoo_options a::before { content: "\f515" !important;}');
     }
 
     public function save_option_field($post_id)

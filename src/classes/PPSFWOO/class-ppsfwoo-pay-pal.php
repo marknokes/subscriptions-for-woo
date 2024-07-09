@@ -142,10 +142,10 @@ class PayPal
 
     public static function valid_request($webhook_id)
     {
-        $request_body = file_get_contents('php://input');
+        $request_body = json_decode(file_get_contents('php://input'));
 
-        if(!$request_body) {
-
+        if ($request_body === NULL && json_last_error() !== JSON_ERROR_NONE) {
+            
             return false;
 
         }
@@ -170,7 +170,7 @@ class PayPal
             'transmission_sig'  => $headers['PAYPAL-TRANSMISSION-SIG'],
             'transmission_time' => $headers['PAYPAL-TRANSMISSION-TIME'],
             'webhook_id'        => $webhook_id,
-            'webhook_event'     => json_decode($request_body)
+            'webhook_event'     => $request_body
         ], "POST");
 
         $success = isset($response['response']['verification_status']) ? $response['response']['verification_status']: false;

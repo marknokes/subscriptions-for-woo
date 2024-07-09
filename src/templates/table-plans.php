@@ -1,3 +1,5 @@
+<?php if (!defined('ABSPATH')) exit; ?>
+
 <table id="plans" class="pp-inner-table">
 	<tr>
 		<th>Plan ID</th>

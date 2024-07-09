@@ -41,7 +41,7 @@ class AjaxActions
 
         } else {
 
-            $nonce_name = $_SESSION['ppsfwoo_customer_nonce'];
+            $nonce_name = sanitize_text_field(wp_unslash($_SESSION['ppsfwoo_customer_nonce']));
 
         }
 

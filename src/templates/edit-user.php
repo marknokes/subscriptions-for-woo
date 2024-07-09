@@ -1,3 +1,5 @@
+<?php if (!defined('ABSPATH')) exit; ?>
+
 <h3>Subscriptions Capabilities</h3>
 <table class="form-table">
     <tr>
