@@ -13,8 +13,6 @@ class PluginMain
 {
     private static $instance = NULL;
 
-    private static $do_wp = false;
-
     public static $options_group = "ppsfwoo_options_group";
 
     public static $upgrade_link = "https://wp-subscriptions.com/compare-plans/";
@@ -117,21 +115,10 @@ class PluginMain
 
             add_action("update_option_$option_name", [$this, 'after_update_option'], 10, 3);
         }
-
-        if(self::$do_wp) {
-
-            register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$this, 'plugin_deactivation']);
-
-            $this->add_actions();
-
-            $this->add_filters();
-        }
     }
 
-    public static function get_instance($do_wp = false)
+    public static function get_instance()
     {
-        self::$do_wp = $do_wp;
-
         if (self::$instance === null) {
             
             self::$instance = new self();
@@ -141,7 +128,7 @@ class PluginMain
         return self::$instance;
     }
 
-    private function add_actions()
+    public function add_actions()
     {
         add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [new AjaxActions(), 'admin_ajax_callback']);
         
@@ -166,7 +153,7 @@ class PluginMain
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
     }
 
-    private function add_filters()
+    public function add_filters()
     {
         add_filter('plugin_action_links_subscriptions-for-woo/subscriptions-for-woo.php', [$this, 'settings_link']);
 
@@ -501,7 +488,7 @@ class PluginMain
     {
         foreach (self::$options as $option_name => $option_value)
         {
-            update_option($option_name, $option_value['default'], '', false);
+            add_option($option_name, $option_value['default'], '', false);
         }
 
         self::db_install();

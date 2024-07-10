@@ -61,7 +61,14 @@ class AjaxActionsPriv extends AjaxActions
 
         }
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if (!isset($_POST['search_by_email']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['search_by_email'])), 'search_by_email')) {
+
+            return wp_json_encode([
+                'error' => 'Security check failed.'
+            ]);
+
+        }
+
         $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): "";
 
         if(empty($email)) { 
@@ -72,11 +79,9 @@ class AjaxActionsPriv extends AjaxActions
 
         }
 
-        $PluginMain = PluginMain::get_instance();
+        $data = PluginMain::get_instance()->subscriber_table_options_page($email);
 
-        $subscriber_table_options_page = $PluginMain->subscriber_table_options_page($email);
-
-        if(!$subscriber_table_options_page['num_subs']) {
+        if(!$data['num_subs']) {
 
             return wp_json_encode([
                 'error' => 'No subscribers with that email address.'
@@ -84,9 +89,8 @@ class AjaxActionsPriv extends AjaxActions
 
         } else {
 
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             return wp_json_encode([
-                'html' => $subscriber_table_options_page['html']
+                'html' => $data['html']
             ]);
 
         }

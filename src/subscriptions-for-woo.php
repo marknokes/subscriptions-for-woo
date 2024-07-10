@@ -47,18 +47,24 @@ function ppsfwoo_init()
 	}
 
 	class WC_Product_ppsfwoo extends WC_Product
-    {
-        public $product_type;
-        
-        public function __construct($product)
-        {
-            $this->product_type = 'ppsfwoo';
+	{
+		public $product_type;
+		
+		public function __construct($product)
+		{
+			$this->product_type = 'ppsfwoo';
 
-            parent::__construct($product);
-        }
-    }
+			parent::__construct($product);
+		}
+	}
 
-	PluginMain::get_instance(true);
+	$PluginMain = PluginMain::get_instance();
+
+	register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$PluginMain, 'plugin_deactivation']);
+
+	$PluginMain->add_actions();
+
+	$PluginMain->add_filters();
 
 	new Product();
 

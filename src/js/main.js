@@ -11,8 +11,8 @@ jQuery(document).ready(function($) {
 
 	$('#subs-search').on('submit', function(e) {
     	e.preventDefault();
-    	var email = $("#email-input").val();
-    	if(!email) return;
+    	var email = $("#email-input").val(),
+    		search_by_email = $("#search_by_email").val();
         ppsfwooDoAjax('search_subscribers', function(r) {
         	var response = JSON.parse(r);
 			if(!response.error) {
@@ -23,7 +23,8 @@ jQuery(document).ready(function($) {
 				ppsfwooShowMsg(response.error, "warning");
 			}
 		}, {
-			'email': email
+			'email': email,
+			'search_by_email': search_by_email
 		});
     });
 
