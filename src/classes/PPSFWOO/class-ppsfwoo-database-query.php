@@ -65,6 +65,10 @@ class DatabaseQuery
 
                     return 'NULL';
 
+                } else if (ctype_digit($value)) {
+
+                    return $wpdb->prepare('%d', $value);
+
                 } else {
 
                     return $wpdb->prepare('%s', $value);
