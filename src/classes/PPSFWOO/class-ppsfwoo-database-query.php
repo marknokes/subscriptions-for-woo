@@ -53,39 +53,34 @@ class DatabaseQuery
 
         $columns = array_keys($data->result[0]);
 
+        $column_names = implode(', ', $columns);
+
         $values = [];
 
         foreach ($data->result as $row)
         {
-            foreach ($row as $key => $value)
-            {
-                if(NULL === $row[$key]) {
+            $escaped_values = array_map(function($value) use ($wpdb) {
 
-                    $row[$key] = "NULL";
+                if (is_null($value)) {
+
+                    return 'NULL';
+
+                } else {
+
+                    return $wpdb->prepare('%s', $value);
 
                 }
-            }
 
-            $row_values = array_map([$wpdb, 'prepare'], array_fill(0, count($row), '%s'), $row);
+            }, $row);
 
-            foreach ($row_values as $row_key => $value)
-            {
-                if("'NULL'" === $value) {
+            $values[] = '(' . implode(', ', $escaped_values) . ')';
 
-                    $row_values[$row_key] = 'NULL';
-                    
-                } 
-            }
-
-            $values[] = '(' . implode(', ', $row_values) . ')';
         }
 
         $db_name = DB_NAME;
 
-        $sql_content = "INSERT INTO `$db_name`.`{$wpdb->prefix}ppsfwoo_subscriber` (`" . implode('`, `', $columns) . "`) VALUES \n";
-            
-        $sql_content .= implode(",\n", $values) . ";\n";
+        $insert_query = "INSERT INTO `$db_name`.`{$wpdb->prefix}ppsfwoo_subscriber` ({$column_names}) VALUES " . implode(', ', $values) . ';';
 
-        return $sql_content;
+        return $insert_query;
     }
 }
