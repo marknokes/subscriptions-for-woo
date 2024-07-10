@@ -53,7 +53,7 @@ class DatabaseQuery
 
         $columns = array_keys($data->result[0]);
 
-        $column_names = implode(', ', $columns);
+        $column_names = "`" . implode('`, `', $columns) . "`";
 
         $values = [];
 
@@ -83,8 +83,6 @@ class DatabaseQuery
 
         $db_name = DB_NAME;
 
-        $insert_query = "INSERT INTO `$db_name`.`{$wpdb->prefix}ppsfwoo_subscriber` ({$column_names}) VALUES " . implode(', ', $values) . ';';
-
-        return $insert_query;
+        return "INSERT INTO `{$db_name}`.`{$wpdb->prefix}ppsfwoo_subscriber` ({$column_names}) VALUES " . implode(', ', $values) . ';';
     }
 }
