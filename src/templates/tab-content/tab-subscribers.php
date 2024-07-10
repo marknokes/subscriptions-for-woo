@@ -22,7 +22,7 @@ if($data = $this->subscriber_table_options_page()) {
         	echo wp_kses_post($data['html']);
 
 			$export_url = add_query_arg([
-			    'export_table'  => 'true',
+			    'ppsfwoo_export_table'  => 1,
 			    '_wpnonce' 		=> wp_create_nonce('db_export_nonce')
 			], admin_url('admin.php?page=subscriptions_for_woo'));
 			

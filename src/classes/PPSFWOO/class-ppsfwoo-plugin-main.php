@@ -243,17 +243,15 @@ class PluginMain
 
     public function handle_export_action()
     {
-        $export_table = isset($_GET['export_table']) ? sanitize_text_field(wp_unslash($_GET['export_table'])): "";
-
-        if(empty($export_table) || $export_table !== 'true') {
+        if(!isset($_GET['ppsfwoo_export_table'], $_GET['_wpnonce'])) {
 
             return;
 
         }
 
-        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
+         if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
 
-            wp_die('Security check failed.');
+            wp_die("Security check failed");
 
         }
 
