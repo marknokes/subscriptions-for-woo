@@ -155,7 +155,7 @@ class PluginMain
 
     public function add_filters()
     {
-        add_filter('plugin_action_links_subscriptions-for-woo/subscriptions-for-woo.php', [$this, 'settings_link']);
+        add_filter('plugin_action_links_' . plugin_basename(PPSFWOO_PLUGIN_PATH), [$this, 'settings_link']);
 
         add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 2);
 
