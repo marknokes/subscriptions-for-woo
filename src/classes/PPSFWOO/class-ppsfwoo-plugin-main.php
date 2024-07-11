@@ -318,10 +318,10 @@ class PluginMain
 
         $per_page = $this->ppsfwoo_rows_per_page ?: 10;
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
-        $subs_page_num = isset($_GET['subs_page_num']) ? sanitize_text_field(wp_unslash($_GET['subs_page_num'])): NULL;
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $subs_page_num = $_GET['subs_page_num'] ?? 1;
 
-        $page = isset($subs_page_num) ? absint($subs_page_num) : 1;
+        $page = absint($subs_page_num);
 
         $offset = max(0, ($page - 1) * $per_page);
 

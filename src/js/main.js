@@ -106,6 +106,7 @@ jQuery(document).ready(function($) {
 	    	e.preventDefault();
 	    	ppsfwooShowLoadingMessage('Processing...');
 	    	var plan_id = $(this).data('plan-id'),
+	    		nonce = $(this).data('nonce'),
 	    		paypal_action = $(this).attr('class');
 	    	ppsfwooDoAjax('modify_plan', function(r) {
 	    		var response = JSON.parse(r);
@@ -117,7 +118,8 @@ jQuery(document).ready(function($) {
 	    		}
 	    	}, {
 				'plan_id': plan_id,
-				'paypal_action': paypal_action
+				'paypal_action': paypal_action,
+				'nonce': nonce
 			});
 	    });
 	    $('.plan-row').on('click', '.copy-button', function(e) {

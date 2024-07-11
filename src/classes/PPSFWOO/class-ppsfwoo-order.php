@@ -15,7 +15,7 @@ class Order
         return $results->result[0]->order_id ?? false;
     }
 
-    public static function insert_order(Subscriber $user)
+    public static function insert(Subscriber $user)
     {   
         $order = wc_create_order();
 

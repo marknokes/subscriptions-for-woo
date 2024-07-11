@@ -191,7 +191,7 @@ class Subscriber
 
         if(false === $response['errors'] && 'insert' === $response['action']) {
 
-            $order_id = Order::insert_order($this);
+            $order_id = Order::insert($this);
 
             new DatabaseQuery(
                 "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `order_id` = %d, `canceled_date` = NULL WHERE `id` = %s;",

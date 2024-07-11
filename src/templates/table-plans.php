@@ -29,7 +29,7 @@
 				<button class="copy-button">Copy to clipboard</button>
 			</td>
 			<td><span class='tooltip status <?php echo esc_attr($status_indicator); ?>'><span class='tooltip-text'><?php echo esc_html($plan_data['status']); ?></span></span></td>
-			<td><a href='#' class='<?php echo esc_attr($paypal_action); ?>' data-plan-id='<?php echo esc_attr($plan_id); ?>'><?php echo esc_html(ucfirst($paypal_action)); ?></a></td>
+			<td><a href='#' class='<?php echo esc_attr($paypal_action); ?>' data-plan-id='<?php echo esc_attr($plan_id); ?>' data-nonce='<?php echo esc_attr(wp_create_nonce('modify_plan')); ?>'><?php echo esc_html(ucfirst($paypal_action)); ?></a></td>
 		</tr>
 	<?php
 	}

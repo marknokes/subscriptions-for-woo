@@ -12,7 +12,7 @@ class Plan extends PluginMain
 
 	public function __construct($product_id = NULL)
 	{
-		parent::__construct(false);
+		parent::__construct();
 
 		if($product_id) {
 
@@ -39,11 +39,15 @@ class Plan extends PluginMain
 	{
 		$response = ['error' => 'An unexpected error occurred.'];
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $plan_id = isset($_POST['plan_id']) ? sanitize_text_field(wp_unslash($_POST['plan_id'])): "";
+        if(!isset($_POST['nonce'], $_POST['plan_id'], $_POST['paypal_action']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'modify_plan')) {
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $paypal_action = isset($_POST['paypal_action']) ? sanitize_text_field(wp_unslash($_POST['paypal_action'])): "";
+            return ['error' => 'Security check failed.'];
+
+        }
+
+        $plan_id = sanitize_text_field(wp_unslash($_POST['plan_id']));
+
+        $paypal_action = sanitize_text_field(wp_unslash($_POST['paypal_action']));
 
         try {
 
