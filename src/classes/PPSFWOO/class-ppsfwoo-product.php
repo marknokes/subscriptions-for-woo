@@ -32,6 +32,12 @@ class Product
         add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
         
         add_action('woocommerce_process_product_meta_ppsfwoo', [$this, 'save_option_field']);
+
+        add_action('woocommerce_ppsfwoo_add_to_cart', function() {
+
+            do_action('woocommerce_simple_add_to_cart');
+
+        });
     }
 
     private function add_filters()
@@ -141,7 +147,7 @@ class Product
         wp_add_inline_style('ppsfwoo-edit_product_css', 'ul.wc-tabs li.ppsfwoo_options a::before { content: "\f515" !important;}');
     }
 
-    public function save_option_field($post_id)
+    public function save_option_field($product_id)
     {
         if (!isset($_POST["{$this->env}_ppsfwoo_plan_id"]) ||
             !isset($_POST['ppsfwoo_plan_id_nonce']) ||
@@ -154,7 +160,9 @@ class Product
 
         $plan_id = sanitize_text_field(wp_unslash($_POST["{$this->env}_ppsfwoo_plan_id"]));
 
-        update_post_meta($post_id, "{$this->env}_ppsfwoo_plan_id", $plan_id);
+        update_post_meta($product_id, "{$this->env}_ppsfwoo_plan_id", $plan_id);
+
+        update_post_meta($product_id, '_sold_individually', 'yes');
     }
 
     public static function get_product_id_by_plan_id($plan_id)

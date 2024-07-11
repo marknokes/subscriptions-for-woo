@@ -1,3 +1,6 @@
+.product-type-ppsfwoo .input-text.qty {
+  display: none;
+}
 .inactive-subscription,
 .ppsfwoo-cancelled {
   display: none;
