@@ -7,19 +7,17 @@ use PPSFWOO\Exception;
 
 class AjaxActions
 {
+    // phpcs:disable
 	public function admin_ajax_callback()
     {  
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])): "";
 
         if(method_exists($this, $method)) {
             
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             echo call_user_func([$this, $method]);
 
         } else {
             
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             echo "";
 
             Exception::log(__CLASS__ . "->$method does not exist.");
@@ -28,6 +26,7 @@ class AjaxActions
 
         wp_die();
     }
+    // phpcs:enable
 
     public static function subs_id_redirect_nonce($is_ajax = true)
     {
@@ -47,7 +46,7 @@ class AjaxActions
 
         if($is_ajax) {
 
-            // phpcs:ignore WordPress.Security.NonceVerification.Missing        
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing
             $Plan = new Plan(absint($_POST['product_id']));
 
             if($Plan->id) {

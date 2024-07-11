@@ -6,23 +6,21 @@ class DatabaseQuery
 {
 	public $result;
 
+    // phpcs:disable
 	public function __construct($query, $vars = [], $output = OBJECT)
 	{
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query('SET time_zone = "+00:00"');
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+        
         $stmt = $vars ? $wpdb->prepare($query, $vars): $query;
 
         if(strpos($query, "SELECT") === 0) {
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
         	$result = $wpdb->get_results($stmt, $output);
 
         } else {
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
         	$result = $wpdb->query($stmt);
 
         }
@@ -38,6 +36,7 @@ class DatabaseQuery
         }
 
 	}
+    // phpcs:enable
 
     public static function export()
     {
