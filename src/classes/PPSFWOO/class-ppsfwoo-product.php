@@ -34,12 +34,6 @@ class Product
         add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
         
         add_action('woocommerce_process_product_meta_' . self::TYPE, [$this, 'save_option_field']);
-
-        add_action('woocommerce_' . self::TYPE . '_add_to_cart', function() {
-
-            do_action('woocommerce_simple_add_to_cart');
-
-        });
     }
 
     private function add_filters()
@@ -160,17 +154,9 @@ class Product
 
         }
 
-        $product = wc_get_product($product_id);
-
         $plan_id = sanitize_text_field(wp_unslash($_POST["{$this->env}_ppsfwoo_plan_id"]));
 
         update_post_meta($product_id, "{$this->env}_ppsfwoo_plan_id", $plan_id);
-
-        $product->update_meta_data('ppcp_subscription_plan', ['id' => $plan_id]);
-
-        $product->set_sold_individually('yes');
-
-        $product->save();
     }
 
     public static function get_product_id_by_plan_id($plan_id)
