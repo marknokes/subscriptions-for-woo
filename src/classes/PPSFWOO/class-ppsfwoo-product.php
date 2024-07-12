@@ -200,7 +200,7 @@ class Product
 
         $product_id = $product ? $product->get_id(): false;
 
-        if(empty($price) || false === $product_id || !$product->is_type('ppsfwoo')) {
+        if(empty($price) || false === $product_id || !$product->is_type(self::TYPE)) {
 
             return $price;
 
