@@ -9,6 +9,8 @@ use PPSFWOO\Plan;
 
 class Product
 {
+    const TYPE = "subscription";
+
     private $PluginMain,
             $env;
 
@@ -31,9 +33,9 @@ class Product
         
         add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
         
-        add_action('woocommerce_process_product_meta_ppsfwoo', [$this, 'save_option_field']);
+        add_action('woocommerce_process_product_meta_' . self::TYPE, [$this, 'save_option_field']);
 
-        add_action('woocommerce_ppsfwoo_add_to_cart', function() {
+        add_action('woocommerce_' . self::TYPE . '_add_to_cart', function() {
 
             do_action('woocommerce_simple_add_to_cart');
 
@@ -56,7 +58,7 @@ class Product
             return $types;
         }
 
-        $types['ppsfwoo'] = "Subscription";
+        $types[self::TYPE] = "Subscription";
 
         return $types;
     }
@@ -68,11 +70,11 @@ class Product
             return $tabs;
         }
         
-        $tabs['ppsfwoo'] = [
+        $tabs[self::TYPE] = [
             'label'     => 'Subscription Plan',
             'target'    => 'ppsfwoo_options',
             'class'     => [
-                'show_if_ppsfwoo'
+                'show_if_' . self::TYPE
             ],
             'priority' => 11
         ];
@@ -158,11 +160,17 @@ class Product
 
         }
 
+        $product = wc_get_product($product_id);
+
         $plan_id = sanitize_text_field(wp_unslash($_POST["{$this->env}_ppsfwoo_plan_id"]));
 
         update_post_meta($product_id, "{$this->env}_ppsfwoo_plan_id", $plan_id);
 
-        update_post_meta($product_id, '_sold_individually', 'yes');
+        $product->update_meta_data('ppcp_subscription_plan', ['id' => $plan_id]);
+
+        $product->set_sold_individually('yes');
+
+        $product->save();
     }
 
     public static function get_product_id_by_plan_id($plan_id)

@@ -8,6 +8,7 @@ use PPSFWOO\AjaxActionsPriv;
 use PPSFWOO\Webhook;
 use PPSFWOO\PayPal;
 use PPSFWOO\DatabaseQuery;
+use PPSFWOO\Product;
 
 class PluginMain
 {
@@ -277,9 +278,9 @@ class PluginMain
 
                 $product = wc_get_product($post->ID);
 
-                if ($product && $product->is_type('ppsfwoo') && wp_script_is('ppcp-smart-button', 'enqueued')) {
+                if ($product && $product->is_type(Product::TYPE) && wp_script_is('ppcp-smart-button', 'enqueued')) {
 
-                    wp_dequeue_script( 'ppcp-smart-button' );
+                    wp_dequeue_script('ppcp-smart-button');
 
                 }
 

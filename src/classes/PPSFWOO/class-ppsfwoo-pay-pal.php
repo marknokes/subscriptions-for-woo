@@ -5,6 +5,7 @@ namespace PPSFWOO;
 use PPSFWOO\PluginMain;
 use PPSFWOO\Plan;
 use PPSFWOO\Exception;
+use PPSFWOO\Product;
 use WooCommerce\PayPalCommerce\PPCP;
 use WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer;
 use WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
@@ -15,7 +16,7 @@ class PayPal
     {
         global $product;
 
-        if(!$product->is_type('ppsfwoo')) {
+        if(!$product->is_type(Product::TYPE)) {
 
             return;
 
