@@ -48,7 +48,9 @@ function ppsfwoo_init()
 
 	global $product;
 
-	$ppsfwoo_product = new class($product) extends WC_Product
+	$ClassName = 'WC_Product_' . Product::TYPE;
+
+	$ClassDefinition = new class($product) extends WC_Product
 	{
 	    public $product_type;
 		
@@ -60,7 +62,7 @@ function ppsfwoo_init()
 		}
 	};
 
-	class_alias(get_class($ppsfwoo_product), 'WC_Product_' . Product::TYPE);
+	class_alias(get_class($ClassDefinition), $ClassName);
 
 	$PluginMain = PluginMain::get_instance();
 
