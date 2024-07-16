@@ -84,6 +84,13 @@ class PluginMain
         ]
     ];
 
+    public static $tabs = [
+        'tab-subscribers' => 'Subscribers',
+        'tab-plans'       => 'Plans',
+        'tab-general'     => 'General Settings',
+        'tab-advanced'    => 'Advanced'
+    ];
+
     public $client_id,
            $paypal_url,
            $ppsfwoo_webhook_id,
@@ -152,6 +159,12 @@ class PluginMain
         add_action('rest_api_init', [Webhook::get_instance(), 'rest_api_init']);
         
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
+
+        add_action('ppsfwoo_options_page_tab_menu', [$this, 'ppsfwoo_options_page_tab_menu'], 10, 1);
+
+        add_action('ppsfwoo_options_page_tab_content', [$this, 'ppsfwoo_options_page_tab_content'], 10, 1);
+
+        add_action('ppsfwoo_after_options_page', [$this, 'after_options_page']);
     }
 
     public function add_filters()
@@ -161,6 +174,38 @@ class PluginMain
         add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 2);
 
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
+    }
+
+    public function ppsfwoo_options_page_tab_menu($tabs)
+    {
+        foreach ($tabs as $tab_id => $display_name)
+        {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $active = isset($_GET['tab']) && $tab_id === $_GET['tab'] ? "nav-tab-active": "";
+
+            echo '<a href="' . esc_attr($tab_id) . '" class="nav-tab ' . esc_attr($active) . '">' . esc_html($display_name) . '</a>';
+        }
+    }
+
+    public function ppsfwoo_options_page_tab_content($tabs)
+    {
+        foreach ($tabs as $tab_id => $display_name)
+        {
+            $file = $this->template_dir . "tab-content/$tab_id.php";
+
+            if(!file_exists($file)) continue;
+
+            echo '<div id="' . esc_attr($tab_id) . '" class="tab-content">';
+
+            include $file;
+
+            echo '</div>';
+        }
+    }
+
+    public function after_options_page()
+    {
+        include $this->template_dir . "tab-content/go-pro.php";
     }
 
     public static function clear_option_cache($option_name)
@@ -630,6 +675,8 @@ class PluginMain
 
     public function options_page()
     {
+        $tabs = self::$tabs;
+        
         include $this->template_dir . "/options-page.php";
     }
 }
