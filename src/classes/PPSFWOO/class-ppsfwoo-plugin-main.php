@@ -600,6 +600,7 @@ class PluginMain
         if(plugin_basename(PPSFWOO_PLUGIN_PATH) !== $file) {
 
             return $links;
+
         }
 
         $upgrade = [
