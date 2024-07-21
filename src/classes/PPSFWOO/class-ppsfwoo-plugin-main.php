@@ -365,9 +365,7 @@ class PluginMain
         $per_page = $this->ppsfwoo_rows_per_page ?: 10;
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $subs_page_num = $_GET['subs_page_num'] ?? 1;
-
-        $page = absint($subs_page_num);
+        $page = isset($_GET['subs_page_num']) ? absint($_GET['subs_page_num']):  1;
 
         $offset = max(0, ($page - 1) * $per_page);
 
