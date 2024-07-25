@@ -94,6 +94,8 @@ function ppsfwoo_upgrader_process_complete($upgrader, $hook_extra)
 
             set_transient('ppsfwoo_ppcp_updated', true, 60);
 
+            PluginMain::ppsfwoo_ppcp_updated();
+
         }
     }
 }

@@ -148,7 +148,7 @@ class PluginMain
 
         add_action('admin_init', [$this, 'handle_export_action']);
 
-        add_action('admin_init', [$this, 'ppsfwoo_ppcp_updated']);
+        add_action('admin_init', [self::class, 'ppsfwoo_ppcp_updated']);
 
         add_action('admin_menu', [$this, 'register_options_page']);
 
@@ -256,7 +256,7 @@ class PluginMain
         }
     }
 
-    public function ppsfwoo_ppcp_updated()
+    public static function ppsfwoo_ppcp_updated()
     {
         if(false === get_transient('ppsfwoo_ppcp_updated_ran') && get_transient('ppsfwoo_ppcp_updated')) {
 
