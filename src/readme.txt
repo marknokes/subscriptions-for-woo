@@ -6,7 +6,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Stable tag: 2.3.4
 WC tested up to: 8.9.2
 Requires at least: 6.4.3
-Tested up to: 6.6
+Tested up to: 6.6.1
 Requires PHP: 7.4
 
 Enjoy recurring PayPal subscription payments leveraging WooCommerce and WooCommerce PayPal Payments
@@ -57,7 +57,7 @@ To install and configure Subscriptions for Woo, you will need:
 * WooCommerce Version 8.7.0 or newer (installed and activated)
 * WooCommerce PayPal Payments Version 2.6.1 or newer (installed and activated)
 * PHP Version 7.2 or newer
-* PayPal business **or** personal account
+* A PayPal business account
 
 = Setup and Configuration =
 
@@ -90,7 +90,12 @@ This plugin integrates with the PayPal SDK to process payments securely. Please 
 * Before using this plugin, please review PayPal's [Terms of Use](https://www.paypal.com/us/legalhub/home) and [Privacy Policy](https://www.paypal.com/us/legalhub/privacy-full) to understand how PayPal handles your data and transactions.
 
 == Screenshots ==
-1. Main settings screen
+1. Subscribers list
+2. General settings
+3. Advanced settings
+4. Product edit screen
+5. Subscriptions capabilities
+6. Copy shortcode link
 
 == Upgrade Notice ==
 
