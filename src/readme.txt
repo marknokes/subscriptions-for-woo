@@ -1,4 +1,4 @@
-=== Subscriptions for Woo ===
+=== Subscriptions for Woo - Recurring subscription payments using PayPal and WooCommerce ===
 Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
