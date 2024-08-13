@@ -256,9 +256,11 @@ class PluginMain
         }
     }
 
-    public static function ppsfwoo_ppcp_updated()
+    public static function ppsfwoo_ppcp_updated($upgrader_process_complete = false)
     {
-        if(false === get_transient('ppsfwoo_ppcp_updated_ran') && get_transient('ppsfwoo_ppcp_updated')) {
+        $ppsfwoo_ppcp_updated = false === get_transient('ppsfwoo_ppcp_updated_ran') && get_transient('ppsfwoo_ppcp_updated');
+
+        if($upgrader_process_complete || $ppsfwoo_ppcp_updated) {
 
             set_transient('ppsfwoo_ppcp_updated_ran', true, 60);
 

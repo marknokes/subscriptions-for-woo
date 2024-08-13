@@ -92,9 +92,7 @@ function ppsfwoo_upgrader_process_complete($upgrader, $hook_extra)
         	(is_string($plugin) && $basename === $plugin)
         ) {
 
-            set_transient('ppsfwoo_ppcp_updated', true, 60);
-
-            PluginMain::ppsfwoo_ppcp_updated();
+            PluginMain::ppsfwoo_ppcp_updated(true);
 
         }
     }
