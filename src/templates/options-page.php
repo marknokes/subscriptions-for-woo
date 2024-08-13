@@ -1,15 +1,4 @@
-<?php
-
-if (!defined('ABSPATH')) exit;
-
-$tabs = [
-	'tab-subscribers' => 'Subscribers',
-	'tab-plans' 	  => 'Plans',
-	'tab-general' 	  => 'General Settings',
-	'tab-advanced' 	  => 'Advanced'
-];
-
-?>
+<?php if (!defined('ABSPATH')) exit; ?>
 
 <div class="flex-container">
 	
@@ -19,35 +8,14 @@ $tabs = [
 
 		<div class="nav-tab-wrapper">
 
-			<?php
-
-			foreach ($tabs as $tab_id => $display_name)
-			{
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				$active = isset($_GET['tab']) && $tab_id === $_GET['tab'] ? "nav-tab-active": "";
-
-				echo '<a href="' . esc_attr($tab_id) . '" class="nav-tab ' . esc_attr($active) . '">' . esc_html($display_name) . '</a>';
-			}
-
-			?>
+			<?php do_action('ppsfwoo_options_page_tab_menu', $tabs); ?>
 
 		</div>
 
-		<?php
-
-		foreach ($tabs as $tab_id => $display_name)
-		{
-			echo '<div id="' . esc_attr($tab_id) . '" class="tab-content">';
-
-			include $this->template_dir . "tab-content/$tab_id.php";
-
-			echo '</div>';
-		}
-
-		?>
+		<?php do_action('ppsfwoo_options_page_tab_content', $tabs); ?>
 
 	</div>
 
-	<?php if(!PPSFWOO_PLUGIN_EXTRAS) { include $this->template_dir . "tab-content/go-pro.php"; } ?>
+	<?php do_action('ppsfwoo_after_options_page'); ?>
 
 </div>

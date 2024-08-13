@@ -6,3 +6,4 @@ src/templates/subscriber-table-my-account.php
 src/js/my-account*
 src/js/enterprise*
 src/css/enterprise*
+src/templates/tab-content/tab-license.php
