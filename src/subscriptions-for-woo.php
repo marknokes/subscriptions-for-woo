@@ -92,8 +92,15 @@ function ppsfwoo_upgrader_process_complete($upgrader, $hook_extra)
         	(is_string($plugin) && $basename === $plugin)
         ) {
 
-            PluginMain::ppsfwoo_ppcp_updated(true);
+        	if (!wp_next_scheduled(PluginMain::$cron_event_ppsfwoo_ppcp_updated)) {
+            	
+            	wp_schedule_single_event(
+            		time() + 30,
+            		PluginMain::$cron_event_ppsfwoo_ppcp_updated,
+            		[true]
+            	);
 
+        	}
         }
     }
 }

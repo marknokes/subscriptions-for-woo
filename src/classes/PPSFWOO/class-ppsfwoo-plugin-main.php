@@ -20,6 +20,8 @@ class PluginMain
 
     public static $ppcp_settings_url = "admin.php?page=wc-settings&tab=checkout&section=ppcp-gateway&ppcp-tab=ppcp-connection";
 
+    public static $cron_event_ppsfwoo_ppcp_updated = "cron_event_ppsfwoo_ppcp_updated";
+
     public static $options = [
         'ppsfwoo_thank_you_page_id' => [
             'name'    => 'Order thank you page',
@@ -150,6 +152,8 @@ class PluginMain
 
         add_action('admin_init', [self::class, 'ppsfwoo_ppcp_updated']);
 
+        add_action(self::$cron_event_ppsfwoo_ppcp_updated, [self::class, 'ppsfwoo_ppcp_updated']);
+
         add_action('admin_menu', [$this, 'register_options_page']);
 
         add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
@@ -256,11 +260,11 @@ class PluginMain
         }
     }
 
-    public static function ppsfwoo_ppcp_updated($upgrader_process_complete = false)
+    public static function ppsfwoo_ppcp_updated($doing_cron = false)
     {
-        $ppsfwoo_ppcp_updated = false === get_transient('ppsfwoo_ppcp_updated_ran') && get_transient('ppsfwoo_ppcp_updated');
+        $transients = false === get_transient('ppsfwoo_ppcp_updated_ran') && get_transient('ppsfwoo_ppcp_updated');
 
-        if($upgrader_process_complete || $ppsfwoo_ppcp_updated) {
+        if($transients || $doing_cron) {
 
             set_transient('ppsfwoo_ppcp_updated_ran', true, 60);
 
