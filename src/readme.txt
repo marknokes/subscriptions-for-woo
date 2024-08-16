@@ -1,9 +1,9 @@
-=== Subscriptions for Woo - Recurring subscription payments using PayPal and WooCommerce ===
+=== Subscriptions for Woo - Recurring subscription payments using PayPal & WooCommerce ===
 Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.3.4
+Stable tag: 2.3.5
 WC tested up to: 8.9.2
 Requires at least: 6.4.3
 Tested up to: 6.6.1
@@ -104,6 +104,9 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.3.5 =
+* Bugfix: webhooks not re-created on upgrader_process_complete
 
 = 2.3.4 =
 * Initial release.
