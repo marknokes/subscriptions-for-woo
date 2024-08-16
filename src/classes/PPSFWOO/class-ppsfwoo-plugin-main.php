@@ -150,9 +150,13 @@ class PluginMain
 
         add_action('admin_init', [$this, 'handle_export_action']);
 
-        add_action('admin_init', [self::class, 'ppsfwoo_ppcp_updated']);
+        add_action('admin_init', [$this, 'check_ppcp_updated']);
 
-        add_action(self::$cron_event_ppsfwoo_ppcp_updated, [self::class, 'ppsfwoo_ppcp_updated']);
+        add_action(self::$cron_event_ppsfwoo_ppcp_updated, function() {
+
+            Webhook::get_instance()->resubscribe();
+
+        });
 
         add_action('admin_menu', [$this, 'register_options_page']);
 
@@ -164,9 +168,9 @@ class PluginMain
         
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
 
-        add_action('ppsfwoo_options_page_tab_menu', [$this, 'ppsfwoo_options_page_tab_menu'], 10, 1);
+        add_action('ppsfwoo_options_page_tab_menu', [$this, 'options_page_tab_menu'], 10, 1);
 
-        add_action('ppsfwoo_options_page_tab_content', [$this, 'ppsfwoo_options_page_tab_content'], 10, 1);
+        add_action('ppsfwoo_options_page_tab_content', [$this, 'options_page_tab_content'], 10, 1);
 
         add_action('ppsfwoo_after_options_page', [$this, 'after_options_page']);
     }
@@ -180,7 +184,25 @@ class PluginMain
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
     }
 
-    public function ppsfwoo_options_page_tab_menu($tabs)
+    public static function upgrader_process_complete($upgrader, $hook_extra)
+    {
+        if ($hook_extra['action'] === 'update' && $hook_extra['type'] === 'plugin') {
+
+            $plugin = $hook_extra['plugins'] ?? $hook_extra['plugin'] ?? [];
+
+            $basename = "woocommerce-paypal-payments/woocommerce-paypal-payments.php";
+
+            $is_target = (is_array($plugin) && in_array($basename, $plugin)) || (is_string($plugin) && $basename === $plugin);
+
+            if ($is_target && !wp_next_scheduled(self::$cron_event_ppsfwoo_ppcp_updated)) {
+
+                wp_schedule_single_event(time(), self::$cron_event_ppsfwoo_ppcp_updated);
+
+            }
+        }
+    }
+
+    public function options_page_tab_menu($tabs)
     {
         foreach ($tabs as $tab_id => $display_name)
         {
@@ -191,7 +213,7 @@ class PluginMain
         }
     }
 
-    public function ppsfwoo_options_page_tab_content($tabs)
+    public function options_page_tab_content($tabs)
     {
         foreach ($tabs as $tab_id => $display_name)
         {
@@ -260,17 +282,16 @@ class PluginMain
         }
     }
 
-    public static function ppsfwoo_ppcp_updated($doing_cron = false)
+    public static function allow_force_resubscribe()
     {
-        $transients = false === get_transient('ppsfwoo_ppcp_updated_ran') && get_transient('ppsfwoo_ppcp_updated');
+        delete_transient('ppsfwoo_webhooks_resubscribed');
 
-        if($transients || $doing_cron) {
+        set_transient('ppsfwoo_ppcp_updated', true, 60);
+    }
 
-            set_transient('ppsfwoo_ppcp_updated_ran', true, 60);
-
-            Webhook::get_instance()->resubscribe();
-
-            AjaxActionsPriv::refresh_plans();
+    public function check_ppcp_updated()
+    {
+        if(get_transient('ppsfwoo_ppcp_updated') && false !== Webhook::get_instance()->resubscribe()) {
 
             add_action('admin_notices', function() {
                 ?>
@@ -279,7 +300,6 @@ class PluginMain
                 </div>
                 <?php
             });
-
         }
     }
 

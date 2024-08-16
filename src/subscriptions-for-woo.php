@@ -7,7 +7,7 @@
  * Author URI: https://wp-subscriptions.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Version: 2.3.4
+ * Version: 2.3.5
  * WC requires at least: 8.6.0
  * WC tested up to: 8.9.2
  * Requires at least: 6.4.3
@@ -22,14 +22,6 @@ use WooCommerce\PayPalCommerce\PPCP;
 
 if (!defined('ABSPATH')) exit;
 
-add_action('plugins_loaded', 'ppsfwoo_init', 11);
-
-add_action('wc_ajax_ppc-webhooks-resubscribe', function() { set_transient('ppsfwoo_ppcp_updated', true, 60); });
-
-add_action('update_option_woocommerce-ppcp-settings', function() { set_transient('ppsfwoo_ppcp_updated', true, 60); });
-
-add_action('upgrader_process_complete', 'ppsfwoo_upgrader_process_complete', 10, 2);
-
 require_once 'autoload.php';
 
 spl_autoload_register('ppsfwoo_autoload');
@@ -40,8 +32,14 @@ define('PPSFWOO_PLUGIN_EXTRAS', class_exists(PluginExtras::class));
 
 register_activation_hook(PPSFWOO_PLUGIN_PATH, [PluginMain::class, 'plugin_activation']);
 
-function ppsfwoo_init()
-{
+add_action('wc_ajax_ppc-webhooks-resubscribe', [PluginMain::class, 'allow_force_resubscribe']);
+
+add_action('update_option_woocommerce-ppcp-settings', [PluginMain::class, 'allow_force_resubscribe']);
+
+add_action('upgrader_process_complete', [PluginMain::class, 'upgrader_process_complete'], 10, 2);
+
+add_action('plugins_loaded', function() {
+
 	if(!class_exists(WC_Product::class) || !class_exists(PPCP::class)) {
 
 		return;
@@ -77,30 +75,5 @@ function ppsfwoo_init()
 	new Product();
 
 	if(PPSFWOO_PLUGIN_EXTRAS) { new PluginExtras(); };
-}
 
-function ppsfwoo_upgrader_process_complete($upgrader, $hook_extra)
-{
-	if ($hook_extra['action'] === 'update' && $hook_extra['type'] === 'plugin') {
-
-        $plugin = $hook_extra['plugins'] ?? $hook_extra['plugin'] ?? [];
-
-        $basename = "woocommerce-paypal-payments/woocommerce-paypal-payments.php";
-
-        if (
-        	(is_array($plugin) && in_array($basename, $plugin)) ||
-        	(is_string($plugin) && $basename === $plugin)
-        ) {
-
-        	if (!wp_next_scheduled(PluginMain::$cron_event_ppsfwoo_ppcp_updated)) {
-            	
-            	wp_schedule_single_event(
-            		time() + 30,
-            		PluginMain::$cron_event_ppsfwoo_ppcp_updated,
-            		[true]
-            	);
-
-        	}
-        }
-    }
-}
+}, 11);

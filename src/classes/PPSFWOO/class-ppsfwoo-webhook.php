@@ -132,7 +132,13 @@ class Webhook
     }
 
     public function resubscribe()
-    {
+    {    
+        $created = false;
+
+        if(get_transient('ppsfwoo_webhooks_resubscribed')) return;
+
+        set_transient('ppsfwoo_webhooks_resubscribed', true, 300);
+
         if($webhooks = PayPal::request("/v1/notifications/webhooks")) {
 
             if(isset($webhooks['response']['webhooks'])) {
@@ -146,9 +152,11 @@ class Webhook
                     }
                 }
 
-                $this->create();
+                $created = $this->create();
             }
         }
+
+        return $created;
     }
 
     public function list()
