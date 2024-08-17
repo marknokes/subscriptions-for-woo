@@ -105,7 +105,7 @@ If you encounter issues with the PayPal buttons not appearing after an update, p
 
 == Changelog ==
 
-= 2.3.5 =
+= 2.3.6 =
 * Improvement: remove superfluous transient check during webhook resubscribe
 
 = 2.3.5 =
