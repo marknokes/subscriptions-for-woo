@@ -184,24 +184,6 @@ class PluginMain
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
     }
 
-    public static function upgrader_process_complete($upgrader, $hook_extra)
-    {
-        if ($hook_extra['action'] === 'update' && $hook_extra['type'] === 'plugin') {
-
-            $plugin = $hook_extra['plugins'] ?? $hook_extra['plugin'] ?? [];
-
-            $basename = "woocommerce-paypal-payments/woocommerce-paypal-payments.php";
-
-            $is_target = (is_array($plugin) && in_array($basename, $plugin)) || (is_string($plugin) && $basename === $plugin);
-
-            if ($is_target && !wp_next_scheduled(self::$cron_event_ppsfwoo_ppcp_updated)) {
-
-                wp_schedule_single_event(time(), self::$cron_event_ppsfwoo_ppcp_updated);
-
-            }
-        }
-    }
-
     public function options_page_tab_menu($tabs)
     {
         foreach ($tabs as $tab_id => $display_name)
@@ -282,16 +264,39 @@ class PluginMain
         }
     }
 
-    public static function allow_force_resubscribe()
+    public static function schedule_webhook_resubscribe()
     {
-        delete_transient('ppsfwoo_webhooks_resubscribed');
+        if (!get_transient('ppsfwoo_ppcp_updated') && !wp_next_scheduled(self::$cron_event_ppsfwoo_ppcp_updated)) {
 
-        set_transient('ppsfwoo_ppcp_updated', true, 60);
+            set_transient('ppsfwoo_ppcp_updated', true);
+
+            wp_schedule_single_event(time(), self::$cron_event_ppsfwoo_ppcp_updated);
+
+            do_action('wp_cron');
+        }
+    }
+
+    public static function upgrader_process_complete($upgrader, $hook_extra)
+    {
+        if ($hook_extra['action'] === 'update' && $hook_extra['type'] === 'plugin') {
+
+            $plugin = $hook_extra['plugins'] ?? $hook_extra['plugin'] ?? [];
+
+            $basename = "woocommerce-paypal-payments/woocommerce-paypal-payments.php";
+
+            $is_target = (is_array($plugin) && in_array($basename, $plugin)) || (is_string($plugin) && $basename === $plugin);
+
+            if ($is_target) {
+
+                self::schedule_webhook_resubscribe();
+
+            }
+        }
     }
 
     public function check_ppcp_updated()
     {
-        if(get_transient('ppsfwoo_ppcp_updated') && false !== Webhook::get_instance()->resubscribe()) {
+        if(get_transient('ppsfwoo_ppcp_updated')) {
 
             add_action('admin_notices', function() {
                 ?>
@@ -300,6 +305,8 @@ class PluginMain
                 </div>
                 <?php
             });
+
+            delete_transient('ppsfwoo_ppcp_updated');
         }
     }
 

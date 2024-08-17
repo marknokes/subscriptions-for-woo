@@ -32,9 +32,9 @@ define('PPSFWOO_PLUGIN_EXTRAS', class_exists(PluginExtras::class));
 
 register_activation_hook(PPSFWOO_PLUGIN_PATH, [PluginMain::class, 'plugin_activation']);
 
-add_action('wc_ajax_ppc-webhooks-resubscribe', [PluginMain::class, 'allow_force_resubscribe']);
+add_action('wc_ajax_ppc-webhooks-resubscribe', [PluginMain::class, 'schedule_webhook_resubscribe']);
 
-add_action('update_option_woocommerce-ppcp-settings', [PluginMain::class, 'allow_force_resubscribe']);
+add_action('update_option_woocommerce-ppcp-settings', [PluginMain::class, 'schedule_webhook_resubscribe']);
 
 add_action('upgrader_process_complete', [PluginMain::class, 'upgrader_process_complete'], 10, 2);
 
