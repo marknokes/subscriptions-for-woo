@@ -9,9 +9,9 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Version: 2.3.6
  * WC requires at least: 8.6.0
- * WC tested up to: 8.9.2
+ * WC tested up to: 9.3.3
  * Requires at least: 6.4.3
- * Tested up to: 6.6.1
+ * Tested up to: 6.7
  * Requires PHP: 7.4
  */
 

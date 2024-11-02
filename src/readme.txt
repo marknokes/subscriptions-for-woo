@@ -4,9 +4,9 @@ Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Stable tag: 2.3.6
-WC tested up to: 8.9.2
+WC tested up to: 9.3.3
 Requires at least: 6.4.3
-Tested up to: 6.6.1
+Tested up to: 6.7
 Requires PHP: 7.4
 
 Enjoy recurring PayPal subscription payments leveraging WooCommerce and WooCommerce PayPal Payments
