@@ -48,7 +48,7 @@ class PayPal
 
         $env = [
             'paypal_api_url' => $sandbox_on ? 'https://api-m.sandbox.paypal.com': 'https://api-m.paypal.com',
-            'paypal_url'     => $sandbox_on ? 'https://sandbox.paypal.com': 'https://www.paypal.com',
+            'paypal_url'     => $sandbox_on ? 'https://www.sandbox.paypal.com': 'https://www.paypal.com',
             'client_id'      => $settings->has('client_id') && $settings->get('client_id') ? $settings->get('client_id'): '',
             'env'            => $sandbox_on ? 'sandbox': 'production'
         ];
