@@ -47,9 +47,9 @@ class AjaxActions
         if($is_ajax) {
 
             // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $Plan = new Plan(absint($_POST['product_id']));
+            $Plan = isset($_POST['product_id']) ? new Plan(absint($_POST['product_id'])): NULL;
 
-            if($Plan->id) {
+            if(isset($Plan) && $Plan->id) {
 
                 $PluginMain = PluginMain::get_instance();
 

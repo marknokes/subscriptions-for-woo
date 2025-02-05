@@ -26,7 +26,8 @@ class PluginMain
         'ppsfwoo_thank_you_page_id' => [
             'name'    => 'Order thank you page',
             'type'    => 'select',
-            'default' => 0
+            'default' => 0,
+            'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_rows_per_page' => [
             'name'    => 'Subscribers Rows Per Page',
@@ -38,17 +39,20 @@ class PluginMain
                 '40' => 40,
                 '50' => 50
             ],
-            'default' => '10'
+            'default' => 10,
+            'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_delete_plugin_data' => [
             'name'    => 'Delete plugin data on deactivation',
             'type'    => 'checkbox',
-            'default' => 0
+            'default' => 0,
+            'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_hide_inactive_plans' => [
             'name'    => 'Hide inactive plans',
             'type'    => 'checkbox',
-            'default' => 0
+            'default' => 0,
+            'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_subscribed_webhooks' => [
             'type'    => 'skip_settings_field',
@@ -82,7 +86,8 @@ class PluginMain
         'ppsfwoo_button_text' => [
             'name'    => 'Button Text',
             'type'    => 'text',
-            'default' => 'Subscribe'
+            'default' => 'Subscribe',
+            'sanitize_callback' => 'sanitize_text_field'
         ]
     ];
 
@@ -683,8 +688,16 @@ class PluginMain
         foreach (self::$options as $option_name => $option_value)
         {
             if('skip_settings_field' === $option_value['type']) continue;
-            
-            register_setting(self::$options_group, $option_name);
+
+            // phpcs:ignore PluginCheck.CodeAnalysis.SettingSanitization.register_settingDynamic
+            register_setting(
+                self::$options_group,
+                $option_name,
+                [
+                    'type'              => gettype($option_value['default']),
+                    'sanitize_callback' => $option_value['sanitize_callback']
+                ]
+            );
         }
     }
 

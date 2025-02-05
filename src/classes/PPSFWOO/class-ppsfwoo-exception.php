@@ -8,6 +8,7 @@ class Exception
 {
 	public static function log($message = "")
 	{
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace 
 		$stack_trace = debug_backtrace();
 
         $message .= " Stack trace:\n";
