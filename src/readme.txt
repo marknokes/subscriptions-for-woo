@@ -3,7 +3,7 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.3.8
+Stable tag: 2.3.9
 WC tested up to: 9.3.3
 Requires at least: 6.4.3
 Tested up to: 6.7.2
@@ -104,6 +104,10 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.3.9 =
+* Bugfix: Customers unable to download products up to expiration date after cancellation
+* Feat: Plan table on settings page now deeplinks into PayPal
 
 = 2.3.8 =
 * Security enhancements: Sanitize options passed to register_setting
