@@ -20,7 +20,7 @@
 		$status_indicator = $plan_active ? 'green': 'red';
 		?>
 		<tr class="plan-row">
-			<td><?php echo esc_html($plan_id); ?></td>
+			<td><a href='<?php echo esc_url($paypal_url); ?>/billing/plans/<?php echo esc_attr($plan_id); ?>' target='_blank'><?php echo esc_html($plan_id); ?></a></td>
 			<td><?php echo esc_html($plan_data['plan_name']); ?></td>
 			<td><?php echo esc_html($plan_data['product_name']); ?></td>
 			<td><?php echo esc_html($plan_data['frequency']); ?></td>
