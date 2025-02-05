@@ -150,7 +150,7 @@ class Subscriber
                 ]
             );
 
-            Product::update_download_permissions($order_id, 'grant');
+            Product::update_download_permissions($order_id);
         }
 
         $errors = isset($result->result['error']) ? $result->result['error']: false;
@@ -164,8 +164,18 @@ class Subscriber
     public function cancel()
     {
         if($order_id = Order::get_order_id_by_subscription_id($this->subscription_id)) {
+
+            $results = new DatabaseQuery(
+                "SELECT DATE(`created` + INTERVAL 1 YEAR) AS `access_expires`
+                 FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
+                 WHERE `order_id` = %d;", [$order_id]
+            );
+
+            $access_expires = isset($results->result[0]->access_expires)
+                ? $results->result[0]->access_expires
+                : "1999-12-31";
         
-            Product::update_download_permissions($order_id, 'revoke');
+            Product::update_download_permissions($order_id, $access_expires);
 
         }
 

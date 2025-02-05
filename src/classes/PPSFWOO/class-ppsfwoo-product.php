@@ -217,22 +217,7 @@ class Product
         return $price;
     }
 
-    protected static function get_download_count($download_id, $order_id)
-    {
-        $results = new DatabaseQuery(
-            "SELECT `download_count` FROM {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
-             WHERE `download_id` = %s
-             AND `order_id` = %d;",
-            [
-                $download_id,
-                $order_id
-            ]
-        );
-
-        return isset($results->result[0]->download_count) ? $results->result[0]->download_count: 0;
-    }
-
-    public static function update_download_permissions($order_id, $action = "grant")
+    public static function update_download_permissions($order_id, $access_expires = "")
     {
         if (class_exists('\WC_Product')) {
 
@@ -249,40 +234,39 @@ class Product
                 $product = $item->get_product(); 
 
                 if ($product && $product->exists() && $product->is_downloadable()) {
-
-                    $default_download_limit = get_post_meta($product->get_id(), '_download_limit', true);
                     
                     $downloads = $product->get_downloads();
 
                     foreach (array_keys($downloads) as $download_id)
                     {
-                        $download_count = self::get_download_count($download_id, $order_id);
+                        if(!empty($access_expires)) {
 
-                        if($action === 'grant' && $default_download_limit === "-1") {
-
-                            $downloads_remaining = "";
-
-                        } else if($action === 'revoke') {
-
-                            $downloads_remaining = "0";
+                            new DatabaseQuery(
+                                "UPDATE {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
+                                 SET `access_expires` = %s
+                                 WHERE `download_id` = %s
+                                 AND `order_id` = %d;",
+                                [   
+                                    $access_expires,
+                                    $download_id,
+                                    $order_id
+                                ]
+                            );
 
                         } else {
 
-                            $downloads_remaining = (int) $default_download_limit - (int) $download_count;
+                            new DatabaseQuery(
+                                "UPDATE {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
+                                 SET `access_expires` = NULL
+                                 WHERE `download_id` = %s
+                                 AND `order_id` = %d;",
+                                [
+                                    $download_id,
+                                    $order_id
+                                ]
+                            );
 
                         }
-
-                        new DatabaseQuery(
-                            "UPDATE {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
-                             SET `downloads_remaining` = %s
-                             WHERE `download_id` = %s
-                             AND `order_id` = %d;",
-                            [
-                                (string) $downloads_remaining,
-                                $download_id,
-                                $order_id
-                            ]
-                        );
                     } 
                 } 
             }
