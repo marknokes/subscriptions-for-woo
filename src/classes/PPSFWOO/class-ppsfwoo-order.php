@@ -49,7 +49,7 @@ class Order
         
         $order->calculate_totals();
         
-        $order->set_status('wc-completed', 'Order created programmatically.');
+        $order->set_status('processing', 'Order created by Subscriptions for Woo.');
 
         $order->save();
 

@@ -65,16 +65,23 @@ class Subscriber
             return esc_attr("false");
 
         }
-
-        if(!session_id()) session_start();
         
         $redirect = false;
 
-        $results = new DatabaseQuery("SELECT `wp_customer_id`, `order_id` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber WHERE `id` = %s", [$subs_id]);
+        $query = "SELECT `wp_customer_id`
+                       , `order_id`
+                  FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
+                  WHERE `id` = %s;";
+
+        $results = new DatabaseQuery($query, [$subs_id]);
 
         $order_id = $results->result[0]->order_id ?? NULL;
 
         if ($order_id && $order = wc_get_order($order_id)) {
+
+            $order->set_status('completed', 'Order complete.');
+
+            $order->save();
 
             $redirect = $order->get_checkout_order_received_url();
 
@@ -84,11 +91,14 @@ class Subscriber
 
             }
 
-        } else if(isset($_SESSION['ppsfwoo_customer_nonce']) && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")) {
+        } else if(
+            false !== get_transient('ppsfwoo_customer_nonce')
+            && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")
+        ) {
 
             if(self::is_active($response)) {
 
-                unset($_SESSION['ppsfwoo_customer_nonce']);
+                delete_transient('ppsfwoo_customer_nonce');
 
                 $Subscriber = new self($response, Webhook::ACTIVATED);
 

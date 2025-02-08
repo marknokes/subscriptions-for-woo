@@ -32,15 +32,17 @@ class AjaxActions
     {
         $nonce_name = "";
 
-        if(!session_id()) session_start();
+        $ppsfwoo_customer_nonce = get_transient('ppsfwoo_customer_nonce');
 
-        if (!isset($_SESSION['ppsfwoo_customer_nonce'])) {
+        if (!$ppsfwoo_customer_nonce) {
 
-            $nonce_name = $_SESSION['ppsfwoo_customer_nonce'] = wp_generate_password(24, false);
+            $nonce_name = wp_generate_password(24, false);
+
+            set_transient('ppsfwoo_customer_nonce', $nonce_name, 3600);
 
         } else {
 
-            $nonce_name = sanitize_text_field(wp_unslash($_SESSION['ppsfwoo_customer_nonce']));
+            $nonce_name = $ppsfwoo_customer_nonce;
 
         }
 
