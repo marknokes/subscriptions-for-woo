@@ -3,6 +3,7 @@
 namespace PPSFWOO;
 
 use PPSFWOO\Product;
+use PPSFWOO\Plan;
 use PPSFWOO\Order;
 use PPSFWOO\Webhook;
 use PPSFWOO\DatabaseQuery;
@@ -10,10 +11,10 @@ use PPSFWOO\Exception;
 
 class Subscriber
 {
+    public \stdClass $subscription;
+
     public $event_type,
            $user_id,
-           $subscription_id,
-           $plan_id,
            $email,
            $first_name,
            $last_name,
@@ -22,40 +23,85 @@ class Subscriber
            $city,
            $state,
            $postal_code,
-           $country_code,
-           $next_billing;
+           $country_code;
 
-	public function __construct($request, $event_type = NULL)
+	public function __construct($subscription, $event_type = NULL)
     {
-        $type = isset($request['response']) ? "response": "resource";
+        $type = isset($subscription['response']) ? "response": "resource";
 
-        $this->user_id          = NULL;
+        $this->subscription = (object) $subscription[$type];
 
-        $this->subscription_id  = $request[$type]['id'];
+        $this->subscription->last_payment = !empty($this->subscription->billing_info['last_payment']['time'])
+            ? new \DateTime($this->subscription->billing_info['last_payment']['time'])
+            : NULL;
 
-        $this->plan_id          = $request[$type]['plan_id'];
+        $this->subscription->next_billing = !empty($this->subscription->billing_info['next_billing_time'])
+            ? new \DateTime($this->subscription->billing_info['next_billing_time'])
+            : NULL;
 
-        $this->email            = $request[$type]['subscriber']['email_address'];
+        $expiration = $this->add_frequency_to_last_payment(
+            $this->subscription->last_payment,
+            (new Plan('plan_id', $this->get_plan_id()))->frequency
+        );
 
-        $this->first_name       = $request[$type]['subscriber']['name']['given_name'];
+        $this->subscription->expiration = $expiration
+            ?? $this->subscription->next_billing
+            ?? new \DateTime();
+        
+        $this->email            = $this->subscription->subscriber['email_address'];
 
-        $this->last_name        = $request[$type]['subscriber']['name']['surname'];
+        $this->first_name       = $this->subscription->subscriber['name']['given_name'];
 
-        $this->address_line_1   = $request[$type]['subscriber']['shipping_address']['address']['address_line_1'];
+        $this->last_name        = $this->subscription->subscriber['name']['surname'];
 
-        $this->address_line_2   = $request[$type]['subscriber']['shipping_address']['address']['address_line_2'] ?? "";
+        $this->address_line_1   = $this->subscription->subscriber['shipping_address']['address']['address_line_1'];
 
-        $this->city             = $request[$type]['subscriber']['shipping_address']['address']['admin_area_2'];
+        $this->address_line_2   = $this->subscription->subscriber['shipping_address']['address']['address_line_2'] ?? "";
 
-        $this->state            = $request[$type]['subscriber']['shipping_address']['address']['admin_area_1'];
+        $this->city             = $this->subscription->subscriber['shipping_address']['address']['admin_area_2'];
 
-        $this->postal_code      = $request[$type]['subscriber']['shipping_address']['address']['postal_code'];
+        $this->state            = $this->subscription->subscriber['shipping_address']['address']['admin_area_1'];
 
-        $this->country_code     = $request[$type]['subscriber']['shipping_address']['address']['country_code'];
+        $this->postal_code      = $this->subscription->subscriber['shipping_address']['address']['postal_code'];
 
-        $this->next_billing     = isset($request[$type]['billing_info']['next_billing_time']) ? (new \DateTime($request[$type]['billing_info']['next_billing_time']))->format('Y-m-d'): NULL;
+        $this->country_code     = $this->subscription->subscriber['shipping_address']['address']['country_code'];
 
-    	$this->event_type       = $event_type;
+        $this->event_type       = $event_type;
+
+    }
+
+    protected static function add_frequency_to_last_payment($datetime, $interval_type)
+    {
+        if(empty($datetime)) return NULL;
+
+        $intervals = [
+            'DAY'   => 'P1D',
+            'WEEK'  => 'P1W',
+            'MONTH' => 'P1M',
+            'YEAR'  => 'P1Y'
+        ];
+
+        if (!isset($intervals[$interval_type])) {
+
+            throw new \InvalidArgumentException("Invalid interval type. Use WEEK, MONTH, or YEAR.");
+
+        }
+
+        $new_date = clone $datetime;
+
+        $new_date->add(new \DateInterval($intervals[$interval_type]));
+
+        return $new_date;
+    }
+
+    public function get_id()
+    {
+        return $this->subscription->id ?? '';
+    }
+
+    public function get_plan_id()
+    {
+        return $this->subscription->plan_id ?? '';
     }
 
     public static function get($subs_id)
@@ -128,7 +174,7 @@ class Subscriber
 
         }
 
-        $order_id = Order::get_order_id_by_subscription_id($this->subscription_id);
+        $order_id = Order::get_order_id_by_subscription_id($this->get_id());
 
         if(false === $order_id) {
 
@@ -141,9 +187,9 @@ class Subscriber
                 )
                 VALUES (%s,%d,%s,%s);",
                 [
-                    $this->subscription_id,
+                    $this->get_id(),
                     $this->user_id,
-                    $this->plan_id,
+                    $this->get_plan_id(),
                     $this->event_type
                 ]
             );
@@ -154,12 +200,13 @@ class Subscriber
                 "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET
                     `paypal_plan_id` = %s,
                     `event_type` = %s,
-                    `canceled_date` = NULL
+                    `canceled_date` = NULL,
+                    `expires` = NULL
                 WHERE `id` = %s;",
                 [
-                    $this->plan_id,
+                    $this->get_plan_id(),
                     $this->event_type,
-                    $this->subscription_id
+                    $this->get_id()
                 ]
             );
 
@@ -175,19 +222,26 @@ class Subscriber
     }
 
     public function cancel()
-    {
-        if($order_id = Order::get_order_id_by_subscription_id($this->subscription_id)) {
+    {   
+        $expiration = $this->subscription->expiration->format(\DateTime::RFC3339);
+
+        if($order_id = Order::get_order_id_by_subscription_id($this->get_id())) {
         
-            Product::update_download_permissions($order_id, $this->next_billing);
+            Product::update_download_permissions($order_id, $expiration);
 
         }
 
         $result = new DatabaseQuery(
-            "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `event_type` = %s, `canceled_date` = %s WHERE `id` = %s;",
+            "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
+             SET `event_type` = %s,
+                 `canceled_date` = %s,
+                 `expires` = %s
+             WHERE `id` = %s;",
             [
                 $this->event_type,
                 gmdate("Y-m-d H:i:s"),
-                $this->subscription_id
+                $expiration,
+                $this->get_id()
             ]
         );
 
@@ -210,12 +264,12 @@ class Subscriber
                 "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `order_id` = %d, `canceled_date` = NULL WHERE `id` = %s;",
                 [
                     $order_id,
-                    $this->subscription_id
+                    $this->get_id()
                 ]
             );
         }
 
-        return $this->subscription_id ?? false;
+        return $this->get_id() ?? false;
     }
 
     private function create_wp_user()

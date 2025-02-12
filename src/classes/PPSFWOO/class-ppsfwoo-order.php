@@ -21,7 +21,7 @@ class Order
 
         $order->set_customer_id($user->user_id);
 
-        $order->add_product(wc_get_product(Product::get_product_id_by_plan_id($user->plan_id)));
+        $order->add_product(wc_get_product(Product::get_product_id_by_plan_id($user->get_plan_id())));
 
         $address = [
             'first_name' => $user->first_name,

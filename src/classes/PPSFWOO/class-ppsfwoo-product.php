@@ -192,7 +192,7 @@ class Product
 
         }
 
-        $Plan = new Plan($product_id);
+        $Plan = new Plan('product_id', $product_id);
 
         if ($Plan->frequency) {
 

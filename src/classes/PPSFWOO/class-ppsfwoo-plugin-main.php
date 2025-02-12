@@ -281,19 +281,24 @@ class PluginMain
         }
     }
 
+    protected static function is_upgrade_target($basename, $plugin)
+    {
+        return (is_array($plugin) && in_array($basename, $plugin)) || (is_string($plugin) && $basename === $plugin);
+    }
+
     public static function upgrader_process_complete($upgrader, $hook_extra)
     {
         if ($hook_extra['action'] === 'update' && $hook_extra['type'] === 'plugin') {
 
             $plugin = $hook_extra['plugins'] ?? $hook_extra['plugin'] ?? [];
 
-            $basename = "woocommerce-paypal-payments/woocommerce-paypal-payments.php";
-
-            $is_target = (is_array($plugin) && in_array($basename, $plugin)) || (is_string($plugin) && $basename === $plugin);
-
-            if ($is_target) {
+            if (self::is_upgrade_target("woocommerce-paypal-payments/woocommerce-paypal-payments.php", $plugin)) {
 
                 self::schedule_webhook_resubscribe();
+
+            } else if (self::is_upgrade_target(plugin_basename(PPSFWOO_PLUGIN_PATH), $plugin)) {
+
+                self::upgrade_db();
 
             }
         }
@@ -573,6 +578,8 @@ class PluginMain
 
         self::db_install();
 
+        self::upgrade_db();
+
         self::create_thank_you_page();
 
         $Webhook = Webhook::get_instance();
@@ -603,6 +610,10 @@ class PluginMain
                 self::clear_option_cache($option_name);
 
             }
+
+            delete_option('ppsfwoo_db_version');
+
+            wp_cache_delete('ppsfwoo_db_version', 'options');
         }
     }
 
@@ -629,6 +640,43 @@ class PluginMain
         );";
 
         new DatabaseQuery($create_table);
+
+        update_option('ppsfwoo_db_version', self::plugin_data('Version'), false);
+    }
+
+    public static function upgrade_db()
+    {
+        $installed_version = self::get_option('ppsfwoo_db_version') ?: '2.4';
+
+        $this_version = self::plugin_data('Version');
+
+        if($installed_version === $this_version) {
+
+            return;
+
+        }
+
+        $did_upgrade = false;
+
+        if (version_compare($installed_version, '2.4.1', '<')) {
+
+            new DatabaseQuery("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
+                ADD COLUMN `expires` datetime DEFAULT NULL,
+                ADD INDEX `idx_expires` (`expires`);"
+            );
+
+            $did_upgrade = true;
+
+        }
+
+        if($did_upgrade) {
+
+            update_option('ppsfwoo_db_version', $this_version, false);
+
+            wp_cache_delete('ppsfwoo_db_version', 'options');
+
+        }
+        
     }
 
     public function plugin_row_meta($links, $file)

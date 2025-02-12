@@ -10,22 +10,49 @@ class Plan extends PluginMain
 	public $id,
 		   $frequency;
 
-	public function __construct($product_id = NULL)
+	public function __construct($construct_by = "", $value = NULL)
 	{
 		parent::__construct();
 
-		if($product_id) {
+        switch ($construct_by)
+        {
+            case 'plan_id':
 
-			$this->id = $this->get_id_by_product_id($product_id);
+                $this->id = $value;
 
-			$this->frequency = $this->get_frequency();
+                $this->frequency = $this->get_frequency();
 
-		}
+                break;
+
+            case 'product_id':
+
+                $this->id = $this->get_id_by_product_id($value);
+
+                $this->frequency = $this->get_frequency();
+
+                break;
+        }
 	}
 
 	private function get_id_by_product_id($product_id)
     {
         return get_post_meta($product_id, "{$this->env['env']}_ppsfwoo_plan_id", true) ?? "";
+    }
+
+    public static function get_plan_price($plan_details)
+    {
+        $billing_cycles = $plan_details['billing_cycles'] ?? [];
+        
+        foreach ($billing_cycles as $cycle)
+        {
+            if ($cycle['tenure_type'] === 'REGULAR') {
+
+                return intval($cycle['pricing_scheme']['fixed_price']['value']);
+
+            }
+        }
+        
+        return;
     }
 
 	private function get_frequency()
