@@ -18,6 +18,7 @@
 use PPSFWOO\PluginMain;
 use PPSFWOO\Product;
 use PPSFWOO\PluginExtras;
+use PPSFWOO\Enterprise;
 use WooCommerce\PayPalCommerce\PPCP;
 
 if (!defined('ABSPATH')) exit;
@@ -29,6 +30,8 @@ spl_autoload_register('ppsfwoo_autoload');
 define('PPSFWOO_PLUGIN_PATH', __FILE__);
 
 define('PPSFWOO_PLUGIN_EXTRAS', class_exists(PluginExtras::class));
+
+define('PPSFWOO_ENTERPRISE', class_exists(Enterprise::class));
 
 register_activation_hook(PPSFWOO_PLUGIN_PATH, [PluginMain::class, 'plugin_activation']);
 

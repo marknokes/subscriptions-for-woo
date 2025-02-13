@@ -11,6 +11,7 @@
 			<li>Give subscribers the ability to manage their own plan, including pausing, cancelling, or re-activating, without needing to wait on you for help</li>
 			<li>Create virtual and downloadable subscription products</li>
 			<li><span class="pro-name">Enterprise feature:</span> Shortcode, with copy shortcode link, allows adding PayPal subscribe button to any page</li>
+			<li><span class="pro-name">Enterprise feature:</span> Allow canceled subscribers to resubscribe and receive a discount</li>
 			<li><span class="pro-name">Enterprise feature:</span> Priority enterprise support</li>
 		</ul>
 		<a class="button button-primary" target="_blank" rel="noopener" href="<?php echo esc_url(self::$upgrade_link); ?>">Compare Plans</a>

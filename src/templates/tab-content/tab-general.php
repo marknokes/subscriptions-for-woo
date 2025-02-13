@@ -29,7 +29,26 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
 		<?php foreach (self::$options as $option => $array)
 		{
+			if(isset($array['is_premium']) && $is_premium = $array['is_premium']) {
+
+				$feature = "Premium";
+
+				$disabled = $is_premium && (!PPSFWOO_PLUGIN_EXTRAS || !PPSFWOO\PluginExtras::onboarding_complete()) ? 'disabled': '';
+
+			} else if(isset($array['is_enterprise']) && $is_enterprise = $array['is_enterprise']) {
+
+				$feature = "Enterprise";
+
+				$disabled = $is_enterprise && (!PPSFWOO_ENTERPRISE || !PPSFWOO\PluginExtras::onboarding_complete()) ? 'disabled': '';
+
+			} else {
+
+				$feature = $disabled = "";
+			}
+
 			if('skip_settings_field' === $array['type']) continue;
+
+			$name = !$disabled ? $option: "";
 
 			$value = self::get_option($option);
 
@@ -40,7 +59,7 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 				<td style="padding-bottom: 15px;">
 
 					<h3>
-						<label for="<?php echo esc_attr($option); ?>"><?php echo esc_attr($array['name']); ?></label>
+						<label for="<?php echo esc_attr($name); ?>"><?php echo esc_attr($array['name']); ?></label>
 					</h3>
 
 					<?php
@@ -51,7 +70,7 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
 							$checked = checked(1, $value, false);
 							?>
-							<input type='checkbox' name='<?php echo esc_attr($option); ?>' value='1' <?php echo esc_attr($checked); ?> />
+							<input type='checkbox' name='<?php echo esc_attr($name); ?>' value='1' <?php echo esc_attr($checked); ?> <?php echo esc_attr($disabled); ?> />
 							<?php
 							break;
 
@@ -64,13 +83,13 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 						case 'textarea':
 
 							?>
-							<textarea rows="10" cols="100" id="<?php echo esc_attr($option); ?>" name="<?php echo esc_attr($option); ?>"><?php echo esc_textarea($value); ?></textarea>
+							<textarea rows="10" cols="100" id="<?php echo esc_attr($option); ?>" name="<?php echo esc_attr($name); ?>" <?php echo esc_attr($disabled); ?>><?php echo esc_textarea($value); ?></textarea>
 							<?php
 							break;
 
 						case 'select':
 
-							echo "<select name='" . esc_attr($option) . "'>";
+							echo "<select name='" . esc_attr($name) . "' " . esc_attr($disabled) . ">";
 
 								$options = $array['options'] ?? false;
 
@@ -126,7 +145,7 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 						
 						case 'multiselect':
 
-							echo wp_kses("<select name='$option[page_ids][]' multiple='multiple'>", ['select' => ['name' => [], 'multiple' => []]]);
+							echo wp_kses("<select name='$name[page_ids][]' multiple='multiple'>", ['select' => ['name' => [], 'multiple' => []]]);
 
 								$type = isset($array['post_type']) ? $array['post_type']: 'page';
 
@@ -150,13 +169,13 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
 							$value = esc_attr($value);
 
-							echo "<input size='20' type='text' id='" . esc_attr($option) . "' name='" . esc_attr($option) . "' value='" . esc_attr($value) . "' />";
+							echo "<input size='20' type='text' id='" . esc_attr($option) . "' name='" . esc_attr($name) . "' value='" . esc_attr($value) . "' />";
 							
 							break;
 					}
 
 					?>
-
+					<p class="description"><span class="pro-name"><?php echo $disabled ? esc_html($feature) . " feature: ": ""; ?></span><?php echo esc_html($array['description']); ?></p>
 				</td>
 
 			</tr>

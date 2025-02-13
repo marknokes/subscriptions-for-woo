@@ -27,6 +27,7 @@ class PluginMain
             'name'    => 'Order thank you page',
             'type'    => 'select',
             'default' => 0,
+            'description' => 'Select the page that customers will be redirected to after checkout.',
             'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_rows_per_page' => [
@@ -40,18 +41,21 @@ class PluginMain
                 '50' => 50
             ],
             'default' => 10,
+            'description' => 'Choose the number of subscribers visible on each page of the Subscribers tab.',
             'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_delete_plugin_data' => [
             'name'    => 'Delete plugin data on deactivation',
             'type'    => 'checkbox',
             'default' => 0,
+            'description' => 'Careful: choosing this will delete all your subscribers locally. Take a backup first!',
             'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_hide_inactive_plans' => [
             'name'    => 'Hide inactive plans',
             'type'    => 'checkbox',
             'default' => 0,
+            'description' => 'Choose to show/hide inactive PayPal plans on the Plans tab.',
             'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_subscribed_webhooks' => [
@@ -87,6 +91,26 @@ class PluginMain
             'name'    => 'Button Text',
             'type'    => 'text',
             'default' => 'Subscribe',
+            'description' => 'Choose the text displayed on the product page subscribe button.',
+            'sanitize_callback' => 'sanitize_text_field'
+        ],
+        'ppsfwoo_discount' => [
+            'name'    => 'Resubscribe Discount',
+            'type'    => 'select',
+            'default' => '10',
+            'options' => [
+                '10' => '10%',
+                '20' => '20%',
+                '30' => '30%',
+                '40' => '40%',
+                '50' => '50%',
+                '60' => '60%',
+                '70' => '70%',
+                '80' => '80%',
+                '90' => '90%'
+            ],
+            'is_enterprise' => true,
+            'description' => 'Percentage discount for canceled subscribers that resubscribe.',
             'sanitize_callback' => 'sanitize_text_field'
         ]
     ];
@@ -107,6 +131,7 @@ class PluginMain
            $ppsfwoo_thank_you_page_id,
            $ppsfwoo_rows_per_page,
            $ppsfwoo_delete_plugin_data,
+           $ppsfwoo_discount,
            $template_dir,
            $plugin_dir_url,
            $ppsfwoo_button_text,
@@ -126,6 +151,8 @@ class PluginMain
 
         foreach (self::$options as $option_name => $option_value)
         {
+            if(self::skip_option($option_value)) continue;
+
             $this->$option_name = self::get_option($option_name);
 
             add_action("update_option_$option_name", [$this, 'after_update_option'], 10, 3);
@@ -248,6 +275,8 @@ class PluginMain
 
     public static function get_option($option_name)
     {
+        if(isset(self::$options[$option_name]) && self::skip_option(self::$options[$option_name])) return false;
+
         $cached_value = wp_cache_get($option_name, 'options');
         
         if ($cached_value === false) {
@@ -573,6 +602,8 @@ class PluginMain
     {
         foreach (self::$options as $option_name => $option_value)
         {
+            if(self::skip_option($option_value)) continue;
+
             add_option($option_name, $option_value['default'], '', false);
         }
 
@@ -731,11 +762,17 @@ class PluginMain
         ]);
     }
 
+    protected static function skip_option($array)
+    {
+        return isset($array['is_premium']) && $array['is_premium'] && !PPSFWOO_PLUGIN_EXTRAS ||
+               isset($array['is_enterprise']) && $array['is_enterprise'] && !PPSFWOO_ENTERPRISE;
+    }
+
     public function register_settings()
     {
         foreach (self::$options as $option_name => $option_value)
         {
-            if('skip_settings_field' === $option_value['type']) continue;
+            if('skip_settings_field' === $option_value['type'] || self::skip_option($option_value)) continue;
 
             // phpcs:ignore PluginCheck.CodeAnalysis.SettingSanitization.register_settingDynamic
             register_setting(
