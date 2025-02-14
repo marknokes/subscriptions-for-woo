@@ -133,7 +133,10 @@ div.tab-content {
   visibility: visible;
   opacity: 1;
 }
-
+.disabled-link{
+  pointer-events:none;
+  color:gray;
+}
 @media (max-width: 800px) {
   .flex-container div.partial-width {
     width: 100%;

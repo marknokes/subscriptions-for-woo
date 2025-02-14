@@ -223,7 +223,7 @@ class Subscriber
 
     public function cancel()
     {   
-        $expiration = $this->subscription->expiration->format(\DateTime::RFC3339);
+        $expiration = $this->subscription->expiration->format('Y-m-d');
 
         if($order_id = Order::get_order_id_by_subscription_id($this->get_id())) {
         

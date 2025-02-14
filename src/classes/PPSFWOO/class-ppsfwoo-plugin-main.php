@@ -94,6 +94,44 @@ class PluginMain
             'description' => 'Choose the text displayed on the product page subscribe button.',
             'sanitize_callback' => 'sanitize_text_field'
         ],
+        'ppsfwoo_reminder' => [
+            'name'    => 'Resubscribe Email Reminder',
+            'type'    => 'select',
+            'default' => '10',
+            'options' => [
+                '1' => '1 day',
+                '2' => '2 days',
+                '3' => '3 days',
+                '4' => '4 days',
+                '5' => '5 days',
+                '6' => '6 days',
+                '7' => '7 days',
+                '8' => '8 days',
+                '9' => '9 days',
+                '10' => '10 days',
+                '11' => '11 days',
+                '12' => '12 days',
+                '13' => '13 days',
+                '14' => '14 days',
+                '15' => '15 days',
+                '16' => '16 days',
+                '17' => '17 days',
+                '18' => '18 days',
+                '19' => '19 days',
+                '20' => '20 days'
+            ],
+            'is_enterprise' => true,
+            'description' => 'Email reminders with a link to resubscribe should be sent this many days before expiration of a canceled subscription. {wc_settings_tab_email}',
+            'sanitize_callback' => 'absint'
+        ],
+        'ppsfwoo_resubscribe_landing_page_id' => [
+            'name'    => 'Resubscribe landing page',
+            'type'    => 'select',
+            'is_enterprise' => true,
+            'default' => 0,
+            'description' => 'Select the page that customers will visit upon resubscribing to a canceled subscription.',
+            'sanitize_callback' => 'absint'
+        ],
         'ppsfwoo_discount' => [
             'name'    => 'Resubscribe Discount',
             'type'    => 'select',
@@ -111,7 +149,7 @@ class PluginMain
             ],
             'is_enterprise' => true,
             'description' => 'Percentage discount for canceled subscribers that resubscribe.',
-            'sanitize_callback' => 'sanitize_text_field'
+            'sanitize_callback' => 'absint'
         ]
     ];
 
@@ -131,6 +169,8 @@ class PluginMain
            $ppsfwoo_thank_you_page_id,
            $ppsfwoo_rows_per_page,
            $ppsfwoo_delete_plugin_data,
+           $ppsfwoo_reminder,
+           $ppsfwoo_resubscribe_landing_page_id,
            $ppsfwoo_discount,
            $template_dir,
            $plugin_dir_url,
@@ -296,6 +336,17 @@ class PluginMain
             return $cached_value;
 
         }
+    }
+
+    public static function format_description($string, $disabled)
+    {
+        $class = $disabled ? 'disabled-link': '';
+
+        $replacements = [
+            '{wc_settings_tab_email}' => "<a class='". $class ."' href='" . admin_url("admin.php?page=wc-settings&tab=email&section=wc_ppsfwoo_email") . "'>Edit / Disable</a>"
+        ];
+
+        return str_replace(array_keys($replacements), array_values($replacements), $string);
     }
 
     public static function schedule_webhook_resubscribe()
@@ -697,7 +748,17 @@ class PluginMain
             );
 
             $did_upgrade = true;
+        }
 
+        if (version_compare($installed_version, '2.4.2', '<')) {
+
+            new DatabaseQuery("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
+                MODIFY `expires` date,
+                DROP INDEX `idx_expires`,
+                ADD INDEX `idx_expires` (`expires`);"
+            );
+
+            $did_upgrade = true;
         }
 
         if($did_upgrade) {

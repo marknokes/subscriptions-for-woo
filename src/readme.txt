@@ -3,7 +3,7 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.4.1
+Stable tag: 2.4.2
 WC tested up to: 9.3.3
 Requires at least: 6.4.3
 Tested up to: 6.7.2
@@ -104,6 +104,9 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.4.2 =
+* Change data type for new expires column
 
 = 2.4.1 =
 * Improvement: Add expires column to subscriber table

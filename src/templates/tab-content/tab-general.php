@@ -175,7 +175,9 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 					}
 
 					?>
-					<p class="description"><span class="pro-name"><?php echo $disabled ? esc_html($feature) . " feature: ": ""; ?></span><?php echo esc_html($array['description']); ?></p>
+					<p class="description">
+						<span class="pro-name"><?php echo $disabled ? esc_html($feature) . " feature: ": ""; ?></span><?php echo wp_kses_post(wptexturize(self::format_description($array['description'], $disabled))); ?>
+					</p>
 				</td>
 
 			</tr>
