@@ -107,6 +107,7 @@ If you encounter issues with the PayPal buttons not appearing after an update, p
 
 = 2.4.2 =
 * Change data type for new expires column
+* Update plugin activation/deactivation
 
 = 2.4.1 =
 * Improvement: Add expires column to subscriber table
