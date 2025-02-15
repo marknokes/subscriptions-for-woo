@@ -599,7 +599,7 @@ class PluginMain
         return $notification_email;
     }
 
-    protected static function get_page_by_title($title)
+    public static function get_page_by_title($title)
     {
         $query = new \WP_Query([
             'post_type'      => 'page',
@@ -664,6 +664,12 @@ class PluginMain
 
         self::create_thank_you_page();
 
+        if(PPSFWOO_ENTERPRISE) {
+
+            Enterprise::create_resubscribe_page();
+
+        }
+
         $Webhook = Webhook::get_instance();
 
         if(!$Webhook->id()) {
@@ -684,6 +690,8 @@ class PluginMain
             Webhook::get_instance()->delete();
             
             wp_delete_post($this->ppsfwoo_thank_you_page_id, true);
+
+            wp_delete_post($this->ppsfwoo_resubscribe_landing_page_id, true);
             
             foreach(self::$options as $option_name => $option_value) {
 
