@@ -139,7 +139,7 @@ class Subscriber
 
         } else if(
             false !== get_transient('ppsfwoo_customer_nonce')
-            && $response = PayPal::request("/v1/billing/subscriptions/$subs_id")
+            && $response = PayPal::request(PayPal::EP_SUBSCRIPTIONS . $subs_id)
         ) {
 
             if(self::is_active($response)) {

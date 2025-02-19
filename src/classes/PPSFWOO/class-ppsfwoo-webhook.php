@@ -135,7 +135,7 @@ class Webhook
     {
         $created = false;
         
-        if($webhooks = PayPal::request("/v1/notifications/webhooks")) {
+        if($webhooks = PayPal::request(PayPal::EP_WEBHOOKS)) {
 
             if(isset($webhooks['response']['webhooks'])) {
 
@@ -161,7 +161,7 @@ class Webhook
 
             $subscribed = $this->subscribed_webhooks;
 
-        } else if($webhooks = PayPal::request("/v1/notifications/webhooks")) {
+        } else if($webhooks = PayPal::request(PayPal::EP_WEBHOOKS)) {
 
             $subscribed = [];
 
@@ -195,7 +195,7 @@ class Webhook
 
         try{
 
-            $response = PayPal::request("/v1/notifications/webhooks", [
+            $response = PayPal::request(PayPal::EP_WEBHOOKS, [
                 'url' => $this->listen_address(),
                 'event_types' => [
                     ['name' => self::ACTIVATED],
@@ -243,7 +243,7 @@ class Webhook
 
     protected function patch($get_new_response = false)
     {
-        if($webhooks = PayPal::request("/v1/notifications/webhooks")) {
+        if($webhooks = PayPal::request(PayPal::EP_WEBHOOKS)) {
 
             if(isset($webhooks['response']['webhooks'])) {
 
@@ -274,7 +274,7 @@ class Webhook
                                 "value" => $types
                             ];
 
-                            PayPal::request("/v1/notifications/webhooks/$webhook_id", [$data], "PATCH");
+                            PayPal::request(PayPal::EP_WEBHOOKS . $webhook_id, [$data], "PATCH");
                         }
                         
                     } else if($get_new_response && $this->listen_address() === $webhooks['response']['webhooks'][$key]['url']) {
@@ -293,7 +293,7 @@ class Webhook
     {
         $webhook_id = $webhook_id ?: $this->id();
 
-        $response = PayPal::request("/v1/notifications/webhooks/$webhook_id", [], "DELETE");
+        $response = PayPal::request(PayPal::EP_WEBHOOKS . $webhook_id, [], "DELETE");
 
         return $response['response'] ?? false;
     }

@@ -78,7 +78,7 @@ class Plan extends PluginMain
 
         try {
 
-            if($plan_id && $paypal_response = PayPal::request("/v1/billing/plans/$plan_id/$paypal_action", [], "POST")) {
+            if($plan_id && $paypal_response = PayPal::request(PayPal::EP_PLANS . "$plan_id/$paypal_action", [], "POST")) {
 
                 if(204 === $paypal_response['status']) {
 
@@ -101,7 +101,7 @@ class Plan extends PluginMain
     {
         $plans = [];
 
-        if($plan_data = PayPal::request("/v1/billing/plans")) {
+        if($plan_data = PayPal::request(PayPal::EP_PLANS)) {
 
             if(isset($plan_data['response']['plans'])) {
 
@@ -115,11 +115,11 @@ class Plan extends PluginMain
 
                     }
 
-                    $plan_freq = PayPal::request("/v1/billing/plans/{$plan['id']}");
+                    $plan_freq = PayPal::request(PayPal::EP_PLANS . $plan['id']);
 
                     if(!in_array($plan['product_id'], array_keys($products))) {
                     
-                        $product_data = PayPal::request("/v1/catalogs/products/{$plan['product_id']}");
+                        $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
 
                         $product_name = $product_data['response']['name'];
 

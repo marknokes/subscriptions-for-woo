@@ -12,6 +12,16 @@ use WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
 
 class PayPal
 {
+    const EP_SUBSCRIPTIONS  = "/v1/billing/subscriptions/";
+
+    const EP_PLANS          = "/v1/billing/plans/";
+
+    const EP_PRODUCTS       = "/v1/catalogs/products/";
+
+    const EP_WEBHOOKS       = "/v1/notifications/webhooks";
+
+    const EP_VERIFY_SIG     = "/v1/notifications/verify-webhook-signature";
+
     public static function button()
     {
         global $product;
@@ -164,7 +174,7 @@ class PayPal
             return false;
         }
 
-        $response = self::request("/v1/notifications/verify-webhook-signature", [
+        $response = self::request(self::EP_VERIFY_SIG, [
             'auth_algo'         => $headers['PAYPAL-AUTH-ALGO'],
             'cert_url'          => $headers['PAYPAL-CERT-URL'],
             'transmission_id'   => $headers['PAYPAL-TRANSMISSION-ID'],
