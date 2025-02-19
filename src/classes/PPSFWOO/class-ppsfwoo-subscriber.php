@@ -6,7 +6,7 @@ use PPSFWOO\Product,
     PPSFWOO\Plan,
     PPSFWOO\Order,
     PPSFWOO\Webhook,
-    PPSFWOO\DatabaseQuery,
+    PPSFWOO\Database,
     PPSFWOO\Exception;
 
 class Subscriber
@@ -119,7 +119,7 @@ class Subscriber
                   FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
                   WHERE `id` = %s;";
 
-        $results = new DatabaseQuery($query, [$subs_id]);
+        $results = new Database($query, [$subs_id]);
 
         $order_id = $results->result[0]->order_id ?? NULL;
 
@@ -178,7 +178,7 @@ class Subscriber
 
         if(false === $order_id) {
 
-            $result = new DatabaseQuery(
+            $result = new Database(
                 "INSERT INTO {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber (
                     `id`,
                     `wp_customer_id`,
@@ -196,7 +196,7 @@ class Subscriber
 
         } else {
 
-            $result = new DatabaseQuery(
+            $result = new Database(
                 "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET
                     `paypal_plan_id` = %s,
                     `event_type` = %s,
@@ -231,7 +231,7 @@ class Subscriber
 
         }
 
-        $result = new DatabaseQuery(
+        $result = new Database(
             "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
              SET `event_type` = %s,
                  `canceled_date` = %s,
@@ -260,7 +260,7 @@ class Subscriber
 
             $order_id = Order::insert($this);
 
-            new DatabaseQuery(
+            new Database(
                 "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `order_id` = %d, `canceled_date` = NULL WHERE `id` = %s;",
                 [
                     $order_id,

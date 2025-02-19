@@ -3,7 +3,7 @@
 namespace PPSFWOO;
 
 use PPSFWOO\PluginMain,
-    PPSFWOO\DatabaseQuery,
+    PPSFWOO\Database,
     PPSFWOO\PayPal,
     PPSFWOO\Plan;
 
@@ -241,7 +241,7 @@ class Product
                     {
                         if(!empty($access_expires)) {
 
-                            new DatabaseQuery(
+                            new Database(
                                 "UPDATE {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
                                  SET `access_expires` = %s
                                  WHERE `download_id` = %s
@@ -255,7 +255,7 @@ class Product
 
                         } else {
 
-                            new DatabaseQuery(
+                            new Database(
                                 "UPDATE {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
                                  SET `access_expires` = NULL
                                  WHERE `download_id` = %s

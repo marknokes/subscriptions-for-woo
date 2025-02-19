@@ -7,7 +7,7 @@
  * Author URI: https://wp-subscriptions.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Version: 2.4.2
+ * Version: 2.4.3
  * WC requires at least: 8.6.0
  * WC tested up to: 9.3.3
  * Requires at least: 6.4.3
@@ -20,7 +20,8 @@ use WooCommerce\PayPalCommerce\PPCP;
 use PPSFWOO\PluginMain,
 	PPSFWOO\Product,
 	PPSFWOO\PluginExtras,
-	PPSFWOO\Enterprise;
+	PPSFWOO\Enterprise,
+	PPSFWOO\Database;
 
 if (!defined('ABSPATH')) exit;
 
@@ -70,7 +71,7 @@ add_action('plugins_loaded', function() {
 
 	$PluginMain = PluginMain::get_instance();
 
-	$PluginMain::upgrade_db();
+	Database::upgrade();
 
 	register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$PluginMain, 'plugin_deactivation']);
 

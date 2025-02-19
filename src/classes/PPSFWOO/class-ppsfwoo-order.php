@@ -4,13 +4,13 @@ namespace PPSFWOO;
 
 use PPSFWOO\Product,
     PPSFWOO\Subscriber,
-    PPSFWOO\DatabaseQuery;
+    PPSFWOO\Database;
 
 class Order
 {
 	public static function get_order_id_by_subscription_id($subs_id)
     {
-        $results = new DatabaseQuery("SELECT `order_id` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber WHERE `id` = %s", [$subs_id]);
+        $results = new Database("SELECT `order_id` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber WHERE `id` = %s", [$subs_id]);
 
         return $results->result[0]->order_id ?? false;
     }

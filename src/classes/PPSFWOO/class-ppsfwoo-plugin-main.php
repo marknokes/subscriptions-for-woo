@@ -8,7 +8,7 @@ use PPSFWOO\AjaxActions,
     PPSFWOO\AjaxActionsPriv,
     PPSFWOO\Webhook,
     PPSFWOO\PayPal,
-    PPSFWOO\DatabaseQuery,
+    PPSFWOO\Database,
     PPSFWOO\Product;
 
 class PluginMain
@@ -379,7 +379,7 @@ class PluginMain
 
             } else if (self::is_upgrade_target(plugin_basename(PPSFWOO_PLUGIN_PATH), $plugin)) {
 
-                self::upgrade_db();
+                Database::upgrade();
 
             }
         }
@@ -430,7 +430,7 @@ class PluginMain
         header('Content-Disposition: attachment; filename="table_backup.sql"');
 
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo DatabaseQuery::export();
+        echo Database::export();
 
         exit();
     }
@@ -495,7 +495,7 @@ class PluginMain
 
         if($email) {
 
-            $result = new DatabaseQuery(
+            $result = new Database(
                 "SELECT `s`.* FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber `s`
                  JOIN {$GLOBALS['wpdb']->base_prefix}users `u`
                  ON `s`.`wp_customer_id` = `u`.`ID`
@@ -505,7 +505,7 @@ class PluginMain
 
         } else {
 
-            $result = new DatabaseQuery(
+            $result = new Database(
                 "SELECT * FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber ORDER BY order_id DESC LIMIT %d OFFSET %d",
                 [$per_page, $offset]
             );
@@ -520,7 +520,7 @@ class PluginMain
 
             ob_start();
 
-            $row_query = new DatabaseQuery("SELECT COUNT(*) AS `count` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
+            $row_query = new Database("SELECT COUNT(*) AS `count` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
 
             $total_rows = $row_query->result[0]->count ?? 0;
 
@@ -659,9 +659,9 @@ class PluginMain
             add_option($option_name, $option_value['default'], '', false);
         }
 
-        self::db_install();
+        Database::install();
 
-        self::upgrade_db();
+        Database::upgrade();
 
         self::create_thank_you_page();
 
@@ -686,7 +686,7 @@ class PluginMain
     {
         if("1" === $this->ppsfwoo_delete_plugin_data) {
             
-            new DatabaseQuery("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
+            new Database("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
 
             Webhook::get_instance()->delete();
             
@@ -706,78 +706,6 @@ class PluginMain
 
             wp_cache_delete('ppsfwoo_db_version', 'options');
         }
-    }
-
-    protected static function db_install()
-    {
-        $create_table = "CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber ( 
-          id varchar(64) NOT NULL,
-          wp_customer_id bigint(20) UNSIGNED NOT NULL,
-          paypal_plan_id varchar(64) NOT NULL,
-          order_id bigint(20) UNSIGNED DEFAULT NULL,
-          event_type varchar(35) NOT NULL,
-          created datetime DEFAULT current_timestamp(),
-          last_updated datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-          canceled_date datetime DEFAULT NULL,
-          PRIMARY KEY (id),
-          KEY idx_wp_customer_id (wp_customer_id),
-          KEY idx_order_id (order_id),
-          FOREIGN KEY fk_user_id (wp_customer_id)
-            REFERENCES {$GLOBALS['wpdb']->base_prefix}users(ID)
-            ON UPDATE CASCADE ON DELETE CASCADE,
-          FOREIGN KEY fk_order_id (order_id)
-            REFERENCES {$GLOBALS['wpdb']->base_prefix}wc_orders(id)
-            ON UPDATE CASCADE ON DELETE CASCADE
-        );";
-
-        new DatabaseQuery($create_table);
-
-        update_option('ppsfwoo_db_version', self::plugin_data('Version'), false);
-    }
-
-    public static function upgrade_db()
-    {
-        $installed_version = self::get_option('ppsfwoo_db_version') ?: '2.4';
-
-        $this_version = self::plugin_data('Version');
-
-        if($installed_version === $this_version) {
-
-            return;
-
-        }
-
-        $did_upgrade = false;
-
-        if (version_compare($installed_version, '2.4.1', '<')) {
-
-            new DatabaseQuery("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
-                ADD COLUMN `expires` datetime DEFAULT NULL,
-                ADD INDEX `idx_expires` (`expires`);"
-            );
-
-            $did_upgrade = true;
-        }
-
-        if (version_compare($installed_version, '2.4.2', '<')) {
-
-            new DatabaseQuery("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
-                MODIFY `expires` date,
-                DROP INDEX `idx_expires`,
-                ADD INDEX `idx_expires` (`expires`);"
-            );
-
-            $did_upgrade = true;
-        }
-
-        if($did_upgrade) {
-
-            update_option('ppsfwoo_db_version', $this_version, false);
-
-            wp_cache_delete('ppsfwoo_db_version', 'options');
-
-        }
-        
     }
 
     public function plugin_row_meta($links, $file)
