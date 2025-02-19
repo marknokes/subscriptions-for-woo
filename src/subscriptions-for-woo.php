@@ -15,11 +15,12 @@
  * Requires PHP: 7.4
  */
 
-use PPSFWOO\PluginMain;
-use PPSFWOO\Product;
-use PPSFWOO\PluginExtras;
-use PPSFWOO\Enterprise;
 use WooCommerce\PayPalCommerce\PPCP;
+
+use PPSFWOO\PluginMain,
+	PPSFWOO\Product,
+	PPSFWOO\PluginExtras,
+	PPSFWOO\Enterprise;
 
 if (!defined('ABSPATH')) exit;
 

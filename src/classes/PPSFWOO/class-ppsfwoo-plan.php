@@ -2,8 +2,8 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PayPal;
-use PPSFWOO\PluginMain;
+use PPSFWOO\PayPal,
+    PPSFWOO\PluginMain;
 
 class Plan extends PluginMain
 {

@@ -3,12 +3,13 @@
 namespace PPSFWOO;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
-use PPSFWOO\AjaxActions;
-use PPSFWOO\AjaxActionsPriv;
-use PPSFWOO\Webhook;
-use PPSFWOO\PayPal;
-use PPSFWOO\DatabaseQuery;
-use PPSFWOO\Product;
+
+use PPSFWOO\AjaxActions,
+    PPSFWOO\AjaxActionsPriv,
+    PPSFWOO\Webhook,
+    PPSFWOO\PayPal,
+    PPSFWOO\DatabaseQuery,
+    PPSFWOO\Product;
 
 class PluginMain
 {

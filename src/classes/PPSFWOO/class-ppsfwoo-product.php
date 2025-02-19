@@ -2,10 +2,10 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain;
-use PPSFWOO\DatabaseQuery;
-use PPSFWOO\PayPal;
-use PPSFWOO\Plan;
+use PPSFWOO\PluginMain,
+    PPSFWOO\DatabaseQuery,
+    PPSFWOO\PayPal,
+    PPSFWOO\Plan;
 
 class Product
 {

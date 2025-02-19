@@ -2,13 +2,14 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain;
-use PPSFWOO\Plan;
-use PPSFWOO\Exception;
-use PPSFWOO\Product;
-use WooCommerce\PayPalCommerce\PPCP;
-use WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer;
-use WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
+use PPSFWOO\PluginMain,
+    PPSFWOO\Plan,
+    PPSFWOO\Exception,
+    PPSFWOO\Product;
+
+use WooCommerce\PayPalCommerce\PPCP,
+    WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer,
+    WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
 
 class PayPal
 {

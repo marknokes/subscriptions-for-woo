@@ -2,12 +2,12 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Product;
-use PPSFWOO\Plan;
-use PPSFWOO\Order;
-use PPSFWOO\Webhook;
-use PPSFWOO\DatabaseQuery;
-use PPSFWOO\Exception;
+use PPSFWOO\Product,
+    PPSFWOO\Plan,
+    PPSFWOO\Order,
+    PPSFWOO\Webhook,
+    PPSFWOO\DatabaseQuery,
+    PPSFWOO\Exception;
 
 class Subscriber
 {

@@ -2,9 +2,9 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Product;
-use PPSFWOO\Subscriber;
-use PPSFWOO\DatabaseQuery;
+use PPSFWOO\Product,
+    PPSFWOO\Subscriber,
+    PPSFWOO\DatabaseQuery;
 
 class Order
 {

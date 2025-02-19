@@ -2,9 +2,9 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain;
-use PPSFWOO\Plan;
-use PPSFWOO\AjaxActions;
+use PPSFWOO\PluginMain,
+    PPSFWOO\Plan,
+    PPSFWOO\AjaxActions;
 
 class AjaxActionsPriv extends AjaxActions
 {

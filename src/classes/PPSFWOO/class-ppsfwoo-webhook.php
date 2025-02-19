@@ -2,9 +2,9 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PayPal;
-use PPSFWOO\Subscriber;
-use PPSFWOO\PluginMain;
+use PPSFWOO\PayPal,
+    PPSFWOO\Subscriber,
+    PPSFWOO\PluginMain;
 
 class Webhook
 {

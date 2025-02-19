@@ -2,8 +2,8 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Subscriber;
-use PPSFWOO\Exception;
+use PPSFWOO\Subscriber,
+    PPSFWOO\Exception;
 
 class AjaxActions
 {
