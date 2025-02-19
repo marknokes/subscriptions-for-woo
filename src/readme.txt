@@ -105,6 +105,10 @@ If you encounter issues with the PayPal buttons not appearing after an update, p
 
 == Changelog ==
 
+= 2.4.3 =
+* Refactor: combine class import statements
+* Refactor: rename database class and move install/upgrade from plugin main to database
+
 = 2.4.2 =
 * Change data type for new expires column
 * Update plugin activation/deactivation
