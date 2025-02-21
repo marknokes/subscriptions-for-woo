@@ -80,7 +80,7 @@ class Plan extends PluginMain
 
             if($plan_id && $paypal_response = PayPal::request(PayPal::EP_PLANS . "$plan_id/$paypal_action", [], "POST")) {
 
-                if(204 === $paypal_response['status']) {
+                if(PayPal::response_status_is($paypal_response, 204)) {
 
                     $response = ['success' => true];
                 

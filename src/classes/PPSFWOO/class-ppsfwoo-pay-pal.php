@@ -67,6 +67,11 @@ class PayPal
         return $env;
     }
 
+    public static function response_status_is($response, $status)
+    {
+        return isset($response['status']) && $status === $response['status'];
+    }
+
 	public static function access_token($log_error = true)
     {
         try {
