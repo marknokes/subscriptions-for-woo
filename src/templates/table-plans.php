@@ -5,7 +5,8 @@
 		<th>Plan ID</th>
 		<th>Plan Name</th>
 		<th>Product Name</th>
-		<th>Plan Frequency</th>
+		<th>Frequency</th>
+		<th>Price</th>
 		<th>Share Link</th>
 		<th>Status</th>
 		<th>Modify</th>
@@ -18,12 +19,16 @@
 		$paypal_action = $plan_active ? 'deactivate': 'activate';
 
 		$status_indicator = $plan_active ? 'green': 'red';
+
+		$formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+
 		?>
 		<tr class="plan-row">
 			<td><a href='<?php echo esc_url($paypal_url); ?>/billing/plans/<?php echo esc_attr($plan_id); ?>' target='_blank'><?php echo esc_html($plan_id); ?></a></td>
 			<td><?php echo esc_html($plan_data['plan_name']); ?></td>
 			<td><?php echo esc_html($plan_data['product_name']); ?></td>
 			<td><?php echo esc_html($plan_data['frequency']); ?></td>
+			<td><?php echo esc_html($formatter->formatCurrency($plan_data['price'], 'USD')); ?></td>
 			<td>
 				<p class="copy-text"><?php echo esc_url($paypal_url); ?>/webapps/billing/plans/subscribe?plan_id=<?php echo esc_html($plan_id); ?></p>
 				<button class="copy-button">Copy to clipboard</button>

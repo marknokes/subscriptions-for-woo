@@ -90,6 +90,10 @@ class Product
 
                 if($plans && !isset($plans['000'])) {
 
+                    $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+
+                    $options = "<option value=''>Select a plan [" . $this->env . "]</option>";
+
                     foreach($plans as $plan_id => $plan_data)
                     {
                         if("ACTIVE" !== $plan_data['status']) {
@@ -98,23 +102,33 @@ class Product
 
                         } else {
 
-                            $plans[$plan_id] = "{$plan_data['plan_name']} [{$plan_data['product_name']}] [{$plan_data['frequency']}]";
+                            $options .= '<option value="' . esc_attr($plan_id) . '" data-price="' . esc_attr($formatter->formatCurrency($plan_data['price'], 'USD')) . '">' . esc_html("{$plan_data['plan_name']} [{$plan_data['product_name']}] [{$plan_data['frequency']}]") . '</option>';
 
                         }
 
                     }
 
-                    $plans = array_merge(["" => "Select a plan [$this->env]"], $plans);
-
                     wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false);
 
-                    woocommerce_wp_select([
-                        'id'          => "{$this->env}_ppsfwoo_plan_id",
-                        'label'       => "PayPal Subscription Plan",
-                        'options'     => $plans,
-                        'desc_tip'    => true,
-                        'description' => 'Subscription plans created in your PayPal account will be listed here in the format:<br />"Product [Plan] [Frequency]"',
-                    ]);
+                    ?>
+                    <p class="form-field">
+                        <label for="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>">PayPal Subscription Plan</label>
+                        <select id="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>" name="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>">
+                            <?php echo $options; ?>
+                        </select>
+                    </p>
+                    <script type="text/javascript">
+                        jQuery(document).ready(function($){
+                            $('#<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>')
+                                .change(function(){
+                                    var priceDisplay = $('#_regular_price');
+                                    var selectedOption = $(this).find('option:selected');
+                                    var price = parseFloat(selectedOption.data('price').replace('$', ''));
+                                    priceDisplay.text(price);
+                                });
+                        });
+                    </script>
+                    <?php
                 } else {
 
                     ?>

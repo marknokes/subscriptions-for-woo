@@ -104,7 +104,7 @@ class PayPal
         }
     }
 
-	public static function request($api, $payload = [], $method = "GET")
+	public static function request($api, $payload = [], $method = "GET", $additional_headers = [])
     {
         if(empty(self::env()['client_id']) || !$token = self::access_token()) {
 
@@ -114,19 +114,27 @@ class PayPal
 
         $args = [
             'method'  => $method,
-            'headers' => [
+            'headers' => array_merge([
                 'Authorization' => 'Bearer ' . $token,
                 'Content-Type' => 'application/json'
-            ]
+            ], $additional_headers)
         ];
+
+        $url = self::env()['paypal_api_url'] . $api;
 
         if($payload) {
 
-            $args['body'] = wp_json_encode($payload);
+            if("GET" === $method) {
+
+                $url = add_query_arg($payload, $url);
+
+            } else {
+
+                $args['body'] = wp_json_encode($payload);
+
+            }
 
         }
-
-        $url = self::env()['paypal_api_url'] . $api;
 
         $remote_response = wp_remote_request($url, $args);
 

@@ -62,6 +62,22 @@ class Plan extends PluginMain
         return $plans[$this->id]['frequency'] ?? "";
     }
 
+    public static function get_frequency_from_response($plan_details)
+    {
+        $billing_cycles = $plan_details['billing_cycles'] ?? [];
+        
+        foreach ($billing_cycles as $cycle)
+        {
+            if ($cycle['tenure_type'] === 'REGULAR') {
+
+                return $cycle['frequency']['interval_unit'];
+
+            }
+        }
+        
+        return;
+    }
+
 	public function modify_plan()
 	{
 		$response = ['error' => 'An unexpected error occurred.'];
@@ -101,54 +117,56 @@ class Plan extends PluginMain
     {
         $plans = [];
 
-        if($plan_data = PayPal::request(PayPal::EP_PLANS)) {
+        $plan_data = PayPal::request(
+            PayPal::EP_PLANS,
+            ['page_size' => 20],
+            "GET",
+            ['Prefer' => 'return=representation']
+        );
 
-            if(isset($plan_data['response']['plans'])) {
+        if($plan_data && isset($plan_data['response']['plans'])) {
 
-                $products = [];
+            $products = [];
 
-                foreach($plan_data['response']['plans'] as $plan)
-                {
-                    if($this->ppsfwoo_hide_inactive_plans && "ACTIVE" !== $plan['status']) {
+            foreach($plan_data['response']['plans'] as $plan)
+            {
+                if($this->ppsfwoo_hide_inactive_plans && "ACTIVE" !== $plan['status']) {
 
-                        continue;
+                    continue;
 
-                    }
-
-                    $plan_freq = PayPal::request(PayPal::EP_PLANS . $plan['id']);
-
-                    if(!in_array($plan['product_id'], array_keys($products))) {
-                    
-                        $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
-
-                        $product_name = $product_data['response']['name'];
-
-                        $products[$plan['product_id']] = $product_name;
-
-                    } else {
-
-                        $product_name = $products[$plan['product_id']];
-                    }
-
-                    $plans[$plan['id']] = [
-                        'plan_name'     => $plan['name'],
-                        'product_name'  => $product_name,
-                        'frequency'     => $plan_freq['response']['billing_cycles'][0]['frequency']['interval_unit'],
-                        'status'        => $plan['status']
-                    ];
                 }
 
-                uasort($plans, function ($a, $b) {
-                    return strcmp($a['status'], $b['status']);
-                });
-            
-                $env = $this->env['env'];
+                if(!in_array($plan['product_id'], array_keys($products))) {
+                
+                    $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
 
-                update_option('ppsfwoo_plans', [
-                    $env => $plans
-                ]);
+                    $product_name = $product_data['response']['name'];
 
+                    $products[$plan['product_id']] = $product_name;
+
+                } else {
+
+                    $product_name = $products[$plan['product_id']];
+                }
+
+                $plans[$plan['id']] = [
+                    'plan_name'     => $plan['name'],
+                    'product_name'  => $product_name,
+                    'frequency'     => self::get_frequency_from_response($plan),
+                    'status'        => $plan['status'],
+                    'price'         => self::get_plan_price($plan)
+                ];
             }
+
+            uasort($plans, function ($a, $b) {
+                return strcmp($a['status'], $b['status']);
+            });
+        
+            $env = $this->env['env'];
+
+            update_option('ppsfwoo_plans', [
+                $env => $plans
+            ]);
 
         }
 
