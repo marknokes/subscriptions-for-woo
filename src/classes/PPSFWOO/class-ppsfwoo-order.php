@@ -15,26 +15,26 @@ class Order
         return $results->result[0]->order_id ?? false;
     }
 
-    public static function insert(Subscriber $user)
+    public static function insert(Subscriber $Subscriber)
     {   
         $order = wc_create_order();
 
-        $order->set_customer_id($user->user_id);
+        $order->set_customer_id($Subscriber->user_id);
 
-        $order->add_product(wc_get_product(Product::get_product_id_by_plan_id($user->get_plan_id())));
+        $order->add_product(wc_get_product(Product::get_product_id_by_plan_id($Subscriber->get_plan_id())));
 
         $address = [
-            'first_name' => $user->first_name,
-            'last_name'  => $user->last_name,
+            'first_name' => $Subscriber->first_name,
+            'last_name'  => $Subscriber->last_name,
             'company'    => '',
-            'email'      => $user->email,
+            'email'      => $Subscriber->email,
             'phone'      => '',
-            'address_1'  => $user->address_line_1,
-            'address_2'  => $user->address_line_2,
-            'city'       => $user->city,
-            'state'      => $user->state,
-            'postcode'   => $user->postal_code,
-            'country'    => $user->country_code
+            'address_1'  => $Subscriber->address_line_1,
+            'address_2'  => $Subscriber->address_line_2,
+            'city'       => $Subscriber->city,
+            'state'      => $Subscriber->state,
+            'postcode'   => $Subscriber->postal_code,
+            'country'    => $Subscriber->country_code
         ];
 
         $order->set_address($address, 'billing');

@@ -43,32 +43,23 @@ class Plan extends PluginMain
         return get_post_meta($product_id, "{$this->env['env']}_ppsfwoo_plan_id", true) ?? "";
     }
 
-    public static function get_plan_price($plan_details)
+    public static function get_from_response_billing_cycles($find, $response)
     {
-        $billing_cycles = $plan_details['billing_cycles'] ?? [];
+        $billing_cycles = $response['billing_cycles'] ?? [];
         
         foreach ($billing_cycles as $cycle)
         {
             if ($cycle['tenure_type'] === 'REGULAR') {
 
-                return intval($cycle['pricing_scheme']['fixed_price']['value']);
+                if('price' === $find) {
 
-            }
-        }
-        
-        return;
-    }
+                    return intval($cycle['pricing_scheme']['fixed_price']['value']);
 
-    public static function get_frequency_from_response($plan_details)
-    {
-        $billing_cycles = $plan_details['billing_cycles'] ?? [];
-        
-        foreach ($billing_cycles as $cycle)
-        {
-            if ($cycle['tenure_type'] === 'REGULAR') {
+                } elseif('frequency' === $find) {
 
-                return $cycle['frequency']['interval_unit'];
+                    return $cycle['frequency']['interval_unit'];
 
+                }
             }
         }
         
@@ -149,9 +140,9 @@ class Plan extends PluginMain
                 $plans[$plan['id']] = [
                     'plan_name'     => $plan['name'],
                     'product_name'  => $product_name,
-                    'frequency'     => self::get_frequency_from_response($plan),
+                    'frequency'     => self::get_from_response_billing_cycles('frequency', $plan),
                     'status'        => $plan['status'],
-                    'price'         => self::get_plan_price($plan)
+                    'price'         => self::get_from_response_billing_cycles('price', $plan)
                 ];
             }
 
