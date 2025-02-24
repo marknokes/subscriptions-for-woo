@@ -120,7 +120,15 @@ class Product
                     <p class="form-field">
                         <label for="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>">PayPal Subscription Plan</label>
                         <select id="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>" name="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>">
-                            <?php echo $options; ?>
+                            <?php
+                            echo wp_kses($options, [
+                                'option' => [
+                                    'value'      => [],
+                                    'selected'   => [],
+                                    'data-price' => []
+                                ]
+                            ]);
+                            ?>
                         </select>
                     </p>
                     <script type="text/javascript">
