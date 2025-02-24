@@ -78,11 +78,15 @@ class Product
 
     public function options_product_tab_content()
     {
+        global $post;
+
         ?>
 
         <div id='ppsfwoo_options' class='panel woocommerce_options_panel'>
 
             <div class='options_group'><?php
+
+                $selected_plan_id = get_post_meta($post->ID, "{$this->env}_ppsfwoo_plan_id", true);
 
                 $Plan = new Plan();
 
@@ -102,7 +106,9 @@ class Product
 
                         } else {
 
-                            $options .= '<option value="' . esc_attr($plan_id) . '" data-price="' . esc_attr($formatter->formatCurrency($plan_data['price'], 'USD')) . '">' . esc_html("{$plan_data['plan_name']} [{$plan_data['product_name']}] [{$plan_data['frequency']}]") . '</option>';
+                            $selected = $selected_plan_id === $plan_id ? 'selected': '';
+
+                            $options .= '<option value="' . esc_attr($plan_id) . '" ' . $selected . ' data-price="' . esc_attr($formatter->formatCurrency($plan_data['price'], 'USD')) . '">' . esc_html("{$plan_data['plan_name']} [{$plan_data['product_name']}] [{$plan_data['frequency']}]") . '</option>';
 
                         }
 

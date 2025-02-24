@@ -20,17 +20,21 @@ class Plan extends PluginMain
 
                 $this->id = $value;
 
-                $this->frequency = $this->get_frequency();
-
                 break;
 
             case 'product_id':
 
                 $this->id = $this->get_id_by_product_id($value);
 
-                $this->frequency = $this->get_frequency();
-
                 break;
+        }
+
+        if(isset($this->id)) {
+
+            $plans = $this->get_plans();
+
+            $this->frequency = $plans[$this->id]['frequency'] ?? "";
+
         }
 	}
 
@@ -53,13 +57,6 @@ class Plan extends PluginMain
         }
         
         return;
-    }
-
-	private function get_frequency()
-    {
-        $plans = $this->get_plans();
-
-        return $plans[$this->id]['frequency'] ?? "";
     }
 
     public static function get_frequency_from_response($plan_details)
