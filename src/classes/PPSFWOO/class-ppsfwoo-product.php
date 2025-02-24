@@ -121,10 +121,10 @@ class Product
                         jQuery(document).ready(function($){
                             $('#<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>')
                                 .change(function(){
-                                    var priceDisplay = $('#_regular_price');
-                                    var selectedOption = $(this).find('option:selected');
-                                    var price = parseFloat(selectedOption.data('price').replace('$', ''));
-                                    priceDisplay.text(price);
+                                    var $price_field = $('#_regular_price'),
+                                        selectedOption = $(this).find('option:selected'),
+                                        price = selectedOption.data('price').replace('$', '');
+                                    $price_field.val(price);
                                 });
                         });
                     </script>
