@@ -279,7 +279,7 @@ class PluginMain
 
         $num_only = preg_replace('/[^0-9.]/', '', $stripped);
 
-        return intval($num_only);
+        return floatval($num_only);
     }
 
     public function update_receipt_display($totals, $order)

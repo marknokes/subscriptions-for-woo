@@ -103,23 +103,25 @@ class Order
 
         foreach ($plan->get_billing_cycles() as $cycle)
         {
+            $sequence = intval($cycle['sequence']);
+
             if (isset($cycle['pricing_scheme']['fixed_price'])) {
 
                 $price = $cycle['pricing_scheme']['fixed_price']['value'];
 
-                if(0 === $first_price && 1 === intval($cycle['sequence'])) {
+                if(0 === $first_price && 1 === $sequence) {
 
-                    $first_price = intval($price);
+                    $first_price = floatval($price);
 
                 }
 
                 $item = new \WC_Order_Item_Product();
 
-                $item->set_name("{$cycle['tenure_type']} (period {$cycle['sequence']})");
+                $item->set_name("{$cycle['tenure_type']} (period $sequence)");
 
                 $item->set_subtotal($price);
 
-                if($cycle['tenure_type'] === 'TRIAL' && 1 === intval($cycle['sequence'])) {
+                if($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
 
                     $item->set_total($price);
 
@@ -143,7 +145,7 @@ class Order
 
                     $price = $tier['amount']['value'];
 
-                    if(0 === $first_price && 1 === intval($cycle['sequence'])) {
+                    if(0 === $first_price && 1 === $sequence) {
 
                         $first_price = $price;
 
@@ -151,11 +153,11 @@ class Order
 
                     $item = new \WC_Order_Item_Product();
 
-                    $item->set_name("{$cycle['tenure_type']} (period {$cycle['sequence']}) tier $tier_num");
+                    $item->set_name("{$cycle['tenure_type']} (period $sequence) tier $tier_num");
 
                     $item->set_subtotal($price);
 
-                    if($cycle['tenure_type'] === 'TRIAL' && 1 === intval($cycle['sequence'])) {
+                    if($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
 
                         $item->set_total($price);
 
@@ -196,7 +198,7 @@ class Order
 
             $order->add_item($fee);
 
-            $first_price = intval($first_price) + intval($payment_preferences['setup_fee']['value']);
+            $first_price = floatval($first_price) + floatval($payment_preferences['setup_fee']['value']);
         }
 
         foreach ($order->get_items() as $item_id => $item)

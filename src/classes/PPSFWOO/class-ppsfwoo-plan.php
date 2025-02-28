@@ -67,7 +67,7 @@ class Plan extends PluginMain
 
                     if (isset($cycle['pricing_scheme']['fixed_price'])) {
 
-                        return intval($cycle['pricing_scheme']['fixed_price']['value']);
+                        return floatval($cycle['pricing_scheme']['fixed_price']['value']);
 
                     } elseif (isset($cycle['pricing_scheme']['pricing_model'])) {
 
@@ -166,7 +166,7 @@ class Plan extends PluginMain
 
                 if(isset($plan['taxes'])) {
 
-                    $tax_rate_id = $this->insert_tax_rate(intval($plan['taxes']['percentage']));
+                    $tax_rate_id = $this->insert_tax_rate(floatval($plan['taxes']['percentage']));
 
                 }
 
@@ -216,7 +216,7 @@ class Plan extends PluginMain
 
             if(isset($cached_response['taxes'])) {
 
-                $tax_rate = intval($cached_response['taxes']['percentage']) ?? 0;
+                $tax_rate = floatval($cached_response['taxes']['percentage']) ?? 0;
 
                 $inclusive = !empty($cached_response['taxes']['inclusive']);
                 
