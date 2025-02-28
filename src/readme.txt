@@ -3,8 +3,8 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.4.3
-WC tested up to: 9.3.3
+Stable tag: 2.4.4
+WC tested up to: 9.7.0
 Requires at least: 6.4.3
 Tested up to: 6.7.2
 Requires PHP: 7.4
@@ -106,6 +106,9 @@ If you encounter issues with the PayPal buttons not appearing after an update, p
 == Changelog ==
 
 = 2.4.3 =
+* Feature: display plan price in table on plan tab
+* Bugfix: taxes not being handled properly
+* Bugfix: paypal subscription plans other than fixed not properly displayed on receipts
 * Refactor: combine class import statements
 * Refactor: rename database class and move install/upgrade from plugin main to database
 
