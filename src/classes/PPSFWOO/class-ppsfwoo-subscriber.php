@@ -7,7 +7,8 @@ use PPSFWOO\Product,
     PPSFWOO\Order,
     PPSFWOO\Webhook,
     PPSFWOO\Database,
-    PPSFWOO\Exception;
+    PPSFWOO\Exception,
+    PPSFWOO\PayPal;
 
 class Subscriber
 {
@@ -23,13 +24,16 @@ class Subscriber
            $city,
            $state,
            $postal_code,
-           $country_code;
+           $country_code,
+           $plan;
 
 	public function __construct($subscription, $event_type = NULL)
     {
         $type = isset($subscription['response']) ? "response": "resource";
 
         $this->subscription = (object) $subscription[$type];
+
+        $this->plan = new Plan('plan_id', $this->get_plan_id());
 
         $this->subscription->last_payment = !empty($this->subscription->billing_info['last_payment']['time'])
             ? new \DateTime($this->subscription->billing_info['last_payment']['time'])
@@ -41,7 +45,7 @@ class Subscriber
 
         $expiration = $this->add_frequency_to_last_payment(
             $this->subscription->last_payment,
-            (new Plan('plan_id', $this->get_plan_id()))->frequency
+            $this->plan->frequency
         );
 
         $this->subscription->expiration = $expiration

@@ -38,6 +38,18 @@ class Plan extends PluginMain
         }
 	}
 
+    public function get_cached_response()
+    {
+        return $this->ppsfwoo_plans[$this->env['env']][$this->id]['response'] ?? NULL;
+    }
+
+    public function get_billing_cycles()
+    {
+        $cached_response = $this->get_cached_response();
+
+        return $cached_response['billing_cycles'] ?? [];
+    }
+
 	private function get_id_by_product_id($product_id)
     {
         return get_post_meta($product_id, "{$this->env['env']}_ppsfwoo_plan_id", true) ?? "";
@@ -53,7 +65,22 @@ class Plan extends PluginMain
 
                 if('price' === $find) {
 
-                    return intval($cycle['pricing_scheme']['fixed_price']['value']);
+                    if (isset($cycle['pricing_scheme']['fixed_price'])) {
+
+                        return intval($cycle['pricing_scheme']['fixed_price']['value']);
+
+                    } elseif (isset($cycle['pricing_scheme']['pricing_model'])) {
+
+                        $values = [];
+
+                        foreach ($cycle['pricing_scheme']['tiers'] as $tier)
+                        {
+                            $values[] = $tier['amount']['value'];
+                        }
+
+                        return min($values);
+
+                    }
 
                 } elseif('frequency' === $find) {
 
@@ -137,12 +164,19 @@ class Plan extends PluginMain
                     $product_name = $products[$plan['product_id']];
                 }
 
+                if(isset($plan['taxes'])) {
+
+                    $tax_rate_id = $this->insert_tax_rate(intval($plan['taxes']['percentage']));
+
+                }
+
                 $plans[$plan['id']] = [
                     'plan_name'     => $plan['name'],
                     'product_name'  => $product_name,
                     'frequency'     => self::get_from_response_billing_cycles('frequency', $plan),
                     'status'        => $plan['status'],
-                    'price'         => self::get_from_response_billing_cycles('price', $plan)
+                    'price'         => self::get_from_response_billing_cycles('price', $plan),
+                    'response'      => $plan
                 ];
             }
 
@@ -159,6 +193,96 @@ class Plan extends PluginMain
         }
 
         return $plans;
+    }
+
+    public function get_payment_preferences()
+    {
+        $cached_response = $this->get_cached_response();
+
+        return isset($cached_response, $cached_response['payment_preferences']) ? $cached_response['payment_preferences']: [];
+    }
+
+    public function get_tax_rate_data()
+    {
+        $class = self::plugin_data('Name');
+
+        $slug = strtolower(str_replace(' ', '-', $class));
+
+        $tax_rate = 0;
+
+        $inclusive = NULL;
+
+        if($cached_response = $this->get_cached_response()) {
+
+            if(isset($cached_response['taxes'])) {
+
+                $tax_rate = intval($cached_response['taxes']['percentage']) ?? 0;
+
+                $inclusive = !empty($cached_response['taxes']['inclusive']);
+                
+            }
+
+        }
+
+        return [
+            'tax_rate'       => $tax_rate,
+            'inclusive'      => $inclusive,
+            'tax_rate_class' => $class,
+            'tax_rate_slug'  => $slug
+        ];
+    }
+
+    public function insert_tax_rate($tax_rate)
+    {
+        $tax_rate_data = $this->get_tax_rate_data();
+
+        $create_tax_rate = true;
+
+        $tax_rate_id = 0;
+
+        $taxes = \WC_Tax::get_rates_for_tax_class($tax_rate_data['tax_rate_slug']);
+
+        if($taxes) {
+
+            foreach ($taxes as $id => $tax_rate_object)
+            {
+                if (
+                    $tax_rate_object->tax_rate_class === $tax_rate_data['tax_rate_slug']
+                    && $tax_rate_object->tax_rate === number_format($tax_rate, 4)
+                ) {
+
+                    $tax_rate_id = $id;
+
+                    $create_tax_rate = false;
+
+                    break;
+
+                }
+            }
+        }
+
+        if(!$taxes || $create_tax_rate) {
+
+            if(!\WC_Tax::get_tax_class_by('name', $tax_rate_data['tax_rate_class'])) {
+
+                \WC_Tax::create_tax_class($tax_rate_data['tax_rate_class'], $tax_rate_data['tax_rate_slug']);
+
+            }
+
+            $tax_rate_id = \WC_Tax::_insert_tax_rate([
+                'tax_rate_country' => '*',
+                'tax_rate_state'   => '*',
+                'tax_rate'         => $tax_rate,
+                'tax_rate_name'    => 'Tax',
+                'tax_rate_class'   => $tax_rate_data['tax_rate_class'],
+                'tax_rate_priority'=> 1,
+                'tax_rate_compound'=> 0,
+                'tax_rate_shipping'=> 0,
+                'tax_rate_order'   => 1]
+            );
+        }
+
+        return $tax_rate_id;
     }
 
 	public function get_plans()

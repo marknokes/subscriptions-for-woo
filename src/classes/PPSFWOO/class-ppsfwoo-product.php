@@ -30,6 +30,8 @@ class Product
         add_action('woocommerce_product_meta_start', ['PPSFWOO\PayPal', 'button']);
 
 		add_action('admin_head', [$this, 'edit_product_css']);
+
+        add_action('woocommerce_admin_order_data_after_order_details', [$this, 'edit_product_css'], 10, 1);
         
         add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
         
@@ -98,6 +100,8 @@ class Product
 
                     $options = "<option value=''>Select a plan [" . $this->env . "]</option>";
 
+                    $tax_rate_slug = $Plan->get_tax_rate_data()['tax_rate_slug'];
+
                     foreach($plans as $plan_id => $plan_data)
                     {
                         if("ACTIVE" !== $plan_data['status']) {
@@ -135,10 +139,10 @@ class Product
                         jQuery(document).ready(function($){
                             $('#<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>')
                                 .change(function(){
-                                    var $price_field = $('#_regular_price'),
-                                        selectedOption = $(this).find('option:selected'),
+                                    var selectedOption = $(this).find('option:selected'),
                                         price = selectedOption.data('price').replace('$', '');
-                                    $price_field.val(price);
+                                    $('#_regular_price').val(price);
+                                    $('#_tax_class').val("<?php echo esc_attr($tax_rate_slug); ?>");
                                 });
                         });
                     </script>
@@ -164,11 +168,32 @@ class Product
         </div><?php
     }
 
-    public static function edit_product_css()
+    public static function edit_product_css($order = NULL)
     {
-        wp_enqueue_style('ppsfwoo-edit_product_css', true, [], '1');
+        $screen = get_current_screen();
 
-        wp_add_inline_style('ppsfwoo-edit_product_css', 'ul.wc-tabs li.ppsfwoo_options a::before { content: "\f515" !important;}');
+        if($screen->post_type === 'product') {
+
+            ?>
+            <script type="text/javascript">
+                jQuery(document).ready(function($) {
+                    var style = "<style>ul.wc-tabs li.subscription_options a::before {content: '\\f515' !important}</style>";
+                    $('head').append(style);
+                });
+            </script>
+            <?php
+
+        } else if(isset($order) && $screen->post_type === 'shop_order' && Order::has_subscription($order)) {
+
+            ?>
+            <script type="text/javascript">
+                jQuery(document).ready(function($) {
+                    $(".wc-order-item-discount").hide();
+                });
+            </script>
+            <?php
+
+        }
     }
 
     public function save_option_field($product_id)

@@ -21,7 +21,8 @@ use PPSFWOO\PluginMain,
 	PPSFWOO\Product,
 	PPSFWOO\PluginExtras,
 	PPSFWOO\Enterprise,
-	PPSFWOO\Database;
+	PPSFWOO\Database,
+	PPSFWOO\Order;
 
 if (!defined('ABSPATH')) exit;
 
@@ -80,6 +81,8 @@ add_action('plugins_loaded', function() {
 	$PluginMain->add_filters();
 
 	new Product();
+
+	new Order();
 
 	if(PPSFWOO_PLUGIN_EXTRAS) { new PluginExtras(); };
 

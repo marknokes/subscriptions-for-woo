@@ -9,7 +9,8 @@ use PPSFWOO\AjaxActions,
     PPSFWOO\Webhook,
     PPSFWOO\PayPal,
     PPSFWOO\Database,
-    PPSFWOO\Product;
+    PPSFWOO\Product,
+    PPSFWOO\Order;
 
 class PluginMain
 {
@@ -151,6 +152,14 @@ class PluginMain
             'is_enterprise' => true,
             'description' => 'Percentage discount for canceled subscribers that resubscribe.',
             'sanitize_callback' => 'absint'
+        ],
+        'ppsfwoo_discount_apply_to_trial' => [
+            'name'    => 'Apply to Trial',
+            'type'    => 'checkbox',
+            'default' => 0,
+            'is_enterprise' => true,
+            'description' => 'Upon resubscribing, choose to apply the discount to all trial periods.',
+            'sanitize_callback' => 'absint'
         ]
     ];
 
@@ -172,6 +181,8 @@ class PluginMain
            $ppsfwoo_delete_plugin_data,
            $ppsfwoo_reminder,
            $ppsfwoo_resubscribe_landing_page_id,
+           $ppsfwoo_discount_apply_to_trial,
+           $ppsfwoo_discount_waive_setup_fee,
            $ppsfwoo_discount,
            $template_dir,
            $plugin_dir_url,
@@ -255,6 +266,40 @@ class PluginMain
         add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 2);
 
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
+
+        add_filter('woocommerce_get_order_item_totals', [$this, 'update_receipt_display'], 10, 2);
+
+    }
+
+    private function receipt_item_value_as_int($item)
+    {
+        $decoded = html_entity_decode($item);
+
+        $stripped = wp_strip_all_tags($decoded);
+
+        $num_only = preg_replace('/[^0-9.]/', '', $stripped);
+
+        return intval($num_only);
+    }
+
+    public function update_receipt_display($totals, $order)
+    {
+        if(!Order::has_subscription($order)) {
+
+            return;
+
+        }
+
+        $subtotal = Order::exclude_from_subtotal(
+            $this->receipt_item_value_as_int($totals['cart_subtotal']['value']),
+            $order
+        );
+        
+        $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+
+        $totals['cart_subtotal']['value'] = $formatter->formatCurrency($subtotal, 'USD');
+
+        return $totals;
     }
 
     public function options_page_tab_menu($tabs)
