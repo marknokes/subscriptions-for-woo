@@ -2,7 +2,8 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain;
+use PPSFWOO\PluginMain,
+    PPSFWOO\AjaxActionsPriv;
 
 class Database
 {
@@ -94,6 +95,14 @@ class Database
                 DROP INDEX `idx_expires`,
                 ADD INDEX `idx_expires` (`expires`);"
             );
+        }
+
+        if (version_compare($installed_version, '2.4.4', '<')) {
+
+            set_transient('ppsfwoo_refresh_plans_ran', true, 10);
+
+            AjaxActionsPriv::refresh_plans();
+
         }
 
         update_option('ppsfwoo_db_version', $this_version, false);
