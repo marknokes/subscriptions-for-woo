@@ -100,8 +100,6 @@ class Product
 
                     $options = "<option value=''>Select a plan [" . $this->env . "]</option>";
 
-                    $tax_rate_slug = $Plan->get_tax_rate_data()['tax_rate_slug'];
-
                     foreach($plans as $plan_id => $plan_data)
                     {
                         if("ACTIVE" !== $plan_data['status']) {
@@ -136,17 +134,42 @@ class Product
                         </select>
                     </p>
                     <script type="text/javascript">
+                        
                         jQuery(document).ready(function($){
+                            
                             $('#<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>')
+                                
                                 .change(function(){
+                                    
                                     var selectedOption = $(this).find('option:selected'),
                                         price = selectedOption.data('price').replace('$', '');
+                                    
                                     $('#_regular_price').val(price);
-                                    $('#_tax_class').val("<?php echo esc_attr($tax_rate_slug); ?>");
+
+                                    <?php
+
+                                    $tax_rate_slug = $Plan->get_tax_rate_data()['tax_rate_slug'];
+
+                                    if(\WC_Tax::get_tax_class_by('slug', $tax_rate_slug)) {
+
+                                        ?>
+                                        
+                                        $('#_tax_class').val("<?php echo esc_attr($tax_rate_slug); ?>");
+                                        
+                                        <?php
+
+                                    }
+
+                                    ?>
+
                                 });
+
                         });
+
                     </script>
+
                     <?php
+                    
                 } else {
 
                     ?>
