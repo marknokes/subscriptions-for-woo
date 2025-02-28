@@ -150,9 +150,9 @@ class PayPal
 
         $response_array = json_decode(wp_remote_retrieve_body($remote_response), true);
 
-        if (isset($response_array['name']) && isset($response_array['message'])) {
+        if (isset($response_array['message'], $response_array['details'][0]['description'])) {
 
-            Exception::log("PayPal API Error: " . $response_array['name'] .  " - " . $response_array['message']);
+            Exception::log("PayPal API Error: " . $response_array['message'] .  " - " . $response_array['details'][0]['description']);
 
             return [
                 'error' => $response_array['name']
