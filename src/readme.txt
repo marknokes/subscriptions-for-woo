@@ -105,11 +105,13 @@ If you encounter issues with the PayPal buttons not appearing after an update, p
 
 == Changelog ==
 
-= 2.4.3 =
+= 2.4.4 =
 * Feature: display plan price in table on plan tab
 * Bugfix: taxes not being handled properly
 * Bugfix: paypal subscription plans other than fixed not properly displayed on receipts
 * Bugfix: replace intval for floatval where floats used
+
+= 2.4.3 =
 * Refactor: combine class import statements
 * Refactor: rename database class and move install/upgrade from plugin main to database
 
