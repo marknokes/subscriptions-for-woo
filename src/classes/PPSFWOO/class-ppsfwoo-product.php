@@ -36,6 +36,8 @@ class Product
         add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
         
         add_action('woocommerce_process_product_meta_' . self::TYPE, [$this, 'save_option_field']);
+
+        add_action('admin_footer', [$this, 'custom_js']);
     }
 
     private function add_filters()
@@ -45,6 +47,42 @@ class Product
         add_filter('product_type_selector', [$this, 'add_product']);
 
         add_filter('woocommerce_product_data_tabs', [$this, 'custom_product_tabs']);
+    }
+
+    public function custom_js()
+    {
+        if ('product' !== get_post_type()) {
+
+            return;
+
+        }
+
+        $Plan = new Plan();
+
+        $tax_rate_slug = $Plan->get_tax_rate_data()['tax_rate_slug'];
+
+        $tax_class_exists = \WC_Tax::get_tax_class_by('slug', $tax_rate_slug);
+
+        ?><script type='text/javascript'>
+            jQuery(document).ready(function($) {
+                var class_list = ".options_group.pricing,.general_options,.show_if_simple";
+                $(class_list)
+                    .addClass('show_if_<?php echo esc_attr(self::TYPE); ?>')
+                    .show();
+                $('#<?php echo esc_attr("{$this->PluginMain->env['env']}_ppsfwoo_plan_id"); ?>')        
+                    .change(function(){
+                        var selectedOption = $(this).find('option:selected'),
+                            price = selectedOption.data('price').replace('$', '');
+                        $('#_regular_price').val(price);
+                        <?php
+                        if($tax_class_exists) {
+                            ?>$('#_tax_class').val("<?php echo esc_attr($tax_rate_slug); ?>");<?php
+                        }
+                        ?>
+                    });
+            });
+
+        </script><?php
     }
 
 	public static function add_product($types)
@@ -133,41 +171,6 @@ class Product
                             ?>
                         </select>
                     </p>
-                    <script type="text/javascript">
-                        
-                        jQuery(document).ready(function($){
-                            
-                            $('#<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>')
-                                
-                                .change(function(){
-                                    
-                                    var selectedOption = $(this).find('option:selected'),
-                                        price = selectedOption.data('price').replace('$', '');
-                                    
-                                    $('#_regular_price').val(price);
-
-                                    <?php
-
-                                    $tax_rate_slug = $Plan->get_tax_rate_data()['tax_rate_slug'];
-
-                                    if(\WC_Tax::get_tax_class_by('slug', $tax_rate_slug)) {
-
-                                        ?>
-                                        
-                                        $('#_tax_class').val("<?php echo esc_attr($tax_rate_slug); ?>");
-                                        
-                                        <?php
-
-                                    }
-
-                                    ?>
-
-                                });
-
-                        });
-
-                    </script>
-
                     <?php
                     
                 } else {
