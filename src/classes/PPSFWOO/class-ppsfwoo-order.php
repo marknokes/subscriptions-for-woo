@@ -8,6 +8,12 @@ use PPSFWOO\Product,
 
 class Order
 {
+    private static $order_total = 0;
+
+    private static $has_trial = NULL;
+
+    private static $tax_rate_data = [];
+
     public function __construct()
     {
         add_filter('woocommerce_order_get_total', [$this, 'exclude_from_total'], 10, 2);
@@ -95,47 +101,72 @@ class Order
         return $has_subscription;
     }
 
-    private static function parse_order_items($order, $plan, $tax_rate_data)
+    private static function create_line_item($cycle, $price, $sequence, $name)
     {
-        $first_price = 0;
+        if(0 === self::$order_total && 1 === $sequence) {
 
-        $has_trial = NULL;
+            self::$order_total = $price;
 
+        }
+
+        $item = new \WC_Order_Item_Product();
+
+        $item->set_name($name);
+
+        $item->set_subtotal($price);
+
+        if($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
+
+            $item->set_total($price);
+
+            self::$has_trial = true;
+
+        } else {
+
+            $item->set_total(0);
+
+            $item->add_meta_data('exclude_from_order_total', ['value' => 'yes']);
+
+        }
+
+        return $item;
+    }
+
+    private static function create_fee($name, $amount)
+    {
+        $fee = new \WC_Order_Item_Fee();
+
+        $fee->set_name($name);
+
+        $fee->set_amount($amount);
+
+        $fee->set_total($amount);
+
+        // Need this here because the loop below over $order->get_items() does not contain fee(s)
+        if(self::$tax_rate_data['tax_rate'] !== 0) {
+                
+            $fee->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
+
+        }
+
+        return $fee;
+    }
+
+    private static function parse_order_items($order, $plan)
+    {
         foreach ($plan->get_billing_cycles() as $cycle)
         {
             $sequence = intval($cycle['sequence']);
 
             if (isset($cycle['pricing_scheme']['fixed_price'])) {
 
-                $price = $cycle['pricing_scheme']['fixed_price']['value'];
+                $price = floatval($cycle['pricing_scheme']['fixed_price']['value']);
 
-                if(0 === $first_price && 1 === $sequence) {
+                $name = "{$cycle['tenure_type']} (period $sequence)";
 
-                    $first_price = floatval($price);
+                $item = self::create_line_item($cycle, $price, $sequence, $name);
 
-                }
-
-                $item = new \WC_Order_Item_Product();
-
-                $item->set_name("{$cycle['tenure_type']} (period $sequence)");
-
-                $item->set_subtotal($price);
-
-                if($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
-
-                    $item->set_total($price);
-
-                    $has_trial = true;
-
-                } else {
-
-                    $item->set_total(0);
-
-                    $item->add_meta_data('exclude_from_order_total', ['value' => 'yes']);
-
-                }
-
-                $order->add_item($item);
+                $order->add_item($item);                
 
             } elseif (isset($cycle['pricing_scheme']['pricing_model'])) {
 
@@ -143,33 +174,11 @@ class Order
                 {
                     $tier_num = $key + 1;
 
-                    $price = $tier['amount']['value'];
+                    $price = floatval($tier['amount']['value']);
 
-                    if(0 === $first_price && 1 === $sequence) {
+                    $name = "{$cycle['tenure_type']} (period $sequence) tier $tier_num";
 
-                        $first_price = $price;
-
-                    }
-
-                    $item = new \WC_Order_Item_Product();
-
-                    $item->set_name("{$cycle['tenure_type']} (period $sequence) tier $tier_num");
-
-                    $item->set_subtotal($price);
-
-                    if($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
-
-                        $item->set_total($price);
-
-                        $has_trial = true;
-
-                    } else {
-
-                        $item->set_total(0);
-
-                        $item->add_meta_data('exclude_from_order_total', ['value' => 'yes']);
-
-                    }
+                    $item = self::create_line_item($cycle, $price, $sequence, $name);
 
                     $order->add_item($item);
 
@@ -181,31 +190,20 @@ class Order
 
         if(isset($payment_preferences['setup_fee']['value']) && $payment_preferences['setup_fee']['value'] > 0) {
 
-            $fee = new \WC_Order_Item_Fee();
+            $fee_amount = floatval($payment_preferences['setup_fee']['value']);
 
-            $fee->set_name('One-time setup fee');
-
-            $fee->set_amount($payment_preferences['setup_fee']['value']);
-
-            $fee->set_total($payment_preferences['setup_fee']['value']);
-
-            // Need this here because the loop below over $order->get_items() does not contain fee(s)
-            if($tax_rate_data['tax_rate'] !== 0) {
-                    
-                $fee->set_tax_class($tax_rate_data['tax_rate_slug']);
-
-            }
+            $fee = self::create_fee('One-time setup fee', $fee_amount, self::$tax_rate_data);
 
             $order->add_item($fee);
 
-            $first_price = floatval($first_price) + floatval($payment_preferences['setup_fee']['value']);
+            self::$order_total += $fee_amount;
         }
 
         foreach ($order->get_items() as $item_id => $item)
         {
             $product = $item->get_product();
 
-            if ($has_trial && $product && $product->exists()) {
+            if (self::$has_trial && $product && $product->exists()) {
 
                 $item->set_total(0);
 
@@ -213,21 +211,43 @@ class Order
 
             }
 
-            if($tax_rate_data['tax_rate'] !== 0) {
+            if(self::$tax_rate_data['tax_rate'] !== 0) {
                     
-                $item->set_tax_class($tax_rate_data['tax_rate_slug']);
+                $item->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
+
+                $item->set_subtotal(self::tax($item->get_subtotal()));
 
             }
             
             $item->save();
         }
+    }
 
-        return $first_price;
+    private static function tax($price)
+    {
+        if(0 === self::$tax_rate_data['tax_rate']) {
+
+            return $price;
+
+        }
+
+        $tax = ((self::$tax_rate_data['tax_rate'] / 100) * $price);
+
+        return empty(self::$tax_rate_data['inclusive']) ? $price + $tax: $price;
+
     }
 
     public static function insert(Subscriber $Subscriber)
     {   
-        $tax_rate_data = $Subscriber->plan->get_tax_rate_data();
+        self::$tax_rate_data = $Subscriber->plan->get_tax_rate_data();
+
+        $include_tax = !empty(self::$tax_rate_data['inclusive']) ? 'yes' : 'no';
+
+        add_filter('pre_option_woocommerce_prices_include_tax', function () use ($include_tax) {
+
+            return $include_tax;
+
+        });
 
         $order = wc_create_order();
 
@@ -235,7 +255,7 @@ class Order
 
         $order->add_product(wc_get_product(Product::get_product_id_by_plan_id($Subscriber->get_plan_id())));
 
-        $first_price = self::parse_order_items($order, $Subscriber->plan, $tax_rate_data);
+        self::parse_order_items($order, $Subscriber->plan);
 
         $order->set_address(self::get_address($Subscriber), 'billing');
 
@@ -249,29 +269,15 @@ class Order
 
         $order->calculate_totals();
 
-        if(0 !== $tax_rate_data['tax_rate']) {
-
-            if(empty($tax_rate_data['inclusive'])) {
-
-                $order->set_total($first_price + (($tax_rate_data['tax_rate'] / 100) * $first_price));
-
-            } else {
-
-                $order->set_total($first_price);
-
-            }
-
-        } else {
-
-            $order->set_total($first_price);
-
-        }
+        $order->set_total(self::tax(self::$order_total));
 
         $order->set_discount_total(0);
 
         $order->set_status('processing', 'Order created by Subscriptions for Woo.');
 
         $order->save();
+
+        remove_filter('pre_option_woocommerce_prices_include_tax', '__return_empty_string');
 
         return $order->get_id();
     }
