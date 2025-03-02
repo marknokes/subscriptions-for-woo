@@ -143,7 +143,7 @@ class Order
         $fee->set_total($amount);
 
         // Need this here because the loop below over $order->get_items() does not contain fee(s)
-        if(self::$tax_rate_data['tax_rate'] !== 0) {
+        if(self::$tax_rate_data['tax_rate'] !== 0 && empty(self::$tax_rate_data['inclusive'])) {
                 
             $fee->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
 
@@ -192,7 +192,7 @@ class Order
 
             $fee_amount = floatval($payment_preferences['setup_fee']['value']);
 
-            $fee = self::create_fee('One-time setup fee', $fee_amount, self::$tax_rate_data);
+            $fee = self::create_fee('One-time setup fee', $fee_amount);
 
             $order->add_item($fee);
 
@@ -211,11 +211,9 @@ class Order
 
             }
 
-            if(self::$tax_rate_data['tax_rate'] !== 0) {
-                    
-                $item->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
+            if(self::$tax_rate_data['tax_rate'] !== 0 && empty(self::$tax_rate_data['inclusive'])) {
 
-                $item->set_subtotal(self::tax($item->get_subtotal()));
+                $item->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
 
             }
             
@@ -223,31 +221,9 @@ class Order
         }
     }
 
-    private static function tax($price)
-    {
-        if(0 === self::$tax_rate_data['tax_rate']) {
-
-            return $price;
-
-        }
-
-        $tax = ((self::$tax_rate_data['tax_rate'] / 100) * $price);
-
-        return empty(self::$tax_rate_data['inclusive']) ? $price + $tax: $price;
-
-    }
-
     public static function insert(Subscriber $Subscriber)
     {   
         self::$tax_rate_data = $Subscriber->plan->get_tax_rate_data();
-
-        $include_tax = !empty(self::$tax_rate_data['inclusive']) ? 'yes' : 'no';
-
-        add_filter('pre_option_woocommerce_prices_include_tax', function () use ($include_tax) {
-
-            return $include_tax;
-
-        });
 
         $order = wc_create_order();
 
@@ -268,8 +244,6 @@ class Order
         $order->calculate_shipping();
 
         $order->calculate_totals();
-
-        $order->set_total(self::tax(self::$order_total));
 
         $order->set_discount_total(0);
 
