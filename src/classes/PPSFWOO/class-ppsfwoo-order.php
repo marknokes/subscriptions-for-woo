@@ -14,6 +14,10 @@ class Order
 
     private static $tax_rate_data = [];
 
+    private static $quantity = 1;
+
+    private static $line_item_price = 0;
+
     public function __construct()
     {
         add_filter('woocommerce_order_get_total', [$this, 'exclude_from_total'], 10, 2);
@@ -101,23 +105,19 @@ class Order
         return $has_subscription;
     }
 
-    private static function create_line_item($cycle, $price, $sequence, $name)
+    private static function create_line_item($cycle, $total, $sequence, $name)
     {
-        if(0 === self::$order_total && 1 === $sequence) {
-
-            self::$order_total = $price;
-
-        }
-
         $item = new \WC_Order_Item_Product();
 
         $item->set_name($name);
 
-        $item->set_subtotal($price);
+        $item->set_subtotal($total);
+
+        $item->set_quantity(self::$quantity);
 
         if($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
 
-            $item->set_total($price);
+            $item->set_total($total);
 
             self::$has_trial = true;
 
@@ -128,6 +128,13 @@ class Order
             $item->add_meta_data('exclude_from_order_total', ['value' => 'yes']);
 
         }
+
+        if(0 === self::$line_item_price && $cycle['tenure_type'] === 'REGULAR') {
+
+            self::$line_item_price = $total / self::$quantity;
+
+        }
+
 
         return $item;
     }
@@ -152,9 +159,15 @@ class Order
         return $fee;
     }
 
-    private static function parse_order_items($order, $plan)
+    private static function parse_order_items($order, $Subscriber)
     {
-        foreach ($plan->get_billing_cycles() as $cycle)
+        $plan_id = $Subscriber->get_plan_id();
+
+        $product_id = Product::get_product_id_by_plan_id($plan_id);
+
+        $product = wc_get_product($product_id);
+
+        foreach ($Subscriber->plan->get_billing_cycles() as $cycle)
         {
             $sequence = intval($cycle['sequence']);
 
@@ -164,7 +177,7 @@ class Order
 
                 $name = "{$cycle['tenure_type']} (period $sequence)";
 
-                $item = self::create_line_item($cycle, $price, $sequence, $name);
+                $item = self::create_line_item($cycle, $price * self::$quantity, $sequence, $name);
 
                 $order->add_item($item);                
 
@@ -172,21 +185,26 @@ class Order
 
                 foreach ($cycle['pricing_scheme']['tiers'] as $key => $tier)
                 {
-                    $tier_num = $key + 1;
+                    $ending_quantity = $tier['ending_quantity'] ?? INF;
 
-                    $price = floatval($tier['amount']['value']);
+                    if (self::$quantity >= $tier['starting_quantity'] && self::$quantity <= $ending_quantity) {
 
-                    $name = "{$cycle['tenure_type']} (period $sequence) tier $tier_num";
+                        $tier_num = $key + 1;
 
-                    $item = self::create_line_item($cycle, $price, $sequence, $name);
+                        $price = floatval($tier['amount']['value']);
 
-                    $order->add_item($item);
+                        $name = "{$cycle['tenure_type']} (period $sequence) tier $tier_num";
 
+                        $item = self::create_line_item($cycle, $price * self::$quantity, $sequence, $name);
+
+                        $order->add_item($item);
+
+                    }
                 }
             }
         }
 
-        $payment_preferences = $plan->get_payment_preferences();
+        $payment_preferences = $Subscriber->plan->get_payment_preferences();
 
         if(isset($payment_preferences['setup_fee']['value']) && $payment_preferences['setup_fee']['value'] > 0) {
 
@@ -195,15 +213,19 @@ class Order
             $fee = self::create_fee('One-time setup fee', $fee_amount);
 
             $order->add_item($fee);
-
-            self::$order_total += $fee_amount;
         }
+
+        $product->set_price(self::$line_item_price);
+
+        $order->add_product($product, self::$quantity);
 
         foreach ($order->get_items() as $item_id => $item)
         {
             $product = $item->get_product();
 
-            if (self::$has_trial && $product && $product->exists()) {
+            $is_product = $product && $product->exists();
+
+            if (self::$has_trial && $is_product) {
 
                 $item->set_total(0);
 
@@ -225,13 +247,13 @@ class Order
     {   
         self::$tax_rate_data = $Subscriber->plan->get_tax_rate_data();
 
+        self::$quantity = $Subscriber->subscription->quantity ?? self::$quantity;
+
         $order = wc_create_order();
 
         $order->set_customer_id($Subscriber->user_id);
 
-        $order->add_product(wc_get_product(Product::get_product_id_by_plan_id($Subscriber->get_plan_id())));
-
-        self::parse_order_items($order, $Subscriber->plan);
+        self::parse_order_items($order, $Subscriber);
 
         $order->set_address(self::get_address($Subscriber), 'billing');
 

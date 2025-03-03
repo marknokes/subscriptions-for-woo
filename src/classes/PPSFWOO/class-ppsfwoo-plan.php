@@ -8,7 +8,21 @@ use PPSFWOO\PayPal,
 class Plan extends PluginMain
 {
 	public $id,
-		   $frequency;
+		   $frequency,
+           $version,
+           $product_id,
+           $name,
+           $status,
+           $usage_type,
+           $billing_cycles,
+           $payment_preferences,
+           $taxes,
+           $quantity_supported,
+           $payee,
+           $create_time,
+           $update_time,
+           $links,
+           $description;
 
 	public function __construct($construct_by = "", $value = NULL)
 	{
@@ -31,10 +45,14 @@ class Plan extends PluginMain
 
         if(isset($this->id)) {
 
-            $plans = $this->get_plans();
+            foreach($this->get_cached_response() as $response_key => $response_item)
+            {
 
-            $this->frequency = $plans[$this->id]['frequency'] ?? "";
+                $this->$response_key = $response_item;
 
+            }
+            
+            $this->frequency = self::get_from_response_billing_cycles('frequency', $this->billing_cycles);
         }
 	}
 
@@ -45,9 +63,7 @@ class Plan extends PluginMain
 
     public function get_billing_cycles()
     {
-        $cached_response = $this->get_cached_response();
-
-        return $cached_response['billing_cycles'] ?? [];
+        return $this->billing_cycles;
     }
 
 	private function get_id_by_product_id($product_id)
@@ -55,9 +71,9 @@ class Plan extends PluginMain
         return get_post_meta($product_id, "{$this->env['env']}_ppsfwoo_plan_id", true) ?? "";
     }
 
-    public static function get_from_response_billing_cycles($find, $response)
+    public static function get_from_response_billing_cycles($find, $response = NULL)
     {
-        $billing_cycles = $response['billing_cycles'] ?? [];
+        $billing_cycles = $response['billing_cycles'] ?? $response ?? [];
         
         foreach ($billing_cycles as $cycle)
         {

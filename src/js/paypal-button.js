@@ -2,6 +2,21 @@ var ppsfwooSubscribeButton = document.getElementById('subscribeButton'),
     ppsfwooEllipsis = document.getElementById('lds-ellipsis'),
     ppsfwooShortcodeContainer = document.getElementById('ppsfwoo-shortcode-button-container');
 
+function ppsfwooCreateQuantityInput() {
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.id = 'quantityInput';
+    input.name = 'quantity';
+    input.min = '1';
+    input.value = '1';
+    var label = document.createElement('label');
+    label.setAttribute('for', 'quantityInput');
+    label.innerHTML = 'Quantity: ';
+    var container = document.getElementById('quantityInputContainer');
+    container.appendChild(label);
+    container.appendChild(input);
+}
+
 function ppsfwooSendPostRequest(url, data) {
     return new Promise((resolve, reject) => {
         var xhr = new XMLHttpRequest();
@@ -36,7 +51,7 @@ function ppsfwooSendPostRequest(url, data) {
     });
 }
 
-function ppsfwooLoadPayPalScript(client_id, nonce, plan_id, callback) {
+function ppsfwooLoadPayPalScript(client_id, nonce, plan_id, quantity_supported, callback) {
     if (window.paypal) {
         callback(nonce, plan_id);
     } else {
@@ -53,6 +68,9 @@ function ppsfwooLoadPayPalScript(client_id, nonce, plan_id, callback) {
             alert("There has been an unexpeced error. Please refresh and try again.");
             location.reload();
         };
+        if(quantity_supported) {
+            ppsfwooCreateQuantityInput();
+        }
         document.body.appendChild(script);
     }
 }
@@ -92,9 +110,12 @@ function ppsfwooRender(nonce, plan_id) {
             label: 'subscribe'
         },
         createSubscription: function(data, actions) {
-            return actions.subscription.create({
-                plan_id: plan_id
-            });
+            var quantityInput = document.getElementById('quantityInput'),
+                data = {plan_id: plan_id};
+            if(quantityInput) {
+                data['quantity'] = quantityInput.value;
+            }
+            return actions.subscription.create(data);
         },
         onApprove: function(data, actions) {
             var redirect_url = ppsfwoo_paypal_ajax_var.redirect + "?subs_id=" + data.subscriptionID + "&subs_id_redirect_nonce=" + nonce;
@@ -118,7 +139,13 @@ function ppsfwooInitializePayPalSubscription() {
         if(response.error) {
             throw new Error("No plan id found for product with ID " + ppsfwoo_paypal_ajax_var.product_id);
         } else {
-            ppsfwooLoadPayPalScript(response.client_id, response.nonce, response.plan_id, ppsfwooRender);
+            ppsfwooLoadPayPalScript(
+                response.client_id,
+                response.nonce,
+                response.plan_id,
+                response.quantity_supported,
+                ppsfwooRender
+            );
         }
     })
     .catch(error => {

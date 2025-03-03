@@ -58,7 +58,8 @@ class AjaxActions
                 $response = [
                     'client_id' => $PluginMain->client_id,
                     'nonce'     => wp_create_nonce($nonce_name),
-                    'plan_id'   => $Plan->id
+                    'plan_id'   => $Plan->id,
+                    'quantity_supported' => $Plan->quantity_supported
                 ];
 
             } else {
