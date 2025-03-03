@@ -20,25 +20,7 @@ class Order
 
     public function __construct()
     {
-        add_filter('woocommerce_order_get_total', [$this, 'exclude_from_total'], 10, 2);
-
         add_filter('woocommerce_order_get_subtotal', [$this, 'exclude_from_subtotal'], 10, 2);
-    }
-
-    public function exclude_from_total($total, $order)
-    {
-        foreach ($order->get_items() as $item_id => $item)
-        {
-            $exclude_from_order_total = $item->get_meta('exclude_from_order_total')['value'] ?? '';
-
-            if ($exclude_from_order_total === 'yes') {
-
-                $total -= $item->get_total();
-
-            }
-        }
-
-        return $total;
     }
 
     public static function exclude_from_subtotal($subtotal, $order)
@@ -48,7 +30,7 @@ class Order
             $exclude_from_order_total = $item->get_meta('exclude_from_order_total')['value'] ?? '';
 
             if ($exclude_from_order_total === 'yes') {
-
+                
                 $subtotal -= $item->get_subtotal();
 
             }
@@ -161,6 +143,10 @@ class Order
 
     private static function parse_order_items($order, $Subscriber)
     {
+        $items = [];
+
+        $payment_preferences = $Subscriber->plan->get_payment_preferences();
+
         $plan_id = $Subscriber->get_plan_id();
 
         $product_id = Product::get_product_id_by_plan_id($plan_id);
@@ -178,8 +164,8 @@ class Order
                 $name = "{$cycle['tenure_type']} (period $sequence)";
 
                 $item = self::create_line_item($cycle, $price * self::$quantity, $sequence, $name);
-
-                $order->add_item($item);                
+  
+                $items[$sequence] = $item;             
 
             } elseif (isset($cycle['pricing_scheme']['pricing_model'])) {
 
@@ -197,14 +183,12 @@ class Order
 
                         $item = self::create_line_item($cycle, $price * self::$quantity, $sequence, $name);
 
-                        $order->add_item($item);
+                        $items[$sequence] = $item;
 
                     }
                 }
             }
         }
-
-        $payment_preferences = $Subscriber->plan->get_payment_preferences();
 
         if(isset($payment_preferences['setup_fee']['value']) && $payment_preferences['setup_fee']['value'] > 0) {
 
@@ -212,7 +196,8 @@ class Order
 
             $fee = self::create_fee('One-time setup fee', $fee_amount);
 
-            $order->add_item($fee);
+            array_push($items, $fee);
+
         }
 
         $product->set_price(self::$line_item_price);
@@ -223,9 +208,9 @@ class Order
         {
             $product = $item->get_product();
 
-            $is_product = $product && $product->exists();
+            if (self::$has_trial && $product && $product->exists()) {
 
-            if (self::$has_trial && $is_product) {
+                $item->set_subtotal(self::$line_item_price * self::$quantity);
 
                 $item->set_total(0);
 
@@ -233,13 +218,25 @@ class Order
 
             }
 
-            if(self::$tax_rate_data['tax_rate'] !== 0 && empty(self::$tax_rate_data['inclusive'])) {
+            if(self::$tax_rate_data['tax_rate'] !== 0) {
 
-                $item->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
+                if(empty(self::$tax_rate_data['inclusive'])) {
 
+                    $item->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
+
+                } else {
+
+                    $item->set_tax_class("");
+
+                }
             }
             
             $item->save();
+        }
+
+        foreach($items as $sequence => $item)
+        {
+            $order->add_item($item);
         }
     }
 
