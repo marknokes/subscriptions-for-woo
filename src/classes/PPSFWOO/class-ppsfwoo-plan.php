@@ -43,9 +43,9 @@ class Plan extends PluginMain
                 break;
         }
 
-        if(isset($this->id)) {
+        if(isset($this->id) && $cached_response = $this->get_cached_response()) {
 
-            foreach($this->get_cached_response() as $response_key => $response_item)
+            foreach($cached_response as $response_key => $response_item)
             {
 
                 $this->$response_key = $response_item;
