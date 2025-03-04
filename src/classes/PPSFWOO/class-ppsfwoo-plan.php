@@ -148,65 +148,81 @@ class Plan extends PluginMain
     {
         $plans = [];
 
-        $plan_data = PayPal::request(
-            PayPal::EP_PLANS,
-            ['page_size' => 20],
-            "GET",
-            ['Prefer' => 'return=representation']
-        );
+        $page = 1;
 
-        if($plan_data && isset($plan_data['response']['plans'])) {
+        do {
 
-            $products = [];
+            $plan_data = PayPal::request(
+                PayPal::EP_PLANS,
+                ['page_size' => 20, 'page' => $page],
+                "GET",
+                ['Prefer' => 'return=representation']
+            );
 
-            foreach($plan_data['response']['plans'] as $plan)
-            {
-                if($this->ppsfwoo_hide_inactive_plans && "ACTIVE" !== $plan['status']) {
+            if($plan_data
+                && isset($plan_data['response']['plans'])
+                && count($plan_data['response']['plans']) > 0
+            ) {
 
-                    continue;
+                $products = [];
 
+                foreach($plan_data['response']['plans'] as $plan)
+                {
+                    if($this->ppsfwoo_hide_inactive_plans && "ACTIVE" !== $plan['status']) {
+
+                        continue;
+
+                    }
+
+                    if(!in_array($plan['product_id'], array_keys($products))) {
+                    
+                        $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
+
+                        $product_name = $product_data['response']['name'];
+
+                        $products[$plan['product_id']] = $product_name;
+
+                    } else {
+
+                        $product_name = $products[$plan['product_id']];
+                    }
+
+                    if(isset($plan['taxes'])) {
+
+                        $tax_rate_id = $this->insert_tax_rate(floatval($plan['taxes']['percentage']));
+
+                    }
+
+                    $plans[$plan['id']] = [
+                        'plan_name'     => $plan['name'],
+                        'product_name'  => $product_name,
+                        'frequency'     => self::get_from_response_billing_cycles('frequency', $plan),
+                        'status'        => $plan['status'],
+                        'price'         => self::get_from_response_billing_cycles('price', $plan),
+                        'response'      => $plan
+                    ];
                 }
 
-                if(!in_array($plan['product_id'], array_keys($products))) {
+                $page++;
+
+            } else {
                 
-                    $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
+                break;
 
-                    $product_name = $product_data['response']['name'];
-
-                    $products[$plan['product_id']] = $product_name;
-
-                } else {
-
-                    $product_name = $products[$plan['product_id']];
-                }
-
-                if(isset($plan['taxes'])) {
-
-                    $tax_rate_id = $this->insert_tax_rate(floatval($plan['taxes']['percentage']));
-
-                }
-
-                $plans[$plan['id']] = [
-                    'plan_name'     => $plan['name'],
-                    'product_name'  => $product_name,
-                    'frequency'     => self::get_from_response_billing_cycles('frequency', $plan),
-                    'status'        => $plan['status'],
-                    'price'         => self::get_from_response_billing_cycles('price', $plan),
-                    'response'      => $plan
-                ];
             }
 
-            uasort($plans, function ($a, $b) {
-                return strcmp($a['status'], $b['status']);
-            });
-        
-            $env = $this->env['env'];
+        } while (true);
 
-            update_option('ppsfwoo_plans', [
-                $env => $plans
-            ]);
+        uasort($plans, function ($a, $b) {
+            return strcmp($a['status'], $b['status']);
+        });
+    
+        $env = $this->env['env'];
 
-        }
+        update_option('ppsfwoo_plans', [
+            $env => $plans
+        ]);
+
 
         return $plans;
     }
