@@ -97,9 +97,7 @@ class Database
             );
         }
 
-        if (version_compare($installed_version, '2.4.4', '<')) {
-
-            set_transient('ppsfwoo_refresh_plans_ran', true, 10);
+        if (version_compare($installed_version, '2.4.6', '<')) {
 
             AjaxActionsPriv::refresh_plans();
 

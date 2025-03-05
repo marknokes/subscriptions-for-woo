@@ -3,8 +3,8 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.4.5
-WC tested up to: 9.7.0
+Stable tag: 2.4.6
+WC tested up to: 9.7.1
 Requires at least: 6.4.3
 Tested up to: 6.7.2
 Requires PHP: 7.4
@@ -104,6 +104,12 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.4.6 =
+* Feature: Allow applying different tax rates to woocommerce order based on paypal plan definition
+* Bugfix: Max 20 paypal plans appearing in admin area
+* Improvement: Remove default tax_class from order product when tax inclusive
+* Improvement: Refactor Plan class
 
 = 2.4.5 =
 * Bugfix: general tab on product page not displaying
