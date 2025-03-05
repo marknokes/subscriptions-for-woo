@@ -67,7 +67,7 @@ class Plan
             }
         }
 
-        throw new \BadMethodCallException("Method $name does not exist.");
+        throw new \BadMethodCallException("Method " . esc_attr($name) . " does not exist.");
     }
 
     private function get_from_billing_cycles($find, $response = NULL)
