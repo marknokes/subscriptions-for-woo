@@ -248,7 +248,7 @@ class Plan extends PluginMain
 
             if(isset($cached_response['taxes'])) {
 
-                $tax_rate = floatval($cached_response['taxes']['percentage']) ?? 0;
+                $tax_rate = number_format($cached_response['taxes']['percentage'], 4) ?? 0;
 
                 $inclusive = !empty($cached_response['taxes']['inclusive']);
                 

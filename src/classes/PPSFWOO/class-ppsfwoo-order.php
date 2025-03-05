@@ -18,6 +18,8 @@ class Order
 
     private static $line_item_price = 0;
 
+    private static $Subscriber = NULL;
+
     public function __construct()
     {
         add_filter('woocommerce_order_get_subtotal', [$this, 'exclude_from_subtotal'], 10, 2);
@@ -46,20 +48,20 @@ class Order
         return $results->result[0]->order_id ?? false;
     }
 
-    public static function get_address(Subscriber $Subscriber)
+    public static function get_address()
     {
         return [
-            'first_name' => $Subscriber->first_name,
-            'last_name'  => $Subscriber->last_name,
+            'first_name' => self::$Subscriber->first_name,
+            'last_name'  => self::$Subscriber->last_name,
             'company'    => '',
-            'email'      => $Subscriber->email,
+            'email'      => self::$Subscriber->email,
             'phone'      => '',
-            'address_1'  => $Subscriber->address_line_1,
-            'address_2'  => $Subscriber->address_line_2,
-            'city'       => $Subscriber->city,
-            'state'      => $Subscriber->state,
-            'postcode'   => $Subscriber->postal_code,
-            'country'    => $Subscriber->country_code
+            'address_1'  => self::$Subscriber->address_line_1,
+            'address_2'  => self::$Subscriber->address_line_2,
+            'city'       => self::$Subscriber->city,
+            'state'      => self::$Subscriber->state,
+            'postcode'   => self::$Subscriber->postal_code,
+            'country'    => self::$Subscriber->country_code
         ];
     }
 
@@ -121,39 +123,11 @@ class Order
         return $item;
     }
 
-    private static function create_fee($name, $amount)
-    {
-        $fee = new \WC_Order_Item_Fee();
-
-        $fee->set_name($name);
-
-        $fee->set_amount($amount);
-
-        $fee->set_total($amount);
-
-        // Need this here because the loop below over $order->get_items() does not contain fee(s)
-        if(self::$tax_rate_data['tax_rate'] !== 0 && empty(self::$tax_rate_data['inclusive'])) {
-                
-            $fee->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
-
-        }
-
-        return $fee;
-    }
-
-    private static function parse_order_items($order, $Subscriber)
+    private static function parse_billing_cycles()
     {
         $items = [];
 
-        $payment_preferences = $Subscriber->plan->get_payment_preferences();
-
-        $plan_id = $Subscriber->get_plan_id();
-
-        $product_id = Product::get_product_id_by_plan_id($plan_id);
-
-        $product = wc_get_product($product_id);
-
-        foreach ($Subscriber->plan->get_billing_cycles() as $cycle)
+        foreach (self::$Subscriber->plan->get_billing_cycles() as $cycle)
         {
             $sequence = intval($cycle['sequence']);
 
@@ -190,21 +164,42 @@ class Order
             }
         }
 
-        if(isset($payment_preferences['setup_fee']['value']) && $payment_preferences['setup_fee']['value'] > 0) {
+        return $items;
+    }
 
-            $fee_amount = floatval($payment_preferences['setup_fee']['value']);
+    private static function parse_order_items($order)
+    {
+        $payment_preferences = self::$Subscriber->plan->get_payment_preferences();
 
-            $fee = self::create_fee('One-time setup fee', $fee_amount);
+        $plan_id = self::$Subscriber->get_plan_id();
+
+        $product_id = Product::get_product_id_by_plan_id($plan_id);
+
+        $product = wc_get_product($product_id);
+
+        $items = self::parse_billing_cycles();
+
+        if(
+            isset($payment_preferences['setup_fee']['value'])
+            && $payment_preferences['setup_fee']['value'] > 0
+        ) {
+
+            $fee = new \WC_Order_Item_Fee();
+            
+            $fee->set_name('One-time setup fee');
+
+            $fee->set_total(floatval($payment_preferences['setup_fee']['value']));
 
             array_push($items, $fee);
 
         }
 
+        // handle adding product to order first & seperately
         $product->set_price(self::$line_item_price);
 
         $order->add_product($product, self::$quantity);
 
-        foreach ($order->get_items() as $item_id => $item)
+        foreach ($order->get_items() as $item)
         {
             $product = $item->get_product();
 
@@ -218,43 +213,88 @@ class Order
 
             }
 
-            if(self::$tax_rate_data['tax_rate'] !== 0) {
-
-                if(empty(self::$tax_rate_data['inclusive'])) {
-
-                    $item->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
-
-                } else {
-
-                    $item->set_tax_class("");
-
-                }
-            }
-            
-            $item->save();
+            self::set_taxes($item);
         }
 
+        // add additional line items to order
         foreach($items as $sequence => $item)
         {
+            self::set_taxes($item);
+
             $order->add_item($item);
         }
     }
 
+    private static function set_taxes($item)
+    {
+        $taxes = \WC_Tax::get_rates_for_tax_class(self::$tax_rate_data['tax_rate_slug']);
+
+        $found_rate = NULL;
+
+        if(self::$tax_rate_data['tax_rate'] === 0 || !empty(self::$tax_rate_data['inclusive']) || !$taxes)
+        {
+            $item->set_tax_class("");
+
+            return;
+        }
+
+        foreach ($taxes as $tax_rate_object)
+        {
+            if(self::$tax_rate_data['tax_rate'] === $tax_rate_object->tax_rate) {
+
+                $found_rate = $tax_rate_object;
+
+                break;
+
+            }
+        }
+
+        if(!isset($found_rate)) {
+
+            $item->set_tax_class("");
+
+            return;
+
+        }
+
+        $tax_rates[ $found_rate->tax_rate_id ] = [
+            'rate'     => (float) $found_rate->tax_rate,
+            'label'    => $found_rate->tax_rate_name,
+            'shipping' => $found_rate->tax_rate_shipping ? 'yes' : 'no',
+            'compound' => $found_rate->tax_rate_compound ? 'yes' : 'no',
+        ];
+
+        $get_subtotal = method_exists($item, 'get_subtotal') ? 'get_subtotal': 'get_total';
+
+        $taxes = \WC_Tax::calc_tax($item->get_total(), $tax_rates, false);
+
+        $subtotal_taxes = \WC_Tax::calc_tax($item->$get_subtotal(), $tax_rates, false);
+
+        $item->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
+        
+        $item->set_taxes([
+            'subtotal' => $subtotal_taxes,
+            'total'    => $taxes,
+        ]);
+    }
+
     public static function insert(Subscriber $Subscriber)
     {   
-        self::$tax_rate_data = $Subscriber->plan->get_tax_rate_data();
+        self::$Subscriber = $Subscriber;
 
-        self::$quantity = $Subscriber->subscription->quantity ?? self::$quantity;
+        self::$tax_rate_data = self::$Subscriber->plan->get_tax_rate_data();
+
+        self::$quantity = self::$Subscriber->subscription->quantity ?? self::$quantity;
 
         $order = wc_create_order();
 
-        $order->set_customer_id($Subscriber->user_id);
+        $order->set_customer_id(self::$Subscriber->user_id);
 
-        self::parse_order_items($order, $Subscriber);
+        self::parse_order_items($order);
 
-        $order->set_address(self::get_address($Subscriber), 'billing');
+        $order->set_address(self::get_address(), 'billing');
 
-        $order->set_address(self::get_address($Subscriber), 'shipping');
+        $order->set_address(self::get_address(), 'shipping');
 
         $order->set_payment_method('paypal');
 
@@ -262,7 +302,9 @@ class Order
 
         $order->calculate_shipping();
 
-        $order->calculate_totals();
+        $order->update_taxes();
+
+        $order->calculate_totals(false);
 
         $order->set_discount_total(0);
 
