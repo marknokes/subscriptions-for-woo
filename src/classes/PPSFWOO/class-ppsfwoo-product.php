@@ -128,9 +128,7 @@ class Product
 
                 $selected_plan_id = get_post_meta($post->ID, "{$this->env}_ppsfwoo_plan_id", true);
 
-                $Plan = new Plan();
-
-                $plans = $Plan->get_plans();
+                $plans = Plan::get_plans();
 
                 if($plans && !isset($plans['000'])) {
 
@@ -138,9 +136,9 @@ class Product
 
                     $options = "<option value=''>Select a plan [" . $this->env . "]</option>";
 
-                    foreach($plans as $plan_id => $plan_data)
+                    foreach($plans as $plan_id => $plan)
                     {
-                        if("ACTIVE" !== $plan_data['status']) {
+                        if("ACTIVE" !== $plan->status) {
 
                             unset($plans[$plan_id]);
 
@@ -148,7 +146,7 @@ class Product
 
                             $selected = $selected_plan_id === $plan_id ? 'selected': '';
 
-                            $options .= '<option value="' . esc_attr($plan_id) . '" ' . $selected . ' data-price="' . esc_attr($formatter->formatCurrency($plan_data['price'], 'USD')) . '">' . esc_html("{$plan_data['plan_name']} [{$plan_data['product_name']}] [{$plan_data['frequency']}]") . '</option>';
+                            $options .= '<option value="' . esc_attr($plan_id) . '" ' . $selected . ' data-price="' . esc_attr($formatter->formatCurrency($plan->price, 'USD')) . '">' . esc_html("{$plan->name} [{$plan->product_name}] [{$plan->frequency}]") . '</option>';
 
                         }
 
@@ -271,7 +269,9 @@ class Product
 
         }
 
-        $Plan = new Plan('product_id', $product_id);
+        $plan_id = get_post_meta($product_id, "{$this->PluginMain->env['env']}_ppsfwoo_plan_id", true) ?? NULL;
+
+        $Plan = new Plan($plan_id);
 
         if ($Plan->frequency) {
 

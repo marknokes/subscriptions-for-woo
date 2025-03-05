@@ -5,10 +5,13 @@ namespace PPSFWOO;
 use PPSFWOO\PayPal,
     PPSFWOO\PluginMain;
 
-class Plan extends PluginMain
+class Plan
 {
-	public $id,
+	public $env,
+           $id,
 		   $frequency,
+           $price,
+           $product_name,
            $version,
            $product_id,
            $name,
@@ -24,56 +27,52 @@ class Plan extends PluginMain
            $links,
            $description;
 
-	public function __construct($construct_by = "", $value = NULL)
+	public function __construct($id = NULL)
 	{
-		parent::__construct();
+		$PluginMain = PluginMain::get_instance();
 
-        switch ($construct_by)
-        {
-            case 'plan_id':
+        $this->env = $PluginMain->env['env'];
 
-                $this->id = $value;
+        $this->id = $id;
 
-                break;
+        $plan_data = $PluginMain->ppsfwoo_plans[$this->env][$this->id] ?? NULL;
 
-            case 'product_id':
+        if(isset($this->id, $plan_data)) {
 
-                $this->id = $this->get_id_by_product_id($value);
-
-                break;
-        }
-
-        if(isset($this->id) && $cached_response = $this->get_cached_response()) {
-
-            foreach($cached_response as $response_key => $response_item)
+            foreach($plan_data as $response_key => $response_item)
             {
 
                 $this->$response_key = $response_item;
 
             }
             
-            $this->frequency = self::get_from_response_billing_cycles('frequency', $this->billing_cycles);
+            $this->frequency = $this->get_from_billing_cycles('frequency');
+
+            $this->price = $this->get_from_billing_cycles('price');
+
+            $this->product_name = $plan_data['product_name'] ?? "";
         }
 	}
 
-    public function get_cached_response()
+    public function __call($name, $arguments)
     {
-        return $this->ppsfwoo_plans[$this->env['env']][$this->id]['response'] ?? NULL;
+        if (strpos($name, 'get_') === 0) {
+
+            $property = lcfirst(substr($name, 4));
+
+            if (property_exists($this, $property)) {
+
+                return $this->$property;
+
+            }
+        }
+
+        throw new \BadMethodCallException("Method $name does not exist.");
     }
 
-    public function get_billing_cycles()
+    private function get_from_billing_cycles($find, $response = NULL)
     {
-        return $this->billing_cycles;
-    }
-
-	private function get_id_by_product_id($product_id)
-    {
-        return get_post_meta($product_id, "{$this->env['env']}_ppsfwoo_plan_id", true) ?? "";
-    }
-
-    public static function get_from_response_billing_cycles($find, $response = NULL)
-    {
-        $billing_cycles = $response['billing_cycles'] ?? $response ?? [];
+        $billing_cycles = $this->billing_cycles ?? $response['billing_cycles'] ?? $response ?? [];
         
         foreach ($billing_cycles as $cycle)
         {
@@ -113,7 +112,10 @@ class Plan extends PluginMain
 	{
 		$response = ['error' => 'An unexpected error occurred.'];
 
-        if(!isset($_POST['nonce'], $_POST['plan_id'], $_POST['paypal_action']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'modify_plan')) {
+        if(
+            !isset($_POST['nonce'], $_POST['plan_id'], $_POST['paypal_action'])
+            || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'modify_plan')
+        ) {
 
             return ['error' => 'Security check failed.'];
 
@@ -146,6 +148,8 @@ class Plan extends PluginMain
 
     public function refresh_all()
     {
+        $PluginMain = PluginMain::get_instance();
+
         $plans = [];
 
         $page = 1;
@@ -168,7 +172,7 @@ class Plan extends PluginMain
 
                 foreach($plan_data['response']['plans'] as $plan)
                 {
-                    if($this->ppsfwoo_hide_inactive_plans && "ACTIVE" !== $plan['status']) {
+                    if($PluginMain->ppsfwoo_hide_inactive_plans && "ACTIVE" !== $plan['status']) {
 
                         continue;
 
@@ -193,14 +197,9 @@ class Plan extends PluginMain
 
                     }
 
-                    $plans[$plan['id']] = [
-                        'plan_name'     => $plan['name'],
-                        'product_name'  => $product_name,
-                        'frequency'     => self::get_from_response_billing_cycles('frequency', $plan),
-                        'status'        => $plan['status'],
-                        'price'         => self::get_from_response_billing_cycles('price', $plan),
-                        'response'      => $plan
-                    ];
+                    $plan['product_name'] = $product_name;
+
+                    $plans[$plan['id']] = $plan;
                 }
 
                 $page++;
@@ -217,26 +216,18 @@ class Plan extends PluginMain
             return strcmp($a['status'], $b['status']);
         });
     
-        $env = $this->env['env'];
+        $env = $this->env;
 
         update_option('ppsfwoo_plans', [
             $env => $plans
         ]);
 
-
         return $plans;
-    }
-
-    public function get_payment_preferences()
-    {
-        $cached_response = $this->get_cached_response();
-
-        return isset($cached_response, $cached_response['payment_preferences']) ? $cached_response['payment_preferences']: [];
     }
 
     public function get_tax_rate_data()
     {
-        $class = self::plugin_data('Name');
+        $class = PluginMain::get_instance()::plugin_data('Name');
 
         $slug = strtolower(str_replace(' ', '-', $class));
 
@@ -244,13 +235,13 @@ class Plan extends PluginMain
 
         $inclusive = NULL;
 
-        if($cached_response = $this->get_cached_response()) {
+        if($taxes = $this->get_taxes()) {
 
-            if(isset($cached_response['taxes'])) {
+            if(isset($taxes)) {
 
-                $tax_rate = number_format($cached_response['taxes']['percentage'], 4) ?? 0;
+                $tax_rate = number_format($taxes['percentage'], 4) ?? 0;
 
-                $inclusive = !empty($cached_response['taxes']['inclusive']);
+                $inclusive = !empty($taxes['inclusive']);
                 
             }
 
@@ -264,7 +255,7 @@ class Plan extends PluginMain
         ];
     }
 
-    public function insert_tax_rate($tax_rate)
+    private function insert_tax_rate($tax_rate)
     {
         $tax_rate_data = $this->get_tax_rate_data();
 
@@ -317,8 +308,25 @@ class Plan extends PluginMain
         return $tax_rate_id;
     }
 
-	public function get_plans()
+	public static function get_plans()
 	{
-		return $this->ppsfwoo_plans[$this->env['env']] ?? [];
+        $plan_objects = [];
+
+        $PluginMain = PluginMain::get_instance();
+
+		$plans = $PluginMain->ppsfwoo_plans[$PluginMain->env['env']] ?? [];
+
+        if($plans) {
+
+            foreach($plans as $plan_id => $plan)
+            {
+
+                $plan_objects[$plan_id] = new self($plan_id);
+
+            }
+
+        }
+
+        return $plan_objects;
 	}
 }

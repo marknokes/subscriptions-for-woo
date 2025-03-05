@@ -2,7 +2,8 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Subscriber,
+use PPSFWOO\PluginMain,
+    PPSFWOO\Subscriber,
     PPSFWOO\Exception;
 
 class AjaxActions
@@ -49,11 +50,15 @@ class AjaxActions
         if($is_ajax) {
 
             // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $Plan = isset($_POST['product_id']) ? new Plan('product_id', absint($_POST['product_id'])): NULL;
+            $product_id = isset($_POST['product_id']) ? absint($_POST['product_id']): NULL;
+
+            $PluginMain = PluginMain::get_instance();
+
+            $plan_id = get_post_meta($product_id, "{$PluginMain->env['env']}_ppsfwoo_plan_id", true) ?? NULL;
+
+            $Plan = isset($product_id) ? new Plan($plan_id): NULL;
 
             if(isset($Plan) && $Plan->id) {
-
-                $PluginMain = PluginMain::get_instance();
 
                 $response = [
                     'client_id' => $PluginMain->client_id,

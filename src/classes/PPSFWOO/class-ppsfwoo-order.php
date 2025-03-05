@@ -169,7 +169,7 @@ class Order
 
     private static function parse_order_items($order)
     {
-        $payment_preferences = self::$Subscriber->plan->get_payment_preferences();
+        $payment_preferences = self::$Subscriber->plan->get_payment_preferences() ?? [];
 
         $plan_id = self::$Subscriber->get_plan_id();
 

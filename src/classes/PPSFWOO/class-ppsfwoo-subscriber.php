@@ -33,7 +33,7 @@ class Subscriber
 
         $this->subscription = (object) $subscription[$type];
 
-        $this->plan = new Plan('plan_id', $this->get_plan_id());
+        $this->plan = new Plan($this->get_plan_id());
 
         $this->subscription->last_payment = !empty($this->subscription->billing_info['last_payment']['time'])
             ? new \DateTime($this->subscription->billing_info['last_payment']['time'])

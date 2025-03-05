@@ -9,9 +9,7 @@ if (!defined('ABSPATH')) exit;
 
 <?php
 
-$Plan = new Plan();
-
-$plans = $Plan->get_plans();
+$plans = Plan::get_plans();
 
 if(sizeof($plans)) {
 
