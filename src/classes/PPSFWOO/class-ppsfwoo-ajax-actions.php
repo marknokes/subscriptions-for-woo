@@ -56,9 +56,9 @@ class AjaxActions
 
             $plan_id = get_post_meta($product_id, "{$PluginMain->env['env']}_ppsfwoo_plan_id", true) ?? NULL;
 
-            $Plan = isset($product_id) ? new Plan($plan_id): NULL;
+            $Plan = isset($product_id, $plan_id) ? new Plan($plan_id): NULL;
 
-            if(isset($Plan) && $Plan->id) {
+            if(isset($Plan)) {
 
                 $response = [
                     'client_id' => $PluginMain->client_id,
