@@ -93,6 +93,14 @@ class Order
     {
         $item = new \WC_Order_Item_Product();
 
+        if(1 === $sequence) {
+
+            $start_time =  (new \DateTime(self::$Subscriber->subscription->start_time))->format('l, F j, Y');
+            
+            $name = " $name starts $start_time";
+
+        }
+
         $item->set_name($name);
 
         $item->set_subtotal($total);
