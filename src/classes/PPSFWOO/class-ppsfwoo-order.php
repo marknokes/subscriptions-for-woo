@@ -225,13 +225,15 @@ class Order
         }
     }
 
-    private static function set_taxes($item)
+    public static function set_taxes($item, $tax_rate_data = NULL)
     {
-        $taxes = \WC_Tax::get_rates_for_tax_class(self::$tax_rate_data['tax_rate_slug']);
+        $tax_rate_data = $tax_rate_data ?? self::$tax_rate_data;
+
+        $taxes = \WC_Tax::get_rates_for_tax_class($tax_rate_data['tax_rate_slug']);
 
         $found_rate = NULL;
 
-        if(self::$tax_rate_data['tax_rate'] === 0 || !empty(self::$tax_rate_data['inclusive']) || !$taxes)
+        if($tax_rate_data['tax_rate'] === 0 || !empty($tax_rate_data['inclusive']) || !$taxes)
         {
             $item->set_tax_class("");
 
@@ -240,7 +242,7 @@ class Order
 
         foreach ($taxes as $tax_rate_object)
         {
-            if(self::$tax_rate_data['tax_rate'] === $tax_rate_object->tax_rate) {
+            if($tax_rate_data['tax_rate'] === $tax_rate_object->tax_rate) {
 
                 $found_rate = $tax_rate_object;
 
@@ -270,7 +272,7 @@ class Order
 
         $subtotal_taxes = \WC_Tax::calc_tax($item->$get_subtotal(), $tax_rates, false);
 
-        $item->set_tax_class(self::$tax_rate_data['tax_rate_slug']);
+        $item->set_tax_class($tax_rate_data['tax_rate_slug']);
         
         $item->set_taxes([
             'subtotal' => $subtotal_taxes,
