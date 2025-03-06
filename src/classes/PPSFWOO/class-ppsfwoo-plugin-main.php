@@ -256,6 +256,8 @@ class PluginMain
         add_action('ppsfwoo_options_page_tab_content', [$this, 'options_page_tab_content'], 10, 1);
 
         add_action('ppsfwoo_after_options_page', [$this, 'after_options_page']);
+
+        add_action('woocommerce_order_item_meta_end', [$this, 'update_receipt_line_item_totals'], 10, 3 );
     }
 
     public function add_filters()
@@ -266,8 +268,39 @@ class PluginMain
 
         add_filter('wp_new_user_notification_email', [$this, 'new_user_notification_email'], 10, 4);
 
-        add_filter('woocommerce_get_order_item_totals', [$this, 'update_receipt_display'], 10, 2);
+        add_filter('woocommerce_get_order_item_totals', [$this, 'update_receipt_subtotal'], 10, 2);
 
+        add_filter('woocommerce_email_recipient_customer_processing_order', [$this, 'suppress_processing_order_email'], 10, 2 );
+    }
+
+    public function suppress_processing_order_email($recipient, $order)
+    {
+        if(Order::has_subscription($order)) {
+
+            return '';
+
+        }
+
+        return $recipient;
+    }
+
+    public function update_receipt_line_item_totals($item_id, $item, $order)
+    {
+        if(!Order::has_subscription($order)) {
+
+            return;
+
+        }
+
+        $meta = $item->get_meta('exclude_from_order_total')['value'] ?? '';
+
+        $exclude_from_order_total = $meta === 'yes';
+
+        if($exclude_from_order_total) {
+
+            $item->set_subtotal($item->get_total());
+        
+        }
     }
 
     private function receipt_item_value_as_int($item)
@@ -281,7 +314,7 @@ class PluginMain
         return floatval($num_only);
     }
 
-    public function update_receipt_display($totals, $order)
+    public function update_receipt_subtotal($totals, $order)
     {
         if(!Order::has_subscription($order)) {
 
