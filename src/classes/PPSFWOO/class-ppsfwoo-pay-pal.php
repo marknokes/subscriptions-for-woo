@@ -114,6 +114,7 @@ class PayPal
 
         $args = [
             'method'  => $method,
+            'timeout' => 10,
             'headers' => array_merge([
                 'Authorization' => 'Bearer ' . $token,
                 'Content-Type' => 'application/json'
