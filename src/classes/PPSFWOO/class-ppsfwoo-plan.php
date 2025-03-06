@@ -182,7 +182,7 @@ class Plan
                     
                         $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
 
-                        $product_name = $product_data['response']['name'];
+                        $product_name = $product_data['response']['name'] ?? "";
 
                         $products[$plan['product_id']] = $product_name;
 

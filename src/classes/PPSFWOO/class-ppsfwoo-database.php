@@ -45,6 +45,10 @@ class Database
 
     public static function install()
     {
+        if((new self("SHOW TABLES LIKE '{$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber';"))->result)
+
+            return;
+
         new self("CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber (
           id varchar(64) NOT NULL,
           wp_customer_id bigint(20) UNSIGNED NOT NULL,
@@ -74,11 +78,7 @@ class Database
 
         $this_version = PluginMain::plugin_data('Version');
 
-        if($installed_version === $this_version) {
-
-            return;
-
-        }
+        if($installed_version === $this_version) return;
 
         if (version_compare($installed_version, '2.4.1', '<')) {
 
