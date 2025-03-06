@@ -56,7 +56,7 @@ class PluginMain
         'ppsfwoo_hide_inactive_plans' => [
             'name'    => 'Hide inactive plans',
             'type'    => 'checkbox',
-            'default' => 0,
+            'default' => 1,
             'description' => 'Choose to show/hide inactive PayPal plans on the Plans tab.',
             'sanitize_callback' => 'absint'
         ],
@@ -182,7 +182,6 @@ class PluginMain
            $ppsfwoo_reminder,
            $ppsfwoo_resubscribe_landing_page_id,
            $ppsfwoo_discount_apply_to_trial,
-           $ppsfwoo_discount_waive_setup_fee,
            $ppsfwoo_discount,
            $template_dir,
            $plugin_dir_url,
@@ -347,12 +346,7 @@ class PluginMain
     {
         self::clear_option_cache($option_name);
 
-        if(
-            'ppsfwoo_hide_inactive_plans' === $option_name &&
-            false === get_transient('ppsfwoo_refresh_plans_ran')
-        ) {
-
-            set_transient('ppsfwoo_refresh_plans_ran', true, 10);
+        if('ppsfwoo_hide_inactive_plans' === $option_name) {
 
             AjaxActionsPriv::refresh_plans();
 

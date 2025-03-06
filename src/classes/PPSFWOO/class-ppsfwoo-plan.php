@@ -172,7 +172,7 @@ class Plan
 
                 foreach($plan_data['response']['plans'] as $plan)
                 {
-                    if($PluginMain->ppsfwoo_hide_inactive_plans && "ACTIVE" !== $plan['status']) {
+                    if($PluginMain::get_option('ppsfwoo_hide_inactive_plans') && "ACTIVE" !== $plan['status']) {
 
                         continue;
 
@@ -222,7 +222,7 @@ class Plan
             $env => $plans
         ]);
 
-        return $plans;
+        return $PluginMain::get_option('ppsfwoo_plans');
     }
 
     public function get_tax_rate_data()

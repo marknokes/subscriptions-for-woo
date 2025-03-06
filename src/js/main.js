@@ -33,11 +33,13 @@ jQuery(document).ready(function($) {
 		ppsfwooShowLoadingMessage('Processing...');
 		ppsfwooDoAjax('refresh_plans', function(r) {
 			var response = JSON.parse(r);
-			if(0 === response.plans.length) {
+			if(0 === response.length) {
 				ppsfwooShowMsg("No plans found.", "warning");
 			} else if(response.success) {
 				ppsfwooShowMsg("Successfully refreshed plans.");
 				ppsfwooRefreshPage();
+			} else if(response.error) {
+				ppsfwooShowMsg(response.error, "error");
 			} else {
 				ppsfwooShowMsg(settingsError, "error");
 			}

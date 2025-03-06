@@ -33,6 +33,16 @@ class AjaxActionsPriv extends AjaxActions
 
     public static function refresh_plans()
     {
+        $wait = 10;
+
+        if(true === get_transient('ppsfwoo_refresh_plans_ran')) {
+
+            return wp_json_encode([
+                'error' => 'Please wait at least ' . absint($wait) . ' seconds and try again.'
+            ]);
+
+        }
+
         if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
             return wp_json_encode([
@@ -41,13 +51,15 @@ class AjaxActionsPriv extends AjaxActions
 
         }
 
+        set_transient('ppsfwoo_refresh_plans_ran', true, $wait);
+
         $Plan = new Plan();
 
         $plans = $Plan->refresh_all();
 
         return wp_json_encode([
             "success" => !empty($plans),
-            "plans"   => $plans
+            "length"   => sizeof($plans)
         ]);
     }
 
