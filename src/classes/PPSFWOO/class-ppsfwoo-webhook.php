@@ -4,7 +4,8 @@ namespace PPSFWOO;
 
 use PPSFWOO\PayPal,
     PPSFWOO\Subscriber,
-    PPSFWOO\PluginMain;
+    PPSFWOO\PluginMain,
+    PPSFWOO\Exception;
 
 class Webhook
 {
@@ -212,7 +213,7 @@ class Webhook
 
                 $event_types = $response['response']['event_types'];
             
-            } else if(isset($response['error']) && $response['error'] === "WEBHOOK_URL_ALREADY_EXISTS") {
+            } else if(!PayPal::response_status_is($response, 201)) {
 
                 $response = $this->patch(true);
 
@@ -235,6 +236,8 @@ class Webhook
             return $response['response'] ?? false;
             
         } catch(\Exception $e) {
+
+            Exception::log($e);
 
             return false;
 

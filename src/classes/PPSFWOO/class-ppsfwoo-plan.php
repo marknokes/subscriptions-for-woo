@@ -218,11 +218,13 @@ class Plan
     
         $env = $this->env;
 
+        PluginMain::clear_option_cache('ppsfwoo_plans');
+
         update_option('ppsfwoo_plans', [
             $env => $plans
         ]);
 
-        return $PluginMain::get_option('ppsfwoo_plans');
+        return $plans;
     }
 
     public function get_tax_rate_data()
@@ -314,7 +316,11 @@ class Plan
 
         $PluginMain = PluginMain::get_instance();
 
-		$plans = $PluginMain->ppsfwoo_plans[$PluginMain->env['env']] ?? [];
+        $maybe_string = PluginMain::get_option('ppsfwoo_plans');
+
+        $array = is_array($maybe_string) ? $maybe_string[$PluginMain->env['env']]: unserialize($maybe_string)[$PluginMain->env['env']];
+
+		$plans = $array ?? [];
 
         if($plans) {
 
