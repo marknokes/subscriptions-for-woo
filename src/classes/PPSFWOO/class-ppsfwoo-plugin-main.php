@@ -406,7 +406,7 @@ class PluginMain
 
         } else {
 
-            return $cached_value;
+            return maybe_unserialize($cached_value);
 
         }
     }

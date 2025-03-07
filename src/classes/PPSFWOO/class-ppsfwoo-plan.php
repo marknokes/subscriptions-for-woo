@@ -314,17 +314,13 @@ class Plan
 	{
         $plan_objects = [];
 
-        $PluginMain = PluginMain::get_instance();
+        $plans = PluginMain::get_option('ppsfwoo_plans');
 
-        $maybe_string = PluginMain::get_option('ppsfwoo_plans');
+        $env = PayPal::env()['env'];
 
-        $array = is_array($maybe_string) ? $maybe_string[$PluginMain->env['env']]: unserialize($maybe_string)[$PluginMain->env['env']];
+        if($plans && isset($plans[$env])) {
 
-		$plans = $array ?? [];
-
-        if($plans) {
-
-            foreach($plans as $plan_id => $plan)
+            foreach($plans[$env] as $plan_id => $plan)
             {
 
                 $plan_objects[$plan_id] = new self($plan_id);
