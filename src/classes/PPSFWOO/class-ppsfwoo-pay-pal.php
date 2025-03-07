@@ -3,7 +3,6 @@
 namespace PPSFWOO;
 
 use PPSFWOO\PluginMain,
-    PPSFWOO\Plan,
     PPSFWOO\Exception,
     PPSFWOO\Product;
 
