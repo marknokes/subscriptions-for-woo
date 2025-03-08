@@ -97,31 +97,9 @@ class PluginMain
             'sanitize_callback' => 'sanitize_text_field'
         ],
         'ppsfwoo_reminder' => [
-            'name'    => 'Resubscribe Email Reminder',
-            'type'    => 'select',
-            'default' => '10',
-            'options' => [
-                '1' => '1 day',
-                '2' => '2 days',
-                '3' => '3 days',
-                '4' => '4 days',
-                '5' => '5 days',
-                '6' => '6 days',
-                '7' => '7 days',
-                '8' => '8 days',
-                '9' => '9 days',
-                '10' => '10 days',
-                '11' => '11 days',
-                '12' => '12 days',
-                '13' => '13 days',
-                '14' => '14 days',
-                '15' => '15 days',
-                '16' => '16 days',
-                '17' => '17 days',
-                '18' => '18 days',
-                '19' => '19 days',
-                '20' => '20 days'
-            ],
+            'name'    => 'Resubscribe Email Reminder (in days)',
+            'type'    => 'number',
+            'default' => 10,
             'is_enterprise' => true,
             'description' => 'Email reminders with a link to resubscribe should be sent this many days before expiration of a canceled subscription. {wc_settings_tab_email}',
             'sanitize_callback' => 'absint'
@@ -135,20 +113,9 @@ class PluginMain
             'sanitize_callback' => 'absint'
         ],
         'ppsfwoo_discount' => [
-            'name'    => 'Resubscribe Discount',
-            'type'    => 'select',
-            'default' => '10',
-            'options' => [
-                '10' => '10%',
-                '20' => '20%',
-                '30' => '30%',
-                '40' => '40%',
-                '50' => '50%',
-                '60' => '60%',
-                '70' => '70%',
-                '80' => '80%',
-                '90' => '90%'
-            ],
+            'name'    => 'Resubscribe Discount Percent',
+            'type'    => 'number',
+            'default' => 10,
             'is_enterprise' => true,
             'description' => 'Percentage discount for canceled subscribers that resubscribe.',
             'sanitize_callback' => 'absint'
@@ -396,11 +363,15 @@ class PluginMain
 
             $option_value = get_option($option_name);
 
-            if ($option_value !== false) {
+            if ($option_value === false) {
 
-                wp_cache_set($option_name, $option_value, 'options');
+                $option_value = self::$options[$option_name]['default'];
+
+                add_option($option_name, $option_value, '', false);
 
             }
+
+            wp_cache_set($option_name, $option_value, 'options');
 
             return $option_value;
 

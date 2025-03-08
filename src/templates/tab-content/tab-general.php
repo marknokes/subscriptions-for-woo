@@ -33,13 +33,13 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
 				$feature = "Premium";
 
-				$disabled = $is_premium && (!PPSFWOO_PLUGIN_EXTRAS || !PPSFWOO\PluginExtras::onboarding_complete()) ? 'disabled': '';
+				$disabled = $is_premium && (!PPSFWOO_PLUGIN_EXTRAS || !PPSFWOO\PluginExtras::onboarding_complete()) ? 'disabled=true': '';
 
 			} else if(isset($array['is_enterprise']) && $is_enterprise = $array['is_enterprise']) {
 
 				$feature = "Enterprise";
 
-				$disabled = $is_enterprise && (!PPSFWOO_ENTERPRISE || !PPSFWOO\PluginExtras::onboarding_complete()) ? 'disabled': '';
+				$disabled = $is_enterprise && (!PPSFWOO_ENTERPRISE || !PPSFWOO\PluginExtras::onboarding_complete()) ? 'disabled=true': '';
 
 			} else {
 
@@ -145,7 +145,7 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 						
 						case 'multiselect':
 
-							echo wp_kses("<select name='$name[page_ids][]' multiple='multiple'>", ['select' => ['name' => [], 'multiple' => []]]);
+							echo wp_kses("<select name='$name[page_ids][]' multiple='multiple'" . esc_attr($disabled) . ">", ['select' => ['name' => [], 'multiple' => []]]);
 
 								$type = isset($array['post_type']) ? $array['post_type']: 'page';
 
@@ -165,11 +165,19 @@ if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
 							break;
 
+						case 'number':
+
+							$value = esc_attr($value);
+
+							echo "<input size='2' type='number' min='1' max='100' id='" . esc_attr($option) . "' name='" . esc_attr($name) . "' value='" . esc_attr($value) . "' " . esc_attr($disabled) . " />";
+							
+							break;
+
 						default:
 
 							$value = esc_attr($value);
 
-							echo "<input size='20' type='text' id='" . esc_attr($option) . "' name='" . esc_attr($name) . "' value='" . esc_attr($value) . "' />";
+							echo "<input size='20' type='text' id='" . esc_attr($option) . "' name='" . esc_attr($name) . "' value='" . esc_attr($value) . "' " . esc_attr($disabled) . " />";
 							
 							break;
 					}
