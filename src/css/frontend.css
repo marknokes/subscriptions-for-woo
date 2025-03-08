@@ -1,3 +1,11 @@
+#ppsfwoo-subscribe-button {
+  margin-bottom:15px;
+  font-size:1.5em;
+  word-break: normal;
+}
+#ppsfwoo-quantity-input-container {
+  margin-bottom:15px;
+}
 .inactive-subscription,
 .ppsfwoo-cancelled {
   display: none;

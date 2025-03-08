@@ -1,20 +1,22 @@
-var ppsfwooSubscribeButton = document.getElementById('subscribeButton'),
+var ppsfwooQuantityInputId = 'ppsfwoo-quantity-input',
+    ppsfwooSubscribeButton = document.getElementById('ppsfwoo-subscribe-button'),
     ppsfwooEllipsis = document.getElementById('lds-ellipsis'),
-    ppsfwooShortcodeContainer = document.getElementById('ppsfwoo-shortcode-button-container');
+    ppsfwooShortcodeContainer = document.getElementById('ppsfwoo-shortcode-button-container'),
+    ppsfwooQuantityInputContainer = document.getElementById('ppsfwoo-quantity-input-container');
 
 function ppsfwooCreateQuantityInput() {
-    var input = document.createElement('input');
+    var input = document.createElement('input'),
+        label = document.createElement('label');
     input.type = 'number';
-    input.id = 'quantityInput';
+    input.id = ppsfwooQuantityInputId;
     input.name = 'quantity';
     input.min = '1';
     input.value = '1';
-    var label = document.createElement('label');
-    label.setAttribute('for', 'quantityInput');
+    label.setAttribute('for', ppsfwooQuantityInputId);
     label.innerHTML = 'Quantity: ';
-    var container = document.getElementById('quantityInputContainer');
-    container.appendChild(label);
-    container.appendChild(input);
+    ppsfwooQuantityInputContainer
+        .appendChild(label)
+        .appendChild(input);
 }
 
 function ppsfwooSendPostRequest(url, data) {
@@ -51,7 +53,7 @@ function ppsfwooSendPostRequest(url, data) {
     });
 }
 
-function ppsfwooLoadPayPalScript(client_id, nonce, plan_id, quantity_supported, callback) {
+function ppsfwooLoadPayPalScript(client_id, nonce, plan_id, callback) {
     if (window.paypal) {
         callback(nonce, plan_id);
     } else {
@@ -66,11 +68,7 @@ function ppsfwooLoadPayPalScript(client_id, nonce, plan_id, quantity_supported, 
             console.log(error);
             ppsfwooLogButtonError(error);
             alert("There has been an unexpeced error. Please refresh and try again.");
-            location.reload();
         };
-        if(quantity_supported) {
-            ppsfwooCreateQuantityInput();
-        }
         document.body.appendChild(script);
     }
 }
@@ -110,7 +108,7 @@ function ppsfwooRender(nonce, plan_id) {
             label: 'subscribe'
         },
         createSubscription: function(data, actions) {
-            var quantityInput = document.getElementById('quantityInput'),
+            var quantityInput = document.getElementById(ppsfwooQuantityInputId),
                 data = {plan_id: plan_id};
             if(quantityInput) {
                 data['quantity'] = quantityInput.value;
@@ -139,11 +137,13 @@ function ppsfwooInitializePayPalSubscription() {
         if(response.error) {
             throw new Error("No plan id found for product with ID " + ppsfwoo_paypal_ajax_var.product_id);
         } else {
+            if(response.quantity_supported) {
+                ppsfwooCreateQuantityInput();
+            }
             ppsfwooLoadPayPalScript(
                 response.client_id,
                 response.nonce,
                 response.plan_id,
-                response.quantity_supported,
                 ppsfwooRender
             );
         }
@@ -152,7 +152,6 @@ function ppsfwooInitializePayPalSubscription() {
         console.log(error);
         ppsfwooLogButtonError(error);
         alert("There has been an unexpeced error. Please refresh and try again.");
-        location.reload();
     });
 }
 

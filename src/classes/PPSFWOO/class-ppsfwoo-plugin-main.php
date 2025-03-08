@@ -225,6 +225,8 @@ class PluginMain
         add_action('ppsfwoo_after_options_page', [$this, 'after_options_page']);
 
         add_action('woocommerce_order_item_meta_end', [$this, 'update_receipt_line_item_totals'], 10, 3 );
+
+        add_action('ppsfwoo_paypal_enqueue_scripts', ['PPSFWOO\PayPal', 'enqueue_scripts'], 10, 1);
     }
 
     public function add_filters()
@@ -365,7 +367,7 @@ class PluginMain
 
             if ($option_value === false) {
 
-                $option_value = self::$options[$option_name]['default'];
+                $option_value = self::$options[$option_name]['default'] ?? false;
 
                 add_option($option_name, $option_value, '', false);
 

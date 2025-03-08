@@ -22,6 +22,24 @@ class PayPal
 
     const EP_VERIFY_SIG     = "/v1/notifications/verify-webhook-signature";
 
+    public static function enqueue_scripts($product_id = 0)
+    {
+        $PluginMain = PluginMain::get_instance();
+
+        wp_enqueue_script(
+            'ppsfwoo-paypal-sdk',
+            $PluginMain->plugin_dir_url . "js/paypal-button.min.js",
+            [],
+            $PluginMain::plugin_data('Version'),
+            true
+        );
+
+        wp_localize_script('ppsfwoo-paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
+            'product_id' => $product_id,
+            'redirect'   => get_permalink($PluginMain->ppsfwoo_thank_you_page_id)
+        ]);
+    }
+
     public static function button()
     {
         global $product;
@@ -38,12 +56,7 @@ class PayPal
             'button_text' => $PluginMain->ppsfwoo_button_text
         ]);
 
-        wp_enqueue_script('paypal-sdk', $PluginMain->plugin_dir_url . "js/paypal-button.min.js", [], $PluginMain::plugin_data('Version'), true);
-
-        wp_localize_script('paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
-            'product_id' => get_the_ID(),
-            'redirect'   => get_permalink($PluginMain->ppsfwoo_thank_you_page_id)
-        ]);
+        do_action('ppsfwoo_paypal_enqueue_scripts', get_the_ID());
     }
 
 	public static function env()
