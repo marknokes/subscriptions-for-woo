@@ -65,10 +65,7 @@ class Product
 
         ?><script type='text/javascript'>
             jQuery(document).ready(function($) {
-                var class_list = ".options_group.pricing,.general_options,.show_if_simple";
-                $(class_list)
-                    .addClass('show_if_<?php echo esc_attr(self::TYPE); ?>')
-                    .show();
+                $('.show_if_simple').addClass('show_if_<?php echo esc_attr(self::TYPE); ?>').show();
                 $('#<?php echo esc_attr("{$this->PluginMain->env['env']}_ppsfwoo_plan_id"); ?>')        
                     .change(function(){
                         var selectedOption = $(this).find('option:selected'),
