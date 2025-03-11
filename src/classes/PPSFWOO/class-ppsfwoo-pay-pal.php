@@ -30,7 +30,7 @@ class PayPal
 
         if($product && !$product->is_type(Product::TYPE)) {
 
-            echo "<div><p>Product ID " . absint($product_id) . " is not a subscribtion product.</p></div>";
+            return;
 
         }
 
