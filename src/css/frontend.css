@@ -1,9 +1,9 @@
-#ppsfwoo-subscribe-button {
+.ppsfwoo-subscribe-button {
   margin-bottom:15px;
   font-size:1.5em;
   word-break: normal;
 }
-#ppsfwoo-quantity-input-container {
+.ppsfwoo-quantity-input {
   margin-bottom:15px;
 }
 .inactive-subscription,
@@ -24,17 +24,17 @@ p.order-again {
   content: '';
   animation: ellipsis-animation 2s infinite;
 }
-#lds-ellipsis,
-#lds-ellipsis div {
+.lds-ellipsis,
+.lds-ellipsis div {
   box-sizing: border-box;
 }
-#lds-ellipsis {
+.lds-ellipsis {
   display: none !important;
   position: relative;
   width: 80px;
   height: 80px;
 }
-#lds-ellipsis div {
+.lds-ellipsis div {
   position: absolute;
   top: 33.33333px;
   width: 13.33333px;
@@ -43,19 +43,19 @@ p.order-again {
   background: currentColor;
   animation-timing-function: cubic-bezier(0, 1, 1, 0);
 }
-#lds-ellipsis div:nth-child(1) {
+.lds-ellipsis div:nth-child(1) {
   left: 8px;
   animation: lds-ellipsis1 0.6s infinite;
 }
-#lds-ellipsis div:nth-child(2) {
+.lds-ellipsis div:nth-child(2) {
   left: 8px;
   animation: lds-ellipsis2 0.6s infinite;
 }
-#lds-ellipsis div:nth-child(3) {
+.lds-ellipsis div:nth-child(3) {
   left: 32px;
   animation: lds-ellipsis2 0.6s infinite;
 }
-#lds-ellipsis div:nth-child(4) {
+.lds-ellipsis div:nth-child(4) {
   left: 56px;
   animation: lds-ellipsis3 0.6s infinite;
 }

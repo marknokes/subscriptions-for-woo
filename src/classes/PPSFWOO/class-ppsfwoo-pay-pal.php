@@ -22,41 +22,49 @@ class PayPal
 
     const EP_VERIFY_SIG     = "/v1/notifications/verify-webhook-signature";
 
-    public static function enqueue_scripts($product_id = 0)
+    public static function button($product_id = NULL)
     {
-        $PluginMain = PluginMain::get_instance();
+        $product_id = !empty($product_id) ? $product_id: get_the_ID();
+        
+        $product = wc_get_product($product_id);
 
-        wp_enqueue_script(
-            'ppsfwoo-paypal-sdk',
-            $PluginMain->plugin_dir_url . "js/paypal-button.min.js",
-            [],
-            $PluginMain::plugin_data('Version'),
-            true
-        );
+        if($product && !$product->is_type(Product::TYPE)) {
 
-        wp_localize_script('ppsfwoo-paypal-sdk', 'ppsfwoo_paypal_ajax_var', [
-            'product_id' => $product_id,
-            'redirect'   => get_permalink($PluginMain->ppsfwoo_thank_you_page_id)
-        ]);
-    }
-
-    public static function button()
-    {
-        global $product;
-
-        if(!$product->is_type(Product::TYPE)) {
-
-            return;
+            echo "<div><p>Product ID " . absint($product_id) . " is not a subscribtion product.</p></div>";
 
         }
 
         $PluginMain = PluginMain::get_instance();
 
-        $PluginMain::display_template("paypal-button", [
-            'button_text' => $PluginMain->ppsfwoo_button_text
-        ]);
+        wp_enqueue_script(
+            'ppsfwoo-paypal-sdk',
+            "https://www.paypal.com/sdk/js?client-id=$PluginMain->client_id&vault=true&intent=subscription",
+            [],
+            null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion 
+            true
+        );
 
-        do_action('ppsfwoo_paypal_enqueue_scripts', get_the_ID());
+        wp_enqueue_script(
+            'ppsfwoo-paypal-button',
+            $PluginMain->plugin_dir_url . "js/paypal-button.min.js",
+            ['ppsfwoo-paypal-sdk'],
+            $PluginMain::plugin_data('Version'),
+            true
+        );
+
+        wp_add_inline_script('ppsfwoo-paypal-button', "
+            document.getElementById('ppsfwoo-subscribe-button-$product_id')
+                .addEventListener('click', function() {
+                    this.style.display = 'none';
+                    document.getElementById('lds-ellipsis-$product_id').style.setProperty('display', 'inline-block', 'important');
+                    ppsfwooInitializePayPalSubscription($product_id, this);
+                });
+        ");
+        
+        $PluginMain::display_template("paypal-button", [
+            'button_text' => $PluginMain->ppsfwoo_button_text,
+            'product_id' => $product_id
+        ]);
     }
 
 	public static function env()

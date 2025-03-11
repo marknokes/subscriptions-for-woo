@@ -1,22 +1,27 @@
-var ppsfwooQuantityInputId = 'ppsfwoo-quantity-input',
-    ppsfwooSubscribeButton = document.getElementById('ppsfwoo-subscribe-button'),
-    ppsfwooEllipsis = document.getElementById('lds-ellipsis'),
-    ppsfwooShortcodeContainer = document.getElementById('ppsfwoo-shortcode-button-container'),
-    ppsfwooQuantityInputContainer = document.getElementById('ppsfwoo-quantity-input-container');
+function ppsfwooGetQuantityInputId(product_id) {
+    return 'ppsfwoo-quantity-input-' + product_id;
+}
 
-function ppsfwooCreateQuantityInput() {
-    var input = document.createElement('input'),
-        label = document.createElement('label');
+function ppsfwooCreateQuantityInput(product_id) {
+    var ppsfwooQuantityInputContainer = document.getElementById('ppsfwoo-quantity-input-container-' + product_id),
+        input = document.createElement('input'),
+        label = document.createElement('label'),
+        id = ppsfwooGetQuantityInputId(product_id);
     input.type = 'number';
-    input.id = ppsfwooQuantityInputId;
+    input.id = id;
+    input.classList.add('ppsfwoo-quantity-input');
     input.name = 'quantity';
     input.min = '1';
     input.value = '1';
-    label.setAttribute('for', ppsfwooQuantityInputId);
+    label.setAttribute('for', id);
     label.innerHTML = 'Quantity: ';
-    ppsfwooQuantityInputContainer
-        .appendChild(label)
-        .appendChild(input);
+    if(ppsfwooQuantityInputContainer) {
+        ppsfwooQuantityInputContainer
+            .appendChild(label)
+            .appendChild(input);
+    } else {
+        alert('Unable to render PayPal button');
+    }
 }
 
 function ppsfwooSendPostRequest(url, data) {
@@ -53,26 +58,6 @@ function ppsfwooSendPostRequest(url, data) {
     });
 }
 
-function ppsfwooLoadPayPalScript(client_id, nonce, plan_id, callback) {
-    if (window.paypal) {
-        callback(nonce, plan_id);
-    } else {
-        var script = document.createElement('script');
-        script.setAttribute('src', `https://www.paypal.com/sdk/js?client-id=${client_id}&vault=true&intent=subscription`);
-        script.setAttribute('data-sdk-integration-source', 'button-factory');
-        script.onload = function() {            
-            callback(nonce, plan_id);
-        };
-        script.onerror = function() {
-            var error = 'Failed to load PayPal sdk';
-            console.log(error);
-            ppsfwooLogButtonError(error);
-            alert("There has been an unexpeced error. Please refresh and try again.");
-        };
-        document.body.appendChild(script);
-    }
-}
-
 function ppsfwooLogButtonError(msg) {
     ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
         'action': 'ppsfwoo_admin_ajax_callback',
@@ -87,78 +72,70 @@ function ppsfwooLogButtonError(msg) {
     });
 }
 
-function ppsfwooRender(nonce, plan_id) {
-    if(ppsfwooEllipsis) {
-        ppsfwooEllipsis.style.setProperty("display", "none", "important");
-    }
-    var container = document.createElement('div');
-    container.setAttribute('id', `paypal-button-container-${plan_id}`);
-    if(ppsfwooSubscribeButton) {
-        ppsfwooSubscribeButton.insertAdjacentElement('afterend', container);
-    } else if(ppsfwooShortcodeContainer) {
-        ppsfwooShortcodeContainer.replaceWith(container);
-    } else {
-        alert('Unable to render PayPal button');
-    }
-    paypal.Buttons({
-        style: {
-            shape: 'rect',
-            layout: 'vertical',
-            color: 'gold',
-            label: 'subscribe'
-        },
-        createSubscription: function(data, actions) {
-            var quantityInput = document.getElementById(ppsfwooQuantityInputId),
-                data = {plan_id: plan_id};
-            if(quantityInput) {
-                data['quantity'] = quantityInput.value;
-            }
-            return actions.subscription.create(data);
-        },
-        onApprove: function(data, actions) {
-            var redirect_url = ppsfwoo_paypal_ajax_var.redirect + "?subs_id=" + data.subscriptionID + "&subs_id_redirect_nonce=" + nonce;
-            window.location.assign(redirect_url);
-        },
-        onError: function(err) {
-            if(err.message) {
-                ppsfwooLogButtonError(err.message);
-            }
+function ppsfwooCreateBtnContainer(plan_id, product_id, button) {
+    return new Promise((resolve, reject) => {
+        var container = document.createElement('div');
+        container.setAttribute('id', `paypal-button-container-${plan_id}`);
+        if(button) {
+            button.insertAdjacentElement('afterend', container);
+        } else {
+            alert('Unable to render PayPal button');
         }
-    }).render(`#paypal-button-container-${plan_id}`);
+        requestAnimationFrame(() => resolve(container));
+    });
 }
 
-function ppsfwooInitializePayPalSubscription() {
+function ppsfwooRender(nonce, plan_id, product_id, button) {
+    ppsfwooCreateBtnContainer(plan_id, product_id, button)
+        .then((container) => {
+            paypal.Buttons({
+                style: {
+                    shape: 'rect',
+                    layout: 'vertical',
+                    color: 'gold',
+                    label: 'subscribe'
+                },
+                createSubscription: function(data, actions) {
+                    var quantityInput = document.getElementById(ppsfwooGetQuantityInputId(product_id)),
+                        planData = {plan_id: plan_id};
+                    if(quantityInput) {
+                        planData['quantity'] = quantityInput.value;
+                    }
+                    return actions.subscription.create(planData);
+                },
+                onApprove: function(data, actions) {
+                    var redirect_url = ppsfwoo_paypal_ajax_var.redirect + "?subs_id=" + data.subscriptionID + "&subs_id_redirect_nonce=" + nonce;
+                    window.location.assign(redirect_url);
+                },
+                onError: function(err) {
+                    if(err.message) {
+                        ppsfwooLogButtonError(err.message);
+                    }
+                }
+            }).render(`#${container.id}`);
+        });
+}
+
+function ppsfwooInitializePayPalSubscription(product_id, button) {
     ppsfwooSendPostRequest('/wp-admin/admin-ajax.php', {
         'action': 'ppsfwoo_admin_ajax_callback',
         'method': 'subs_id_redirect_nonce',
-        'product_id': ppsfwoo_paypal_ajax_var.product_id
+        'product_id': product_id
     })
-    .then(response => {
+    .then(async response => {
         if(response.error) {
-            throw new Error("No plan id found for product with ID " + ppsfwoo_paypal_ajax_var.product_id);
+            throw new Error("No plan id found for product with ID " + product_id);
         } else {
+            document.getElementById('lds-ellipsis-' + product_id).style.setProperty("display", "none", "important");
             if(response.quantity_supported) {
-                ppsfwooCreateQuantityInput();
+                ppsfwooCreateQuantityInput(product_id);
             }
-            ppsfwooLoadPayPalScript(
-                response.client_id,
-                response.nonce,
-                response.plan_id,
-                ppsfwooRender
-            );
+            ppsfwooRender(response.nonce, response.plan_id, product_id, button);
         }
     })
     .catch(error => {
         console.log(error);
         ppsfwooLogButtonError(error);
         alert("There has been an unexpeced error. Please refresh and try again.");
-    });
-}
-
-if(ppsfwooSubscribeButton) {
-    ppsfwooSubscribeButton.addEventListener('click', function() {
-        this.style.display = 'none';
-        ppsfwooEllipsis.style.setProperty("display", "inline-block", "important");
-        ppsfwooInitializePayPalSubscription();
     });
 }

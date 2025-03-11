@@ -224,9 +224,7 @@ class PluginMain
 
         add_action('ppsfwoo_after_options_page', [$this, 'after_options_page']);
 
-        add_action('woocommerce_order_item_meta_end', [$this, 'update_receipt_line_item_totals'], 10, 3 );
-
-        add_action('ppsfwoo_paypal_enqueue_scripts', ['PPSFWOO\PayPal', 'enqueue_scripts'], 10, 1);
+        add_action('woocommerce_order_item_meta_end', [$this, 'update_receipt_line_item_totals'], 10, 3);
     }
 
     public function add_filters()
@@ -483,6 +481,10 @@ class PluginMain
     public function enqueue_frontend()
     {
         if(!is_admin()) {
+
+            wp_localize_script('ppsfwoo-paypal-button', 'ppsfwoo_paypal_ajax_var', [
+                'redirect' => get_permalink($this->ppsfwoo_thank_you_page_id)
+            ]);
             
             wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/frontend.min.css", [], self::plugin_data('Version'));
 
