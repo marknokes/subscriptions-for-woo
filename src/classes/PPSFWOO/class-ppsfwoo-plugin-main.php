@@ -285,7 +285,7 @@ class PluginMain
     {
         if(!Order::has_subscription($order)) {
 
-            return;
+            return $totals;
 
         }
 
