@@ -3,7 +3,7 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.4.9
+Stable tag: 2.5
 WC tested up to: 9.7.1
 Requires at least: 6.4.3
 Tested up to: 6.7.2
@@ -104,6 +104,14 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.5 =
+* Bugfix: product general settings missing on product type change
+* Bugfix: PayPal webhook endpoint missing trailing slash
+* Improvement: remove superfluous plugin main instances
+* Improvement: update validate_callback on rest_api_init
+* Improvement: general refactoring for efficiency & clarity
+
 
 = 2.4.9 =
 * Bugfix: email error when checking out with non subscription product
