@@ -11,18 +11,25 @@ class Product
 {
     const TYPE = "subscription";
 
-    private $plan_id_key,
+    private $plan_id_meta_key,
             $env;
 
 	public function __construct()
     {
         $this->env = PayPal::env();
 
-        $this->plan_id_key = "{$this->env['env']}_ppsfwoo_plan_id";
+        $this->plan_id_meta_key = self::get_plan_id_meta_key($this->env);
 
     	$this->add_actions();
 
     	$this->add_filters();
+    }
+
+    public static function get_plan_id_meta_key($env = NULL)
+    {
+        $env = $env ?? PayPal::env();
+
+        return "{$env['env']}_ppsfwoo_plan_id";
     }
 
     private function add_actions()
@@ -66,7 +73,7 @@ class Product
                 $('.show_if_simple, .general_options')
                     .addClass('show_if_<?php echo esc_attr(self::TYPE); ?>')
                     .show();
-                $('#<?php echo esc_attr($this->plan_id_key); ?>')        
+                $('#<?php echo esc_attr($this->plan_id_meta_key); ?>')        
                     .change(function(){
                         var selectedOption = $(this).find('option:selected'),
                             price = selectedOption.data('price').replace('$', '');
@@ -123,7 +130,7 @@ class Product
 
             <div class='options_group'><?php
 
-                $selected_plan_id = get_post_meta($post->ID, $this->plan_id_key, true);
+                $selected_plan_id = get_post_meta($post->ID, $this->plan_id_meta_key, true);
 
                 $plans = Plan::get_plans();
 
@@ -153,8 +160,8 @@ class Product
 
                     ?>
                     <p class="form-field">
-                        <label for="<?php echo esc_attr($this->plan_id_key); ?>">PayPal Subscription Plan</label>
-                        <select id="<?php echo esc_attr($this->plan_id_key); ?>" name="<?php echo esc_attr($this->plan_id_key); ?>">
+                        <label for="<?php echo esc_attr($this->plan_id_meta_key); ?>">PayPal Subscription Plan</label>
+                        <select id="<?php echo esc_attr($this->plan_id_meta_key); ?>" name="<?php echo esc_attr($this->plan_id_meta_key); ?>">
                             <?php
                             echo wp_kses($options, [
                                 'option' => [
@@ -219,7 +226,7 @@ class Product
 
     public function save_option_field($product_id)
     {
-        if (!isset($_POST[$this->plan_id_key]) ||
+        if (!isset($_POST[$this->plan_id_meta_key]) ||
             !isset($_POST['ppsfwoo_plan_id_nonce']) ||
             !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ppsfwoo_plan_id_nonce'])), 'ppsfwoo_plan_id_nonce')
         ) {
@@ -228,23 +235,19 @@ class Product
 
         }
 
-        $plan_id = sanitize_text_field(wp_unslash($_POST[$this->plan_id_key]));
+        $plan_id = sanitize_text_field(wp_unslash($_POST[$this->plan_id_meta_key]));
 
-        update_post_meta($product_id, $this->plan_id_key, $plan_id);
+        update_post_meta($product_id, $this->plan_id_meta_key, $plan_id);
     }
 
     public static function get_product_id_by_plan_id($plan_id)
     {
-        $env = PayPal::env();
-
-        $plan_id_key = "{$env['env']}_ppsfwoo_plan_id";
-
         $query = new \WP_Query ([
             'post_type'      => 'product',
             'posts_per_page' => 1, 
             'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
                 [
-                    'key'     => $plan_id_key,
+                    'key'     => self::get_plan_id_meta_key(),
                     'value'   => $plan_id,
                     'compare' => '='
                 ],
@@ -268,7 +271,7 @@ class Product
 
         }
 
-        $plan_id = get_post_meta($product_id, $this->plan_id_key, true) ?? NULL;
+        $plan_id = get_post_meta($product_id, $this->plan_id_meta_key, true) ?? NULL;
 
         $Plan = new Plan($plan_id);
 
