@@ -43,7 +43,11 @@ class AjaxActionsPriv extends AjaxActions
 
         }
 
-        if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
+        if(defined('\DOING_AJAX')
+            && \DOING_AJAX
+            && !is_super_admin()
+            && !current_user_can('ppsfwoo_manage_settings')
+        ) {
 
             return wp_json_encode([
                 'error' => 'Insufficient permissions.'

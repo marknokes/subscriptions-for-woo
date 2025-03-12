@@ -11,14 +11,14 @@ class Product
 {
     const TYPE = "subscription";
 
-    private $PluginMain,
+    private $plan_id_key,
             $env;
 
 	public function __construct()
     {
-    	$this->PluginMain = PluginMain::get_instance();
+        $this->env = PayPal::env();
 
-        $this->env = $this->PluginMain->env['env'];
+        $this->plan_id_key = "{$this->env['env']}_ppsfwoo_plan_id";
 
     	$this->add_actions();
 
@@ -27,7 +27,7 @@ class Product
 
     private function add_actions()
     {
-        add_action('woocommerce_product_meta_start', ['PPSFWOO\PayPal', 'button']);
+        add_action('woocommerce_product_meta_start', [PayPal::class, 'button']);
 
 		add_action('admin_head', [$this, 'edit_product_css']);
 
@@ -57,16 +57,16 @@ class Product
 
         }
 
-        $Plan = new Plan();
-
-        $tax_rate_slug = $Plan->get_tax_rate_data()['tax_rate_slug'];
+        $tax_rate_slug = (new Plan())->get_tax_rate_data()['tax_rate_slug'];
 
         $tax_class_exists = \WC_Tax::get_tax_class_by('slug', $tax_rate_slug);
 
         ?><script type='text/javascript'>
             jQuery(document).ready(function($) {
-                $('.show_if_simple').addClass('show_if_<?php echo esc_attr(self::TYPE); ?>').show();
-                $('#<?php echo esc_attr("{$this->PluginMain->env['env']}_ppsfwoo_plan_id"); ?>')        
+                $('.show_if_simple, .general_options')
+                    .addClass('show_if_<?php echo esc_attr(self::TYPE); ?>')
+                    .show();
+                $('#<?php echo esc_attr($this->plan_id_key); ?>')        
                     .change(function(){
                         var selectedOption = $(this).find('option:selected'),
                             price = selectedOption.data('price').replace('$', '');
@@ -123,7 +123,7 @@ class Product
 
             <div class='options_group'><?php
 
-                $selected_plan_id = get_post_meta($post->ID, "{$this->env}_ppsfwoo_plan_id", true);
+                $selected_plan_id = get_post_meta($post->ID, $this->plan_id_key, true);
 
                 $plans = Plan::get_plans();
 
@@ -131,7 +131,7 @@ class Product
 
                     $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
 
-                    $options = "<option value=''>Select a plan [" . $this->env . "]</option>";
+                    $options = "<option value=''>Select a plan [" . $this->env['env'] . "]</option>";
 
                     foreach($plans as $plan_id => $plan)
                     {
@@ -153,8 +153,8 @@ class Product
 
                     ?>
                     <p class="form-field">
-                        <label for="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>">PayPal Subscription Plan</label>
-                        <select id="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>" name="<?php echo esc_attr("{$this->env}_ppsfwoo_plan_id"); ?>">
+                        <label for="<?php echo esc_attr($this->plan_id_key); ?>">PayPal Subscription Plan</label>
+                        <select id="<?php echo esc_attr($this->plan_id_key); ?>" name="<?php echo esc_attr($this->plan_id_key); ?>">
                             <?php
                             echo wp_kses($options, [
                                 'option' => [
@@ -174,9 +174,9 @@ class Product
 
                     <h3 style="padding: 2em">
 
-                        Please be sure your <a href="<?php echo esc_url(admin_url($this->PluginMain::$ppcp_settings_url)); ?>">connection to PayPal</a>
+                        Please be sure your <a href="<?php echo esc_url(admin_url(PluginMain::$ppcp_settings_url)); ?>">connection to PayPal</a>
 
-                        is setup and that you've created at least one plan in your <span style="text-decoration: underline;"><?php echo esc_html($this->env); ?></span> environment. <a href="<?php echo esc_url($this->PluginMain->env['paypal_url']); ?>/billing/plans" target="_blank">Create a plan now.</a>
+                        is setup and that you've created at least one plan in your <span style="text-decoration: underline;"><?php echo esc_html($this->env['env']); ?></span> environment. <a href="<?php echo esc_url($this->env['paypal_url']); ?>/billing/plans" target="_blank">Create a plan now.</a>
 
                     </h3>
 
@@ -219,7 +219,7 @@ class Product
 
     public function save_option_field($product_id)
     {
-        if (!isset($_POST["{$this->env}_ppsfwoo_plan_id"]) ||
+        if (!isset($_POST[$this->plan_id_key]) ||
             !isset($_POST['ppsfwoo_plan_id_nonce']) ||
             !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ppsfwoo_plan_id_nonce'])), 'ppsfwoo_plan_id_nonce')
         ) {
@@ -228,21 +228,23 @@ class Product
 
         }
 
-        $plan_id = sanitize_text_field(wp_unslash($_POST["{$this->env}_ppsfwoo_plan_id"]));
+        $plan_id = sanitize_text_field(wp_unslash($_POST[$this->plan_id_key]));
 
-        update_post_meta($product_id, "{$this->env}_ppsfwoo_plan_id", $plan_id);
+        update_post_meta($product_id, $this->plan_id_key, $plan_id);
     }
 
     public static function get_product_id_by_plan_id($plan_id)
     {
-        $env = PayPal::env()['env'];
+        $env = PayPal::env();
+
+        $plan_id_key = "{$env['env']}_ppsfwoo_plan_id";
 
         $query = new \WP_Query ([
             'post_type'      => 'product',
             'posts_per_page' => 1, 
             'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
                 [
-                    'key'     => "{$env}_ppsfwoo_plan_id",
+                    'key'     => $plan_id_key,
                     'value'   => $plan_id,
                     'compare' => '='
                 ],
@@ -266,7 +268,7 @@ class Product
 
         }
 
-        $plan_id = get_post_meta($product_id, "{$this->PluginMain->env['env']}_ppsfwoo_plan_id", true) ?? NULL;
+        $plan_id = get_post_meta($product_id, $this->plan_id_key, true) ?? NULL;
 
         $Plan = new Plan($plan_id);
 

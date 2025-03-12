@@ -22,8 +22,6 @@ class PluginMain
 
     public static $ppcp_settings_url = "admin.php?page=wc-settings&tab=checkout&section=ppcp-gateway&ppcp-tab=ppcp-connection";
 
-    public static $cron_event_ppsfwoo_ppcp_updated = "cron_event_ppsfwoo_ppcp_updated";
-
     public static $options = [
         'ppsfwoo_thank_you_page_id' => [
             'name'    => 'Order thank you page',
@@ -198,15 +196,13 @@ class PluginMain
 
         add_action('admin_init', [$this, 'register_settings']);
 
-        add_action('admin_init', [$this, 'handle_export_action']);
+        add_action('admin_init', [Database::class, 'handle_export_action']);
 
         add_action('admin_init', [$this, 'check_ppcp_updated']);
 
-        add_action(self::$cron_event_ppsfwoo_ppcp_updated, function() {
+        add_action('ppsfwoo_cron_resubscribe_webhooks', [Webhook::get_instance(), 'resubscribe']);
 
-            Webhook::get_instance()->resubscribe();
-
-        });
+        add_action('ppsfwoo_refresh_plans', [AjaxActionsPriv::class, 'refresh_plans']);
 
         add_action('admin_menu', [$this, 'register_options_page']);
 
@@ -348,7 +344,7 @@ class PluginMain
 
         if('ppsfwoo_hide_inactive_plans' === $option_name) {
 
-            AjaxActionsPriv::refresh_plans();
+            do_action('ppsfwoo_refresh_plans');
 
         }
     }
@@ -395,11 +391,11 @@ class PluginMain
 
     public static function schedule_webhook_resubscribe()
     {
-        if (!get_transient('ppsfwoo_ppcp_updated') && !wp_next_scheduled(self::$cron_event_ppsfwoo_ppcp_updated)) {
+        if (!get_transient('ppsfwoo_ppcp_updated') && !wp_next_scheduled('ppsfwoo_cron_resubscribe_webhooks')) {
 
             set_transient('ppsfwoo_ppcp_updated', true);
 
-            wp_schedule_single_event(time() + 5, self::$cron_event_ppsfwoo_ppcp_updated);
+            wp_schedule_single_event(time(), 'ppsfwoo_cron_resubscribe_webhooks');
 
             do_action('wp_cron');
         }
@@ -452,30 +448,6 @@ class PluginMain
         ], 'plugin');
 
         return $plugin_data[$data];
-    }
-
-    public function handle_export_action()
-    {
-        if(!isset($_GET['ppsfwoo_export_table'], $_GET['_wpnonce'])) {
-
-            return;
-
-        }
-
-         if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
-
-            wp_die("Security check failed");
-
-        }
-
-        header('Content-Type: application/sql');
-
-        header('Content-Disposition: attachment; filename="table_backup.sql"');
-
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo Database::export();
-
-        exit();
     }
 
     public function enqueue_frontend()
@@ -726,7 +698,7 @@ class PluginMain
 
         }
 
-        AjaxActionsPriv::refresh_plans();
+        do_action('ppsfwoo_refresh_plans');
     }
 
     public function plugin_deactivation()

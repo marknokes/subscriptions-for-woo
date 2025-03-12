@@ -97,18 +97,22 @@ class Webhook
         
         $event_type = $request['event_type'] ?? "";
 
-        $Subscriber = new Subscriber($request, $event_type);
-
         switch($event_type)
         {
-            case Webhook::ACTIVATED:
-                $Subscriber->subscribe();
+            case self::ACTIVATED:
+                (new Subscriber($request, $event_type))->subscribe();
                 break;
-            case Webhook::EXPIRED:
-            case Webhook::CANCELLED:
-            case Webhook::SUSPENDED:
-            case Webhook::PAYMENT_FAILED:
-                $Subscriber->cancel();
+            case self::EXPIRED:
+            case self::CANCELLED:
+            case self::SUSPENDED:
+            case self::PAYMENT_FAILED:
+                (new Subscriber($request, $event_type))->cancel();
+                break;
+            case self::BP_UPDATED:
+            case self::BP_ACTIVATED:
+            case self::BP_DEACTIVATED:
+            case self::BP_PRICE_CHANGE_ACTIVATED:
+                do_action('ppsfwoo_refresh_plans');
                 break;
         }
 

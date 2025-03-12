@@ -29,15 +29,13 @@ class Plan
 
 	public function __construct($id = NULL)
 	{
-		$PluginMain = PluginMain::get_instance();
-
-        $this->env = $PluginMain->env['env'];
+        $this->env = PayPal::env()['env'];
 
         $this->id = $id;
 
-        $plan_data = $PluginMain->ppsfwoo_plans[$this->env][$this->id] ?? NULL;
+        $plan_data = PluginMain::get_option('ppsfwoo_plans')[$this->env][$this->id] ?? NULL;
 
-        if(isset($this->id, $plan_data)) {
+        if(!empty($plan_data)) {
 
             foreach($plan_data as $response_key => $response_item)
             {
@@ -67,7 +65,7 @@ class Plan
             }
         }
 
-        throw new \BadMethodCallException("Method " . esc_attr($name) . " does not exist.");
+        throw new \BadMethodCallException("Property " . esc_attr($name) . " does not exist.");
     }
 
     private function get_from_billing_cycles($find, $response = NULL)
@@ -148,8 +146,6 @@ class Plan
 
     public function refresh_all()
     {
-        $PluginMain = PluginMain::get_instance();
-
         $plans = [];
 
         $page = 1;
@@ -172,7 +168,7 @@ class Plan
 
                 foreach($plan_data['response']['plans'] as $plan)
                 {
-                    if($PluginMain::get_option('ppsfwoo_hide_inactive_plans') && "ACTIVE" !== $plan['status']) {
+                    if(PluginMain::get_option('ppsfwoo_hide_inactive_plans') && "ACTIVE" !== $plan['status']) {
 
                         continue;
 
@@ -216,12 +212,10 @@ class Plan
             return strcmp($a['status'], $b['status']);
         });
     
-        $env = $this->env;
-
         PluginMain::clear_option_cache('ppsfwoo_plans');
 
         update_option('ppsfwoo_plans', [
-            $env => $plans
+            "{$this->env}" => $plans
         ]);
 
         return $plans;
@@ -229,7 +223,7 @@ class Plan
 
     public function get_tax_rate_data()
     {
-        $class = PluginMain::get_instance()::plugin_data('Name');
+        $class = PluginMain::plugin_data('Name');
 
         $slug = strtolower(str_replace(' ', '-', $class));
 

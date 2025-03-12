@@ -43,6 +43,30 @@ class Database
 	}
     // phpcs:enable
 
+    public static function handle_export_action()
+    {
+        if(!isset($_GET['ppsfwoo_export_table'], $_GET['_wpnonce'])) {
+
+            return;
+
+        }
+
+         if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
+
+            wp_die("Security check failed");
+
+        }
+
+        header('Content-Type: application/sql');
+
+        header('Content-Disposition: attachment; filename="table_backup.sql"');
+
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo self::export();
+
+        exit();
+    }
+
     public static function install()
     {
         if((new self("SHOW TABLES LIKE '{$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber';"))->result)
@@ -99,7 +123,7 @@ class Database
 
         if (version_compare($installed_version, '2.4.6', '<')) {
 
-            AjaxActionsPriv::refresh_plans();
+            do_action('ppsfwoo_refresh_plans');
 
         }
 
