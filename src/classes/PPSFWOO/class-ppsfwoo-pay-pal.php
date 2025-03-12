@@ -34,11 +34,11 @@ class PayPal
 
         }
 
-        $PluginMain = PluginMain::get_instance();
+        $client_id = self::env()['client_id'];
 
         wp_enqueue_script(
             'ppsfwoo-paypal-sdk',
-            "https://www.paypal.com/sdk/js?client-id=$PluginMain->client_id&vault=true&intent=subscription",
+            "https://www.paypal.com/sdk/js?client-id=$client_id&vault=true&intent=subscription",
             [],
             null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion 
             true
@@ -46,9 +46,9 @@ class PayPal
 
         wp_enqueue_script(
             'ppsfwoo-paypal-button',
-            $PluginMain->plugin_dir_url . "js/paypal-button.min.js",
+            plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "js/paypal-button.min.js",
             ['ppsfwoo-paypal-sdk'],
-            $PluginMain::plugin_data('Version'),
+            PluginMain::plugin_data('Version'),
             true
         );
 
@@ -61,8 +61,8 @@ class PayPal
                 });
         ");
         
-        $PluginMain::display_template("paypal-button", [
-            'button_text' => $PluginMain->ppsfwoo_button_text,
+        PluginMain::display_template("paypal-button", [
+            'button_text' => PluginMain::get_option('ppsfwoo_button_text'),
             'product_id' => $product_id
         ]);
     }
