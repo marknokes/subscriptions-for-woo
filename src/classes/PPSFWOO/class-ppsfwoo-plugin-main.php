@@ -399,7 +399,7 @@ class PluginMain
 
             set_transient('ppsfwoo_ppcp_updated', true);
 
-            wp_schedule_single_event(time(), self::$cron_event_ppsfwoo_ppcp_updated);
+            wp_schedule_single_event(time() + 5, self::$cron_event_ppsfwoo_ppcp_updated);
 
             do_action('wp_cron');
         }

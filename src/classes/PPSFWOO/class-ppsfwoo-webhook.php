@@ -9,7 +9,7 @@ use PPSFWOO\PayPal,
 
 class Webhook
 {
-	const WEBHOOK_PREFIX = "BILLING.SUBSCRIPTION";
+	const WEBHOOK_PREFIX = ['BILLING.SUBSCRIPTION', 'BILLING.PLAN'];
 
     const ACTIVATED = 'BILLING.SUBSCRIPTION.ACTIVATED';
 
@@ -20,6 +20,14 @@ class Webhook
     const SUSPENDED = 'BILLING.SUBSCRIPTION.SUSPENDED';
 
     const PAYMENT_FAILED = 'BILLING.SUBSCRIPTION.PAYMENT.FAILED';
+
+    const BP_ACTIVATED = 'BILLING.PLAN.ACTIVATED';
+
+    const BP_PRICE_CHANGE_ACTIVATED = 'BILLING.PLAN.PRICING-CHANGE.ACTIVATED';
+
+    const BP_DEACTIVATED = 'BILLING.PLAN.DEACTIVATED';
+
+    const BP_UPDATED = 'BILLING.PLAN.UPDATED';
 
     private static $instance = NULL;
 
@@ -108,7 +116,21 @@ class Webhook
                     'args'                => [
                         'event_type' => [
                             'validate_callback' => function($param, $request, $key) {
-                                return strpos($param, self::WEBHOOK_PREFIX) === 0;
+
+                                $is_valid = false;
+
+                                foreach (self::WEBHOOK_PREFIX as $prefix)
+                                {
+                                    if(strpos($param, $prefix) === 0) {
+
+                                        $is_valid = true;
+
+                                        break;
+
+                                    }
+                                }
+
+                                return $is_valid;
                             }
                         ]
                     ]
@@ -188,6 +210,21 @@ class Webhook
         return $subscribed ?? false;
     }
 
+    public function get_event_types()
+    {
+        return [
+            ['name' => self::ACTIVATED],
+            ['name' => self::EXPIRED],
+            ['name' => self::CANCELLED],
+            ['name' => self::SUSPENDED],
+            ['name' => self::PAYMENT_FAILED],
+            ['name' => self::BP_ACTIVATED],
+            ['name' => self::BP_PRICE_CHANGE_ACTIVATED],
+            ['name' => self::BP_DEACTIVATED],
+            ['name' => self::BP_UPDATED]
+        ];
+    }
+
     public function create()
     {
         $webhook_id = "";
@@ -198,13 +235,7 @@ class Webhook
 
             $response = PayPal::request(PayPal::EP_WEBHOOKS, [
                 'url' => $this->listen_address(),
-                'event_types' => [
-                    ['name' => self::ACTIVATED],
-                    ['name' => self::EXPIRED],
-                    ['name' => self::CANCELLED],
-                    ['name' => self::SUSPENDED],
-                    ['name' => self::PAYMENT_FAILED]
-                ]
+                'event_types' => $this->get_event_types()
             ], "POST");
 
             if(isset($response['response']['id'])) {
@@ -256,25 +287,18 @@ class Webhook
 
                         $webhook_id = $webhooks['response']['webhooks'][$key]['id'];
 
-                        $types = [];
+                        $to_remove = array_column($this->get_event_types(), 'name');
 
-                        foreach($webhooks['response']['webhooks'][$key]['event_types'] as $type_key => $type)
-                        {
-                            if(strpos($type['name'], self::WEBHOOK_PREFIX) !== 0) {
-
-                                array_push($types, [
-                                    'name' => $type['name']
-                                ]);
-                                    
-                            }
-                        }
+                        $types = array_filter($webhooks['response']['webhooks'][$key]['event_types'], function($item) use ($to_remove) {
+                            return !in_array($item['name'], $to_remove);
+                        });
 
                         if(sizeof($webhooks['response']['webhooks'][$key]['event_types']) !== sizeof($types)) {
 
                             $data = [
                                 "op"    => "replace",
                                 "path"  => "/event_types",
-                                "value" => $types
+                                "value" => array_values($types)
                             ];
 
                             PayPal::request(PayPal::EP_WEBHOOKS . $webhook_id, [$data], "PATCH");

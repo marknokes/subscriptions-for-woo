@@ -18,7 +18,7 @@ class PayPal
 
     const EP_PRODUCTS       = "/v1/catalogs/products/";
 
-    const EP_WEBHOOKS       = "/v1/notifications/webhooks";
+    const EP_WEBHOOKS       = "/v1/notifications/webhooks/";
 
     const EP_VERIFY_SIG     = "/v1/notifications/verify-webhook-signature";
 
