@@ -9,8 +9,6 @@ use PPSFWOO\PayPal,
 
 class Webhook
 {
-	const WEBHOOK_PREFIX = ['BILLING.SUBSCRIPTION', 'BILLING.PLAN'];
-
     const ACTIVATED = 'BILLING.SUBSCRIPTION.ACTIVATED';
 
     const EXPIRED = 'BILLING.SUBSCRIPTION.EXPIRED';
@@ -60,6 +58,21 @@ class Webhook
         }
 
         return self::$instance;
+    }
+
+    protected function get_event_types()
+    {
+        return [
+            ['name' => self::ACTIVATED],
+            ['name' => self::EXPIRED],
+            ['name' => self::CANCELLED],
+            ['name' => self::SUSPENDED],
+            ['name' => self::PAYMENT_FAILED],
+            ['name' => self::BP_ACTIVATED],
+            ['name' => self::BP_PRICE_CHANGE_ACTIVATED],
+            ['name' => self::BP_DEACTIVATED],
+            ['name' => self::BP_UPDATED]
+        ];
     }
 
     public function handle_request(\WP_REST_Request $request)
@@ -116,21 +129,8 @@ class Webhook
                     'args'                => [
                         'event_type' => [
                             'validate_callback' => function($param, $request, $key) {
-
-                                $is_valid = false;
-
-                                foreach (self::WEBHOOK_PREFIX as $prefix)
-                                {
-                                    if(strpos($param, $prefix) === 0) {
-
-                                        $is_valid = true;
-
-                                        break;
-
-                                    }
-                                }
-
-                                return $is_valid;
+                                $types = array_column($this->get_event_types(), 'name');
+                                return in_array($param, $types);
                             }
                         ]
                     ]
@@ -208,21 +208,6 @@ class Webhook
         }
 
         return $subscribed ?? false;
-    }
-
-    public function get_event_types()
-    {
-        return [
-            ['name' => self::ACTIVATED],
-            ['name' => self::EXPIRED],
-            ['name' => self::CANCELLED],
-            ['name' => self::SUSPENDED],
-            ['name' => self::PAYMENT_FAILED],
-            ['name' => self::BP_ACTIVATED],
-            ['name' => self::BP_PRICE_CHANGE_ACTIVATED],
-            ['name' => self::BP_DEACTIVATED],
-            ['name' => self::BP_UPDATED]
-        ];
     }
 
     public function create()
