@@ -133,8 +133,10 @@ class Webhook
                     'args'                => [
                         'event_type' => [
                             'validate_callback' => function($param, $request, $key) {
-                                $types = array_column($this->get_event_types(), 'name');
-                                return in_array($param, $types);
+                                return in_array(
+                                    $param,
+                                    array_column($this->get_event_types(), 'name')
+                                );
                             }
                         ]
                     ]
