@@ -19,6 +19,8 @@ class Webhook
 
     const PAYMENT_FAILED = 'BILLING.SUBSCRIPTION.PAYMENT.FAILED';
 
+    const BP_CREATED = 'BILLING.PLAN.CREATED';
+
     const BP_ACTIVATED = 'BILLING.PLAN.ACTIVATED';
 
     const BP_PRICE_CHANGE_ACTIVATED = 'BILLING.PLAN.PRICING-CHANGE.ACTIVATED';
@@ -69,6 +71,7 @@ class Webhook
             ['name' => self::SUSPENDED],
             ['name' => self::PAYMENT_FAILED],
             ['name' => self::BP_ACTIVATED],
+            ['name' => self::BP_CREATED],
             ['name' => self::BP_PRICE_CHANGE_ACTIVATED],
             ['name' => self::BP_DEACTIVATED],
             ['name' => self::BP_UPDATED]
