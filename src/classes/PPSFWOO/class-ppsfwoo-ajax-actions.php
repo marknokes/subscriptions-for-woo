@@ -17,6 +17,10 @@ class AjaxActions
             
             echo call_user_func([$this, $method]);
 
+        } else if(has_action($method)) {
+
+            do_action($method);
+
         } else {
             
             echo "";

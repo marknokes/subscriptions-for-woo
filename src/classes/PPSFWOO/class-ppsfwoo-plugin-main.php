@@ -71,7 +71,7 @@ class PluginMain
             'default' => [
                 'sandbox' => [
                     '000' => [
-                        'plan_name'     => 'Refresh required',
+                        'name'     => 'Refresh required',
                         'product_name'  => '',
                         'frequency'     => '',
                         'status'        => ''
@@ -79,7 +79,7 @@ class PluginMain
                 ],
                 'production' => [
                     '000' => [
-                        'plan_name'     => 'Refresh required',
+                        'name'     => 'Refresh required',
                         'product_name'  => '',
                         'frequency'     => '',
                         'status'        => ''
@@ -617,14 +617,11 @@ class PluginMain
         return $notification_email;
     }
 
-    public static function get_page_by_title($title)
-    {
-        $query = new \WP_Query([
-            'post_type'      => 'page',
-            'post_status'    => 'publish',
-            'posts_per_page' => 1,
-            'title'          => $title,
-        ]);
+    public static function get_post_by_title($args = [])
+    {        
+        $args['post_status'] = array_values(get_post_stati());
+
+        $query = new \WP_Query($args);
 
         if ($query->have_posts()) {
 
@@ -647,7 +644,10 @@ class PluginMain
     {
         $title = "Thank you for your order";
 
-        $page_id = self::get_page_by_title($title);
+        $page_id = self::get_post_by_title([
+            'post_type'   => 'page',
+            'title'       => $title,
+        ]);
 
         if (!$page_id) {
 

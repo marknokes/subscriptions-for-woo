@@ -11,7 +11,6 @@ class Plan
            $id,
 		   $frequency,
            $price,
-           $plan_name,
            $product_name,
            $version,
            $product_id,
