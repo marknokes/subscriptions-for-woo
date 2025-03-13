@@ -244,7 +244,8 @@ class Product
     {
         $query = new \WP_Query ([
             'post_type'      => 'product',
-            'posts_per_page' => 1, 
+            'posts_per_page' => 1,
+            'post_status'    => array_values(get_post_stati()),
             'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
                 [
                     'key'     => self::get_plan_id_meta_key(),

@@ -28,7 +28,8 @@ class PluginMain
             'type'    => 'select',
             'default' => 0,
             'description' => 'Select the page that customers will be redirected to after checkout.',
-            'sanitize_callback' => 'absint'
+            'sanitize_callback' => 'absint',
+            'meta_key' => 'ppsfwoo_thank_you_page'
         ],
         'ppsfwoo_rows_per_page' => [
             'name'    => 'Subscribers Rows Per Page',
@@ -108,7 +109,8 @@ class PluginMain
             'is_enterprise' => true,
             'default' => 0,
             'description' => 'Select the page that customers will visit upon resubscribing to a canceled subscription.',
-            'sanitize_callback' => 'absint'
+            'sanitize_callback' => 'absint',
+            'meta_key' => 'ppsfwoo_resubscribe_landing_page'
         ],
         'ppsfwoo_discount' => [
             'name'    => 'Resubscribe Discount Percent',
@@ -340,9 +342,30 @@ class PluginMain
     {
         self::clear_option_cache($option_name);
 
-        if('ppsfwoo_hide_inactive_plans' === $option_name) {
+        switch ($option_name)
+        {
+            case 'ppsfwoo_hide_inactive_plans':
 
-            do_action('ppsfwoo_refresh_plans');
+                do_action('ppsfwoo_refresh_plans');
+
+                break;
+
+            case 'ppsfwoo_resubscribe_landing_page_id':
+            case 'ppsfwoo_thank_you_page_id':
+
+                $meta_key = self::$options[$option_name]['meta_key'];
+
+                update_post_meta($new_value, $meta_key, true);
+
+                delete_post_meta($old_value, $meta_key);
+
+                update_option($option_name, $new_value);
+
+                break;
+
+            default:
+
+                break;
 
         }
     }
@@ -617,54 +640,32 @@ class PluginMain
         return $notification_email;
     }
 
-    public static function get_post_by_title($args = [])
-    {        
-        $args['post_status'] = array_values(get_post_stati());
-
-        $query = new \WP_Query($args);
-
-        if ($query->have_posts()) {
-
-            $query->the_post();
-            
-            $page_id = get_the_ID();
-            
-            wp_reset_postdata();
-            
-            return $page_id;
-        
-        } else {
-        
-            return false;
-        
-        }
-    }
-
-    protected static function create_thank_you_page()
+    public static function create_thank_you_page()
     {
-        $title = "Thank you for your order";
+        $option_name = 'ppsfwoo_thank_you_page_id';
 
-        $page_id = self::get_post_by_title([
-            'post_type'   => 'page',
-            'title'       => $title,
+        $meta_key = self::$options[$option_name]['meta_key'];
+
+        if (get_post_meta(self::get_option($option_name), $meta_key, true)) {
+
+            return;
+
+        }
+
+        $thank_you_template = plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "templates/thank-you.php";
+
+        $response = wp_remote_get($thank_you_template);
+
+        $page_id = wp_insert_post([
+            'post_title'     => "Thank you for your order",
+            'post_content'   => wp_remote_retrieve_body($response),
+            'post_status'    => 'publish',
+            'post_type'      => 'page'
         ]);
 
-        if (!$page_id) {
+        update_post_meta($page_id, $meta_key, true);
 
-            $thank_you_template = plugin_dir_url(PPSFWOO_PLUGIN_PATH) . "templates/thank-you.php";
-
-            $response = wp_remote_get($thank_you_template);
-
-            $page_id = wp_insert_post([
-                'post_title'     => $title,
-                'post_content'   => wp_remote_retrieve_body($response),
-                'post_status'    => 'publish',
-                'post_type'      => 'page'
-            ]);
-
-        }
-
-        update_option('ppsfwoo_thank_you_page_id', $page_id);
+        update_option($option_name, $page_id);
     }
 
     public static function plugin_activation()
