@@ -202,8 +202,6 @@ class PluginMain
 
         add_action('ppsfwoo_cron_resubscribe_webhooks', [Webhook::get_instance(), 'resubscribe']);
 
-        add_action('ppsfwoo_refresh_plans', [AjaxActionsPriv::class, 'refresh_plans']);
-
         add_action('admin_menu', [$this, 'register_options_page']);
 
         add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
@@ -703,9 +701,15 @@ class PluginMain
 
     public function plugin_deactivation()
     {
+        delete_transient('ppsfwoo_refresh_plans_ran');
+
         if("1" === $this->ppsfwoo_delete_plugin_data) {
             
-            new Database("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber");
+            new Database("SET FOREIGN_KEY_CHECKS = 0;");
+
+            new Database("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber;");
+
+            new Database("SET FOREIGN_KEY_CHECKS = 1;");
 
             Webhook::get_instance()->delete();
             
