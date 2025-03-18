@@ -29,7 +29,7 @@ class PluginMain
             'default' => 0,
             'description' => 'Select the page that customers will be redirected to after checkout.',
             'sanitize_callback' => 'absint',
-            'meta_key' => 'ppsfwoo_thank_you_page'
+            'meta_key' => 'ppsfwoo_thank_you_page' // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
         ],
         'ppsfwoo_rows_per_page' => [
             'name'    => 'Subscribers Rows Per Page',
@@ -110,7 +110,7 @@ class PluginMain
             'default' => 0,
             'description' => 'Select the page that customers will visit upon resubscribing to a canceled subscription.',
             'sanitize_callback' => 'absint',
-            'meta_key' => 'ppsfwoo_resubscribe_landing_page'
+            'meta_key' => 'ppsfwoo_resubscribe_landing_page' // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
         ],
         'ppsfwoo_discount' => [
             'name'    => 'Resubscribe Discount Percent',
