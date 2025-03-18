@@ -12,6 +12,7 @@ class Plan
 		   $frequency,
            $price,
            $product_name,
+           $image_url,
            $version,
            $product_id,
            $name,
@@ -164,8 +165,6 @@ class Plan
                 && count($plan_data['response']['plans']) > 0
             ) {
 
-                $products = [];
-
                 foreach($plan_data['response']['plans'] as $plan)
                 {
                     if(PluginMain::get_option('ppsfwoo_hide_inactive_plans') && "ACTIVE" !== $plan['status']) {
@@ -174,18 +173,7 @@ class Plan
 
                     }
 
-                    if(!in_array($plan['product_id'], array_keys($products))) {
-                    
-                        $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
-
-                        $product_name = $product_data['response']['name'] ?? "";
-
-                        $products[$plan['product_id']] = $product_name;
-
-                    } else {
-
-                        $product_name = $products[$plan['product_id']];
-                    }
+                    $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
 
                     if(isset($plan['taxes'])) {
 
@@ -193,7 +181,9 @@ class Plan
 
                     }
 
-                    $plan['product_name'] = $product_name;
+                    $plan['product_name'] = $product_data['response']['name'] ?? "";
+
+                    $plan['image_url'] = $product_data['response']['image_url'] ?? "";
 
                     $plans[$plan['id']] = $plan;
                 }
