@@ -1,8 +1,10 @@
-<?php if (!defined('ABSPATH')) exit; ?>
+<?php if (!defined('ABSPATH')) {
+    exit;
+} ?>
 
 <div class="flex-container">
 	
-	<div class="wrap <?php echo PPSFWOO_PLUGIN_EXTRAS ? 'full-width': 'partial-width'; ?>">
+	<div class="wrap <?php echo PPSFWOO_PLUGIN_EXTRAS ? 'full-width' : 'partial-width'; ?>">
 
 	    <h1><?php echo esc_html(self::plugin_data("Name")); ?></h1>
 

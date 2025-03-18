@@ -3,18 +3,17 @@
 namespace PPSFWOO;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
-
-use PPSFWOO\AjaxActions,
-    PPSFWOO\AjaxActionsPriv,
-    PPSFWOO\Webhook,
-    PPSFWOO\PayPal,
-    PPSFWOO\Database,
-    PPSFWOO\Product,
-    PPSFWOO\Order;
+use PPSFWOO\AjaxActions;
+use PPSFWOO\AjaxActionsPriv;
+use PPSFWOO\Webhook;
+use PPSFWOO\PayPal;
+use PPSFWOO\Database;
+use PPSFWOO\Product;
+use PPSFWOO\Order;
 
 class PluginMain
 {
-    private static $instance = NULL;
+    private static $instance = null;
 
     public static $options_group = "ppsfwoo_options_group";
 
@@ -137,23 +136,23 @@ class PluginMain
         'tab-advanced'    => 'Advanced'
     ];
 
-    public $client_id,
-           $paypal_url,
-           $ppsfwoo_webhook_id,
-           $ppsfwoo_subscribed_webhooks,
-           $ppsfwoo_hide_inactive_plans,
-           $ppsfwoo_plans,
-           $ppsfwoo_thank_you_page_id,
-           $ppsfwoo_rows_per_page,
-           $ppsfwoo_delete_plugin_data,
-           $ppsfwoo_reminder,
-           $ppsfwoo_resubscribe_landing_page_id,
-           $ppsfwoo_discount_apply_to_trial,
-           $ppsfwoo_discount,
-           $template_dir,
-           $plugin_dir_url,
-           $ppsfwoo_button_text,
-           $env;
+    public $client_id;
+    public $paypal_url;
+    public $ppsfwoo_webhook_id;
+    public $ppsfwoo_subscribed_webhooks;
+    public $ppsfwoo_hide_inactive_plans;
+    public $ppsfwoo_plans;
+    public $ppsfwoo_thank_you_page_id;
+    public $ppsfwoo_rows_per_page;
+    public $ppsfwoo_delete_plugin_data;
+    public $ppsfwoo_reminder;
+    public $ppsfwoo_resubscribe_landing_page_id;
+    public $ppsfwoo_discount_apply_to_trial;
+    public $ppsfwoo_discount;
+    public $template_dir;
+    public $plugin_dir_url;
+    public $ppsfwoo_button_text;
+    public $env;
 
     protected function __construct()
     {
@@ -167,9 +166,10 @@ class PluginMain
 
         $this->paypal_url = $this->env['paypal_url'];
 
-        foreach (self::$options as $option_name => $option_value)
-        {
-            if(self::skip_option($option_value)) continue;
+        foreach (self::$options as $option_name => $option_value) {
+            if (self::skip_option($option_value)) {
+                continue;
+            }
 
             $this->$option_name = self::get_option($option_name);
 
@@ -180,7 +180,7 @@ class PluginMain
     public static function get_instance()
     {
         if (self::$instance === null) {
-            
+
             self::$instance = new self();
 
         }
@@ -191,7 +191,7 @@ class PluginMain
     public function add_actions()
     {
         add_action('wp_ajax_nopriv_ppsfwoo_admin_ajax_callback', [new AjaxActions(), 'admin_ajax_callback']);
-        
+
         add_action('wp_ajax_ppsfwoo_admin_ajax_callback', [new AjaxActionsPriv(), 'admin_ajax_callback']);
 
         add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend'], 11);
@@ -207,11 +207,11 @@ class PluginMain
         add_action('admin_menu', [$this, 'register_options_page']);
 
         add_action('admin_enqueue_scripts', [$this, 'admin_enqueue_scripts']);
-        
+
         add_action('edit_user_profile', [$this, 'add_custom_user_fields']);
-        
+
         add_action('rest_api_init', [Webhook::get_instance(), 'rest_api_init']);
-        
+
         add_action('before_woocommerce_init', [$this, 'wc_declare_compatibility']);
 
         add_action('ppsfwoo_options_page_tab_menu', [$this, 'options_page_tab_menu'], 10, 1);
@@ -233,12 +233,12 @@ class PluginMain
 
         add_filter('woocommerce_get_order_item_totals', [$this, 'update_receipt_subtotal'], 10, 2);
 
-        add_filter('woocommerce_email_recipient_customer_processing_order', [$this, 'suppress_processing_order_email'], 10, 2 );
+        add_filter('woocommerce_email_recipient_customer_processing_order', [$this, 'suppress_processing_order_email'], 10, 2);
     }
 
     public function suppress_processing_order_email($recipient, $order)
     {
-        if(Order::has_subscription($order)) {
+        if (Order::has_subscription($order)) {
 
             return '';
 
@@ -249,7 +249,7 @@ class PluginMain
 
     public function update_receipt_line_item_totals($item_id, $item, $order)
     {
-        if(!Order::has_subscription($order)) {
+        if (!Order::has_subscription($order)) {
 
             return;
 
@@ -259,10 +259,10 @@ class PluginMain
 
         $exclude_from_order_total = $meta === 'yes';
 
-        if($exclude_from_order_total) {
+        if ($exclude_from_order_total) {
 
             $item->set_subtotal($item->get_total());
-        
+
         }
     }
 
@@ -279,7 +279,7 @@ class PluginMain
 
     public function update_receipt_subtotal($totals, $order)
     {
-        if(!Order::has_subscription($order)) {
+        if (!Order::has_subscription($order)) {
 
             return $totals;
 
@@ -289,7 +289,7 @@ class PluginMain
             $this->receipt_item_value_as_int($totals['cart_subtotal']['value']),
             $order
         );
-        
+
         $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
 
         $totals['cart_subtotal']['value'] = $formatter->formatCurrency($subtotal, 'USD');
@@ -299,10 +299,9 @@ class PluginMain
 
     public function options_page_tab_menu($tabs)
     {
-        foreach ($tabs as $tab_id => $display_name)
-        {
+        foreach ($tabs as $tab_id => $display_name) {
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $active = isset($_GET['tab']) && $tab_id === $_GET['tab'] ? "nav-tab-active": "";
+            $active = isset($_GET['tab']) && $tab_id === $_GET['tab'] ? "nav-tab-active" : "";
 
             echo '<a href="' . esc_attr($tab_id) . '" class="nav-tab ' . esc_attr($active) . '">' . esc_html($display_name) . '</a>';
         }
@@ -310,11 +309,12 @@ class PluginMain
 
     public function options_page_tab_content($tabs)
     {
-        foreach ($tabs as $tab_id => $display_name)
-        {
+        foreach ($tabs as $tab_id => $display_name) {
             $file = $this->template_dir . "tab-content/$tab_id.php";
 
-            if(!file_exists($file)) continue;
+            if (!file_exists($file)) {
+                continue;
+            }
 
             echo '<div id="' . esc_attr($tab_id) . '" class="tab-content">';
 
@@ -332,7 +332,7 @@ class PluginMain
     public static function clear_option_cache($option_name)
     {
         if (array_key_exists($option_name, self::$options)) {
-            
+
             wp_cache_delete($option_name, 'options');
 
         }
@@ -342,8 +342,7 @@ class PluginMain
     {
         self::clear_option_cache($option_name);
 
-        switch ($option_name)
-        {
+        switch ($option_name) {
             case 'ppsfwoo_hide_inactive_plans':
 
                 do_action('ppsfwoo_refresh_plans');
@@ -372,10 +371,12 @@ class PluginMain
 
     public static function get_option($option_name)
     {
-        if(isset(self::$options[$option_name]) && self::skip_option(self::$options[$option_name])) return false;
+        if (isset(self::$options[$option_name]) && self::skip_option(self::$options[$option_name])) {
+            return false;
+        }
 
         $cached_value = wp_cache_get($option_name, 'options');
-        
+
         if ($cached_value === false) {
 
             $option_value = get_option($option_name);
@@ -401,7 +402,7 @@ class PluginMain
 
     public static function format_description($string, $disabled)
     {
-        $class = $disabled ? 'disabled-link': '';
+        $class = $disabled ? 'disabled-link' : '';
 
         $replacements = [
             '{wc_settings_tab_email}' => "<a class='". $class ."' href='" . admin_url("admin.php?page=wc-settings&tab=email&section=wc_ppsfwoo_email") . "'>Edit / Disable</a>"
@@ -437,7 +438,7 @@ class PluginMain
 
                 self::schedule_webhook_resubscribe();
 
-            } else if (self::is_upgrade_target(plugin_basename(PPSFWOO_PLUGIN_PATH), $plugin)) {
+            } elseif (self::is_upgrade_target(plugin_basename(PPSFWOO_PLUGIN_PATH), $plugin)) {
 
                 Database::upgrade();
 
@@ -447,9 +448,9 @@ class PluginMain
 
     public function check_ppcp_updated()
     {
-        if(get_transient('ppsfwoo_ppcp_updated')) {
+        if (get_transient('ppsfwoo_ppcp_updated')) {
 
-            add_action('admin_notices', function() {
+            add_action('admin_notices', function () {
                 ?>
                 <div class="notice notice-warning is-dismissible">
                     <p><strong><?php echo esc_html(self::plugin_data("Name")); ?>:</strong> If you switched from sandbox to production and have existing subscription products, please resave them now with their corresponding plan (if necessary) and republish.</p>
@@ -473,12 +474,12 @@ class PluginMain
 
     public function enqueue_frontend()
     {
-        if(!is_admin()) {
+        if (!is_admin()) {
 
             wp_localize_script('ppsfwoo-paypal-button', 'ppsfwoo_paypal_ajax_var', [
                 'redirect' => get_permalink($this->ppsfwoo_thank_you_page_id)
             ]);
-            
+
             wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url . "css/frontend.min.css", [], self::plugin_data('Version'));
 
             if (is_product()) {
@@ -496,8 +497,8 @@ class PluginMain
             }
 
         }
-        
-        $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])): NULL;
+
+        $subs_id = isset($_GET['subs_id']) ? sanitize_text_field(wp_unslash($_GET['subs_id'])) : null;
 
         if (
             !isset($subs_id, $_GET['subs_id_redirect_nonce']) ||
@@ -518,7 +519,7 @@ class PluginMain
 
     public function subscriber_table_options_page($email = "")
     {
-        if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscriptions')) {
+        if (PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscriptions')) {
 
             echo "<p>Your user permissions do not allow you to view this content. Please contact your website administrator.</p>";
 
@@ -529,11 +530,11 @@ class PluginMain
         $per_page = $this->ppsfwoo_rows_per_page ?: 10;
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $page = isset($_GET['subs_page_num']) ? absint($_GET['subs_page_num']):  1;
+        $page = isset($_GET['subs_page_num']) ? absint($_GET['subs_page_num']) : 1;
 
         $offset = max(0, ($page - 1) * $per_page);
 
-        if($email) {
+        if ($email) {
 
             $result = new Database(
                 "SELECT `s`.* FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber `s`
@@ -552,11 +553,11 @@ class PluginMain
 
         }
 
-        $num_subs = is_array($result->result) ? sizeof($result->result): 0;
+        $num_subs = is_array($result->result) ? sizeof($result->result) : 0;
 
         $html = "";
 
-        if($num_subs) {
+        if ($num_subs) {
 
             ob_start();
 
@@ -571,18 +572,17 @@ class PluginMain
                 'paypal_url' => $this->env['paypal_url']
             ]);
 
-            if($email === "" && $total_pages > 1) {
+            if ($email === "" && $total_pages > 1) {
 
                 echo "<div class='pagination'>Page: ";
 
-                for ($i = 1; $i <= $total_pages; $i++)
-                {
+                for ($i = 1; $i <= $total_pages; $i++) {
                     $query_string = http_build_query([
                         'tab'           => 'tab-subscribers',
                         'subs_page_num' => $i
                     ]);
 
-                    $class = $i === $page ? " current": "";
+                    $class = $i === $page ? " current" : "";
 
                     echo "<a href='" . esc_url(admin_url('admin.php?page=subscriptions_for_woo&') . $query_string) . "' class='pagination-link" . esc_attr($class) . "'>" . esc_attr($i) . "</a>";
                 }
@@ -604,7 +604,7 @@ class PluginMain
         if (class_exists(FeaturesUtil::class)) {
 
             FeaturesUtil::declare_compatibility('custom_order_tables', PPSFWOO_PLUGIN_PATH);
-            
+
         }
     }
 
@@ -612,14 +612,14 @@ class PluginMain
     {
         $template = self::get_instance()->template_dir . "/$template.php";
 
-        if(!file_exists($template)) {
+        if (!file_exists($template)) {
 
             return;
 
         }
 
         extract($args);
-            
+
         include $template;
     }
 
@@ -627,7 +627,9 @@ class PluginMain
     {
         $key = get_password_reset_key($user);
 
-        if (is_wp_error($key)) { return; }
+        if (is_wp_error($key)) {
+            return;
+        }
 
         $message  = sprintf('Username: %s', $user->user_login) . "\r\n\r\n";
 
@@ -670,9 +672,10 @@ class PluginMain
 
     public static function plugin_activation()
     {
-        foreach (self::$options as $option_name => $option_value)
-        {
-            if(self::skip_option($option_value)) continue;
+        foreach (self::$options as $option_name => $option_value) {
+            if (self::skip_option($option_value)) {
+                continue;
+            }
 
             add_option($option_name, $option_value['default'], '', false);
         }
@@ -683,7 +686,7 @@ class PluginMain
 
         self::create_thank_you_page();
 
-        if(PPSFWOO_ENTERPRISE) {
+        if (PPSFWOO_ENTERPRISE) {
 
             Enterprise::create_resubscribe_page();
 
@@ -691,7 +694,7 @@ class PluginMain
 
         $Webhook = Webhook::get_instance();
 
-        if(!$Webhook->id()) {
+        if (!$Webhook->id()) {
 
             $Webhook->create();
 
@@ -704,8 +707,8 @@ class PluginMain
     {
         delete_transient('ppsfwoo_refresh_plans_ran');
 
-        if("1" === $this->ppsfwoo_delete_plugin_data) {
-            
+        if ("1" === $this->ppsfwoo_delete_plugin_data) {
+
             new Database("SET FOREIGN_KEY_CHECKS = 0;");
 
             new Database("DROP TABLE IF EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber;");
@@ -713,12 +716,12 @@ class PluginMain
             new Database("SET FOREIGN_KEY_CHECKS = 1;");
 
             Webhook::get_instance()->delete();
-            
+
             wp_delete_post($this->ppsfwoo_thank_you_page_id, true);
 
             wp_delete_post($this->ppsfwoo_resubscribe_landing_page_id, true);
-            
-            foreach(self::$options as $option_name => $option_value) {
+
+            foreach (self::$options as $option_name => $option_value) {
 
                 delete_option($option_name);
 
@@ -734,7 +737,7 @@ class PluginMain
 
     public function plugin_row_meta($links, $file)
     {
-        if(plugin_basename(PPSFWOO_PLUGIN_PATH) !== $file) {
+        if (plugin_basename(PPSFWOO_PLUGIN_PATH) !== $file) {
 
             return $links;
 
@@ -762,7 +765,7 @@ class PluginMain
         $settings_url = esc_url(admin_url('admin.php?page=subscriptions_for_woo'));
 
         $settings = ["<a href='$settings_url'>Settings</a>"];
-        
+
         return array_merge($settings, $links);
     }
 
@@ -792,9 +795,10 @@ class PluginMain
 
     public function register_settings()
     {
-        foreach (self::$options as $option_name => $option_value)
-        {
-            if('skip_settings_field' === $option_value['type'] || self::skip_option($option_value)) continue;
+        foreach (self::$options as $option_name => $option_value) {
+            if ('skip_settings_field' === $option_value['type'] || self::skip_option($option_value)) {
+                continue;
+            }
 
             // phpcs:ignore PluginCheck.CodeAnalysis.SettingSanitization.register_settingDynamic
             register_setting(
@@ -828,7 +832,7 @@ class PluginMain
     public function options_page()
     {
         $tabs = self::$tabs;
-        
+
         include $this->template_dir . "/options-page.php";
     }
 }

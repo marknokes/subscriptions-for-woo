@@ -2,56 +2,56 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain,
-    PPSFWOO\AjaxActionsPriv;
+use PPSFWOO\PluginMain;
+use PPSFWOO\AjaxActionsPriv;
 
 class Database
 {
-	public $result;
+    public $result;
 
     protected static $version = "2.4";
 
     // phpcs:disable
-	public function __construct($query, $vars = [], $output = OBJECT)
-	{
-		global $wpdb;
+    public function __construct($query, $vars = [], $output = OBJECT)
+    {
+        global $wpdb;
 
         $wpdb->query('SET time_zone = "+00:00"');
-        
-        $stmt = $vars ? $wpdb->prepare($query, $vars): $query;
 
-        if(strpos($query, "SELECT") === 0) {
+        $stmt = $vars ? $wpdb->prepare($query, $vars) : $query;
 
-        	$result = $wpdb->get_results($stmt, $output);
+        if (strpos($query, "SELECT") === 0) {
 
-        } else {
-
-        	$result = $wpdb->query($stmt);
-
-        }
-
-        if(!empty($wpdb->last_error)) {
-
-        	$this->result = ['error'  => $wpdb->last_error];
+            $result = $wpdb->get_results($stmt, $output);
 
         } else {
 
-        	$this->result = $result;
+            $result = $wpdb->query($stmt);
 
         }
 
-	}
+        if (!empty($wpdb->last_error)) {
+
+            $this->result = ['error'  => $wpdb->last_error];
+
+        } else {
+
+            $this->result = $result;
+
+        }
+
+    }
     // phpcs:enable
 
     public static function handle_export_action()
     {
-        if(!isset($_GET['ppsfwoo_export_table'], $_GET['_wpnonce'])) {
+        if (!isset($_GET['ppsfwoo_export_table'], $_GET['_wpnonce'])) {
 
             return;
 
         }
 
-         if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
 
             wp_die("Security check failed");
 
@@ -69,9 +69,10 @@ class Database
 
     public static function install()
     {
-        if((new self("SHOW TABLES LIKE '{$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber';"))->result)
+        if ((new self("SHOW TABLES LIKE '{$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber';"))->result) {
 
             return;
+        }
 
         new self("CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber (
           id varchar(64) NOT NULL,
@@ -102,11 +103,14 @@ class Database
 
         $this_version = PluginMain::plugin_data('Version');
 
-        if($installed_version === $this_version) return;
+        if ($installed_version === $this_version) {
+            return;
+        }
 
         if (version_compare($installed_version, '2.4.1', '<')) {
 
-            new self("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
+            new self(
+                "ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
                 ADD COLUMN `expires` datetime DEFAULT NULL,
                 ADD INDEX `idx_expires` (`expires`);"
             );
@@ -114,7 +118,8 @@ class Database
 
         if (version_compare($installed_version, '2.4.2', '<')) {
 
-            new self("ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
+            new self(
+                "ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
                 MODIFY `expires` date,
                 DROP INDEX `idx_expires`,
                 ADD INDEX `idx_expires` (`expires`);"
@@ -130,7 +135,7 @@ class Database
         update_option('ppsfwoo_db_version', $this_version, false);
 
         wp_cache_delete('ppsfwoo_db_version', 'options');
-        
+
     }
 
     public static function export()
@@ -139,7 +144,7 @@ class Database
 
         $data = new self("SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber", [], ARRAY_A);
 
-        if(!isset($data->result[0])) {
+        if (!isset($data->result[0])) {
 
             exit;
 
@@ -151,15 +156,14 @@ class Database
 
         $values = [];
 
-        foreach ($data->result as $row)
-        {
-            $escaped_values = array_map(function($value) use ($wpdb) {
+        foreach ($data->result as $row) {
+            $escaped_values = array_map(function ($value) use ($wpdb) {
 
                 if (is_null($value)) {
 
                     return 'NULL';
 
-                } else if (ctype_digit($value)) {
+                } elseif (ctype_digit($value)) {
 
                     return $wpdb->prepare('%d', $value);
 

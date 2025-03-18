@@ -1,8 +1,10 @@
 <?php
-use PPSFWOO\Webhook,
-	PPSFWOO\PluginExtras;
+use PPSFWOO\Webhook;
+use PPSFWOO\PluginExtras;
 
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 ?>
 
@@ -12,9 +14,9 @@ if (!defined('ABSPATH')) exit;
 
 $webhooks = Webhook::get_instance()->list();
 
-if($webhooks && sizeof($webhooks)) {
+if ($webhooks && sizeof($webhooks)) {
 
-	self::display_template("table-webhooks", [
+    self::display_template("table-webhooks", [
         'webhooks' => $webhooks
     ]);
 
@@ -28,13 +30,13 @@ if($webhooks && sizeof($webhooks)) {
 <h3>Users and Capabilities</h3>
 
 <?php
-if(PPSFWOO_PLUGIN_EXTRAS) {
+if (PPSFWOO_PLUGIN_EXTRAS) {
 
-	PluginExtras::get_users_by_capabilities(true);
+    PluginExtras::get_users_by_capabilities(true);
 
 } else {
 
-	echo "<a href='" . esc_url(self::$upgrade_link) . "' target='_blank'>Pro feature</a>: Select custom capabilities for users.";
+    echo "<a href='" . esc_url(self::$upgrade_link) . "' target='_blank'>Pro feature</a>: Select custom capabilities for users.";
 
 }
 ?>

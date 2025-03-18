@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Subscriptions for Woo
  * Description: Enjoy recurring PayPal subscription payments leveraging WooCommerce and WooCommerce PayPal Payments
@@ -16,16 +17,17 @@
  */
 
 use WooCommerce\PayPalCommerce\PPCP;
+use PPSFWOO\PluginMain;
+use PPSFWOO\AjaxActionsPriv;
+use PPSFWOO\Product;
+use PPSFWOO\PluginExtras;
+use PPSFWOO\Enterprise;
+use PPSFWOO\Database;
+use PPSFWOO\Order;
 
-use PPSFWOO\PluginMain,
-	PPSFWOO\AjaxActionsPriv,
-	PPSFWOO\Product,
-	PPSFWOO\PluginExtras,
-	PPSFWOO\Enterprise,
-	PPSFWOO\Database,
-	PPSFWOO\Order;
-
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 require_once 'autoload.php';
 
@@ -47,46 +49,47 @@ add_action('upgrader_process_complete', [PluginMain::class, 'upgrader_process_co
 
 add_action('ppsfwoo_refresh_plans', [AjaxActionsPriv::class, 'refresh_plans']);
 
-add_action('plugins_loaded', function() {
+add_action('plugins_loaded', function () {
 
-	if(!class_exists(WC_Product::class) || !class_exists(PPCP::class)) {
+    if (!class_exists(WC_Product::class) || !class_exists(PPCP::class)) {
 
-		return;
+        return;
 
-	}
+    }
 
-	global $product;
+    global $product;
 
-	$ClassName = 'WC_Product_' . Product::TYPE;
+    $ClassName = 'WC_Product_' . Product::TYPE;
 
-	$ClassDefinition = new class($product) extends WC_Product
-	{
-	    public $product_type;
-		
-		public function __construct($product)
-		{
-			$this->product_type = Product::TYPE;
+    $ClassDefinition = new class ($product) extends WC_Product {
+        public $product_type;
 
-			parent::__construct($product);
-		}
-	};
+        public function __construct($product)
+        {
+            $this->product_type = Product::TYPE;
 
-	class_alias(get_class($ClassDefinition), $ClassName);
+            parent::__construct($product);
+        }
+    };
 
-	$PluginMain = PluginMain::get_instance();
+    class_alias(get_class($ClassDefinition), $ClassName);
 
-	Database::upgrade();
+    $PluginMain = PluginMain::get_instance();
 
-	register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$PluginMain, 'plugin_deactivation']);
+    Database::upgrade();
 
-	$PluginMain->add_actions();
+    register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$PluginMain, 'plugin_deactivation']);
 
-	$PluginMain->add_filters();
+    $PluginMain->add_actions();
 
-	new Product();
+    $PluginMain->add_filters();
 
-	new Order();
+    new Product();
 
-	if(PPSFWOO_PLUGIN_EXTRAS) { new PluginExtras(); };
+    new Order();
+
+    if (PPSFWOO_PLUGIN_EXTRAS) {
+        new PluginExtras();
+    };
 
 }, 11);

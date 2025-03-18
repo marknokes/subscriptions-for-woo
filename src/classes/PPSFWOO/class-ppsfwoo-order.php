@@ -2,15 +2,15 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Product,
-    PPSFWOO\Subscriber,
-    PPSFWOO\Database;
+use PPSFWOO\Product;
+use PPSFWOO\Subscriber;
+use PPSFWOO\Database;
 
 class Order
 {
     private static $order_total = 0;
 
-    private static $has_trial = NULL;
+    private static $has_trial = null;
 
     private static $tax_rate_data = [];
 
@@ -18,7 +18,7 @@ class Order
 
     private static $line_item_price = 0;
 
-    private static $Subscriber = NULL;
+    private static $Subscriber = null;
 
     public function __construct()
     {
@@ -27,12 +27,11 @@ class Order
 
     public static function exclude_from_subtotal($subtotal, $order)
     {
-        foreach ($order->get_items() as $item_id => $item)
-        {
+        foreach ($order->get_items() as $item_id => $item) {
             $exclude_from_order_total = $item->get_meta('exclude_from_order_total')['value'] ?? '';
 
             if ($exclude_from_order_total === 'yes') {
-                
+
                 $subtotal -= $item->get_subtotal();
 
             }
@@ -41,7 +40,7 @@ class Order
         return $subtotal;
     }
 
-	public static function get_order_id_by_subscription_id($subs_id)
+    public static function get_order_id_by_subscription_id($subs_id)
     {
         $results = new Database("SELECT `order_id` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber WHERE `id` = %s", [$subs_id]);
 
@@ -69,13 +68,12 @@ class Order
     {
         $has_subscription = false;
 
-        if(isset($order) && $order instanceof \WC_Order) {
+        if (isset($order) && $order instanceof \WC_Order) {
 
-            foreach ($order->get_items() as $item)
-            {
+            foreach ($order->get_items() as $item) {
                 $product = $item->get_product();
 
-                if($product->is_type(Product::TYPE)) {
+                if ($product->is_type(Product::TYPE)) {
 
                     $has_subscription = true;
 
@@ -93,10 +91,10 @@ class Order
     {
         $item = new \WC_Order_Item_Product();
 
-        if(1 === $sequence) {
+        if (1 === $sequence) {
 
             $start_time =  (new \DateTime(self::$Subscriber->subscription->start_time))->format('l, F j, Y');
-            
+
             $name = " $name starts $start_time";
 
         }
@@ -107,7 +105,7 @@ class Order
 
         $item->set_quantity(self::$quantity);
 
-        if($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
+        if ($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
 
             $item->set_total($total);
 
@@ -121,7 +119,7 @@ class Order
 
         }
 
-        if(0 === self::$line_item_price && $cycle['tenure_type'] === 'REGULAR') {
+        if (0 === self::$line_item_price && $cycle['tenure_type'] === 'REGULAR') {
 
             self::$line_item_price = $total / self::$quantity;
 
@@ -135,8 +133,7 @@ class Order
     {
         $items = [];
 
-        foreach (self::$Subscriber->plan->get_billing_cycles() as $cycle)
-        {
+        foreach (self::$Subscriber->plan->get_billing_cycles() as $cycle) {
             $sequence = intval($cycle['sequence']);
 
             if (isset($cycle['pricing_scheme']['fixed_price'])) {
@@ -146,13 +143,12 @@ class Order
                 $name = "{$cycle['tenure_type']} (period $sequence)";
 
                 $item = self::create_line_item($cycle, $price * self::$quantity, $sequence, $name);
-  
-                $items[$sequence] = $item;             
+
+                $items[$sequence] = $item;
 
             } elseif (isset($cycle['pricing_scheme']['pricing_model'])) {
 
-                foreach ($cycle['pricing_scheme']['tiers'] as $key => $tier)
-                {
+                foreach ($cycle['pricing_scheme']['tiers'] as $key => $tier) {
                     $ending_quantity = $tier['ending_quantity'] ?? INF;
 
                     if (self::$quantity >= $tier['starting_quantity'] && self::$quantity <= $ending_quantity) {
@@ -187,13 +183,13 @@ class Order
 
         $items = self::parse_billing_cycles();
 
-        if(
+        if (
             isset($payment_preferences['setup_fee']['value'])
             && $payment_preferences['setup_fee']['value'] > 0
         ) {
 
             $fee = new \WC_Order_Item_Fee();
-            
+
             $fee->set_name('One-time setup fee');
 
             $fee->set_total(floatval($payment_preferences['setup_fee']['value']));
@@ -207,8 +203,7 @@ class Order
 
         $order->add_product($product, self::$quantity);
 
-        foreach ($order->get_items() as $item)
-        {
+        foreach ($order->get_items() as $item) {
             $product = $item->get_product();
 
             if (self::$has_trial && $product && $product->exists()) {
@@ -225,32 +220,29 @@ class Order
         }
 
         // add additional line items to order
-        foreach($items as $sequence => $item)
-        {
+        foreach ($items as $sequence => $item) {
             self::set_taxes($item);
 
             $order->add_item($item);
         }
     }
 
-    public static function set_taxes($item, $tax_rate_data = NULL)
+    public static function set_taxes($item, $tax_rate_data = null)
     {
         $tax_rate_data = $tax_rate_data ?? self::$tax_rate_data;
 
         $taxes = \WC_Tax::get_rates_for_tax_class($tax_rate_data['tax_rate_slug']);
 
-        $found_rate = NULL;
+        $found_rate = null;
 
-        if($tax_rate_data['tax_rate'] === 0 || !empty($tax_rate_data['inclusive']) || !$taxes)
-        {
+        if ($tax_rate_data['tax_rate'] === 0 || !empty($tax_rate_data['inclusive']) || !$taxes) {
             $item->set_tax_class("");
 
             return;
         }
 
-        foreach ($taxes as $tax_rate_object)
-        {
-            if($tax_rate_data['tax_rate'] === $tax_rate_object->tax_rate) {
+        foreach ($taxes as $tax_rate_object) {
+            if ($tax_rate_data['tax_rate'] === $tax_rate_object->tax_rate) {
 
                 $found_rate = $tax_rate_object;
 
@@ -259,7 +251,7 @@ class Order
             }
         }
 
-        if(!isset($found_rate)) {
+        if (!isset($found_rate)) {
 
             $item->set_tax_class("");
 
@@ -274,14 +266,14 @@ class Order
             'compound' => $found_rate->tax_rate_compound ? 'yes' : 'no',
         ];
 
-        $get_subtotal = method_exists($item, 'get_subtotal') ? 'get_subtotal': 'get_total';
+        $get_subtotal = method_exists($item, 'get_subtotal') ? 'get_subtotal' : 'get_total';
 
         $taxes = \WC_Tax::calc_tax($item->get_total(), $tax_rates, false);
 
         $subtotal_taxes = \WC_Tax::calc_tax($item->$get_subtotal(), $tax_rates, false);
 
         $item->set_tax_class($tax_rate_data['tax_rate_slug']);
-        
+
         $item->set_taxes([
             'subtotal' => $subtotal_taxes,
             'total'    => $taxes,
@@ -289,7 +281,7 @@ class Order
     }
 
     public static function insert(Subscriber $Subscriber)
-    {   
+    {
         self::$Subscriber = $Subscriber;
 
         self::$tax_rate_data = self::$Subscriber->plan->get_tax_rate_data();

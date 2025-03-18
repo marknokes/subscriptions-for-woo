@@ -2,56 +2,55 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PayPal,
-    PPSFWOO\PluginMain;
+use PPSFWOO\PayPal;
+use PPSFWOO\PluginMain;
 
 class Plan
 {
-	public $env,
-           $id,
-		   $frequency,
-           $price,
-           $product_name,
-           $image_url,
-           $version,
-           $product_id,
-           $name,
-           $status,
-           $usage_type,
-           $billing_cycles,
-           $payment_preferences,
-           $taxes,
-           $quantity_supported,
-           $payee,
-           $create_time,
-           $update_time,
-           $links,
-           $description;
+    public $env;
+    public $id;
+    public $frequency;
+    public $price;
+    public $product_name;
+    public $image_url;
+    public $version;
+    public $product_id;
+    public $name;
+    public $status;
+    public $usage_type;
+    public $billing_cycles;
+    public $payment_preferences;
+    public $taxes;
+    public $quantity_supported;
+    public $payee;
+    public $create_time;
+    public $update_time;
+    public $links;
+    public $description;
 
-	public function __construct($id = NULL)
-	{
+    public function __construct($id = null)
+    {
         $this->env = PayPal::env()['env'];
 
         $this->id = $id;
 
-        $plan_data = PluginMain::get_option('ppsfwoo_plans')[$this->env][$this->id] ?? NULL;
+        $plan_data = PluginMain::get_option('ppsfwoo_plans')[$this->env][$this->id] ?? null;
 
-        if(!empty($plan_data)) {
+        if (!empty($plan_data)) {
 
-            foreach($plan_data as $response_key => $response_item)
-            {
+            foreach ($plan_data as $response_key => $response_item) {
 
                 $this->$response_key = $response_item;
 
             }
-            
+
             $this->frequency = $this->get_from_billing_cycles('frequency');
 
             $this->price = $this->get_from_billing_cycles('price');
 
             $this->product_name = $plan_data['product_name'] ?? "";
         }
-	}
+    }
 
     public function __call($name, $arguments)
     {
@@ -69,15 +68,14 @@ class Plan
         throw new \BadMethodCallException("Property " . esc_attr($name) . " does not exist.");
     }
 
-    private function get_from_billing_cycles($find, $response = NULL)
+    private function get_from_billing_cycles($find, $response = null)
     {
         $billing_cycles = $this->billing_cycles ?? $response['billing_cycles'] ?? $response ?? [];
-        
-        foreach ($billing_cycles as $cycle)
-        {
+
+        foreach ($billing_cycles as $cycle) {
             if ($cycle['tenure_type'] === 'REGULAR') {
 
-                if('price' === $find) {
+                if ('price' === $find) {
 
                     if (isset($cycle['pricing_scheme']['fixed_price'])) {
 
@@ -87,8 +85,7 @@ class Plan
 
                         $values = [];
 
-                        foreach ($cycle['pricing_scheme']['tiers'] as $tier)
-                        {
+                        foreach ($cycle['pricing_scheme']['tiers'] as $tier) {
                             $values[] = $tier['amount']['value'];
                         }
 
@@ -96,22 +93,22 @@ class Plan
 
                     }
 
-                } elseif('frequency' === $find) {
+                } elseif ('frequency' === $find) {
 
                     return $cycle['frequency']['interval_unit'];
 
                 }
             }
         }
-        
+
         return;
     }
 
-	public function modify_plan()
-	{
-		$response = ['error' => 'An unexpected error occurred.'];
+    public function modify_plan()
+    {
+        $response = ['error' => 'An unexpected error occurred.'];
 
-        if(
+        if (
             !isset($_POST['nonce'], $_POST['plan_id'], $_POST['paypal_action'])
             || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'modify_plan')
         ) {
@@ -126,24 +123,24 @@ class Plan
 
         try {
 
-            if($plan_id && $paypal_response = PayPal::request(PayPal::EP_PLANS . "$plan_id/$paypal_action", [], "POST")) {
+            if ($plan_id && $paypal_response = PayPal::request(PayPal::EP_PLANS . "$plan_id/$paypal_action", [], "POST")) {
 
-                if(PayPal::response_status_is($paypal_response, 204)) {
+                if (PayPal::response_status_is($paypal_response, 204)) {
 
                     $response = ['success' => true];
-                
+
                 }
 
             }
-            
-        } catch(\Exception $e) {
+
+        } catch (\Exception $e) {
 
             $response = ['error' => $e->getMessage()];
 
         }
 
         return $response;
-	}
+    }
 
     public function refresh_all()
     {
@@ -160,14 +157,13 @@ class Plan
                 ['Prefer' => 'return=representation']
             );
 
-            if($plan_data
+            if ($plan_data
                 && isset($plan_data['response']['plans'])
                 && count($plan_data['response']['plans']) > 0
             ) {
 
-                foreach($plan_data['response']['plans'] as $plan)
-                {
-                    if(PluginMain::get_option('ppsfwoo_hide_inactive_plans') && "ACTIVE" !== $plan['status']) {
+                foreach ($plan_data['response']['plans'] as $plan) {
+                    if (PluginMain::get_option('ppsfwoo_hide_inactive_plans') && "ACTIVE" !== $plan['status']) {
 
                         continue;
 
@@ -175,7 +171,7 @@ class Plan
 
                     $product_data = PayPal::request(PayPal::EP_PRODUCTS . $plan['product_id']);
 
-                    if(isset($plan['taxes'])) {
+                    if (isset($plan['taxes'])) {
 
                         $tax_rate_id = $this->insert_tax_rate(floatval($plan['taxes']['percentage']));
 
@@ -191,7 +187,7 @@ class Plan
                 $page++;
 
             } else {
-                
+
                 break;
 
             }
@@ -201,7 +197,7 @@ class Plan
         uasort($plans, function ($a, $b) {
             return strcmp($a['status'], $b['status']);
         });
-    
+
         PluginMain::clear_option_cache('ppsfwoo_plans');
 
         update_option('ppsfwoo_plans', [
@@ -219,16 +215,16 @@ class Plan
 
         $tax_rate = 0;
 
-        $inclusive = NULL;
+        $inclusive = null;
 
-        if($taxes = $this->get_taxes()) {
+        if ($taxes = $this->get_taxes()) {
 
-            if(isset($taxes)) {
+            if (isset($taxes)) {
 
                 $tax_rate = number_format($taxes['percentage'], 4) ?? 0;
 
                 $inclusive = !empty($taxes['inclusive']);
-                
+
             }
 
         }
@@ -251,10 +247,9 @@ class Plan
 
         $taxes = \WC_Tax::get_rates_for_tax_class($tax_rate_data['tax_rate_slug']);
 
-        if($taxes) {
+        if ($taxes) {
 
-            foreach ($taxes as $id => $tax_rate_object)
-            {
+            foreach ($taxes as $id => $tax_rate_object) {
                 if (
                     $tax_rate_object->tax_rate_class === $tax_rate_data['tax_rate_slug']
                     && $tax_rate_object->tax_rate === number_format($tax_rate, 4)
@@ -270,23 +265,24 @@ class Plan
             }
         }
 
-        if(!$taxes || $create_tax_rate) {
+        if (!$taxes || $create_tax_rate) {
 
-            if(!\WC_Tax::get_tax_class_by('name', $tax_rate_data['tax_rate_class'])) {
+            if (!\WC_Tax::get_tax_class_by('name', $tax_rate_data['tax_rate_class'])) {
 
                 \WC_Tax::create_tax_class($tax_rate_data['tax_rate_class'], $tax_rate_data['tax_rate_slug']);
 
             }
 
-            $tax_rate_id = \WC_Tax::_insert_tax_rate([
+            $tax_rate_id = \WC_Tax::_insert_tax_rate(
+                [
                 'tax_rate_country' => '*',
                 'tax_rate_state'   => '*',
                 'tax_rate'         => $tax_rate,
                 'tax_rate_name'    => 'Tax',
                 'tax_rate_class'   => $tax_rate_data['tax_rate_class'],
-                'tax_rate_priority'=> 1,
-                'tax_rate_compound'=> 0,
-                'tax_rate_shipping'=> 0,
+                'tax_rate_priority' => 1,
+                'tax_rate_compound' => 0,
+                'tax_rate_shipping' => 0,
                 'tax_rate_order'   => 1]
             );
         }
@@ -294,18 +290,17 @@ class Plan
         return $tax_rate_id;
     }
 
-	public static function get_plans()
-	{
+    public static function get_plans()
+    {
         $plan_objects = [];
 
         $plans = PluginMain::get_option('ppsfwoo_plans');
 
         $env = PayPal::env()['env'];
 
-        if($plans && isset($plans[$env])) {
+        if ($plans && isset($plans[$env])) {
 
-            foreach($plans[$env] as $plan_id => $plan)
-            {
+            foreach ($plans[$env] as $plan_id => $plan) {
 
                 $plan_objects[$plan_id] = new self($plan_id);
 
@@ -314,5 +309,5 @@ class Plan
         }
 
         return $plan_objects;
-	}
+    }
 }

@@ -2,7 +2,9 @@
 
 use PPSFWOO\Webhook;
 
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 ?>
 
@@ -17,11 +19,10 @@ if (!defined('ABSPATH')) exit;
 
     <?php
 
-    foreach ($results as $row)
-    {
+    foreach ($results as $row) {
         $user = get_user_by('id', $row->wp_customer_id);
 
-        if(!is_object($user)) {
+        if (!is_object($user)) {
 
             continue;
 
@@ -39,7 +40,7 @@ if (!defined('ABSPATH')) exit;
                 $class = "status orange";
                 break;
             case Webhook::CANCELLED:
-            case Webhook::PAYMENT_FAILED;
+            case Webhook::PAYMENT_FAILED:
             case Webhook::EXPIRED:
                 $class = "status red";
                 break;
@@ -71,6 +72,6 @@ if (!defined('ABSPATH')) exit;
 
     }
 
-    ?>
+?>
 
 </table>

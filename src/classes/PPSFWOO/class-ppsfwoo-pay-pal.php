@@ -2,33 +2,32 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain,
-    PPSFWOO\Exception,
-    PPSFWOO\Product;
-
-use WooCommerce\PayPalCommerce\PPCP,
-    WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer,
-    WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
+use PPSFWOO\PluginMain;
+use PPSFWOO\Exception;
+use PPSFWOO\Product;
+use WooCommerce\PayPalCommerce\PPCP;
+use WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer;
+use WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
 
 class PayPal
 {
-    const EP_SUBSCRIPTIONS  = "/v1/billing/subscriptions/";
+    public const EP_SUBSCRIPTIONS  = "/v1/billing/subscriptions/";
 
-    const EP_PLANS          = "/v1/billing/plans/";
+    public const EP_PLANS          = "/v1/billing/plans/";
 
-    const EP_PRODUCTS       = "/v1/catalogs/products/";
+    public const EP_PRODUCTS       = "/v1/catalogs/products/";
 
-    const EP_WEBHOOKS       = "/v1/notifications/webhooks/";
+    public const EP_WEBHOOKS       = "/v1/notifications/webhooks/";
 
-    const EP_VERIFY_SIG     = "/v1/notifications/verify-webhook-signature";
+    public const EP_VERIFY_SIG     = "/v1/notifications/verify-webhook-signature";
 
-    public static function button($product_id = NULL)
+    public static function button($product_id = null)
     {
-        $product_id = !empty($product_id) ? $product_id: get_the_ID();
-        
+        $product_id = !empty($product_id) ? $product_id : get_the_ID();
+
         $product = wc_get_product($product_id);
 
-        if($product && !$product->is_type(Product::TYPE)) {
+        if ($product && !$product->is_type(Product::TYPE)) {
 
             return;
 
@@ -40,7 +39,7 @@ class PayPal
             'ppsfwoo-paypal-sdk',
             "https://www.paypal.com/sdk/js?client-id=$client_id&vault=true&intent=subscription",
             [],
-            null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion 
+            null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
             true
         );
 
@@ -60,17 +59,17 @@ class PayPal
                     ppsfwooInitializePayPalSubscription($product_id, this);
                 });
         ");
-        
+
         PluginMain::display_template("paypal-button", [
             'button_text' => PluginMain::get_option('ppsfwoo_button_text'),
             'product_id' => $product_id
         ]);
     }
 
-	public static function env()
+    public static function env()
     {
         $ppcp = new PPCP();
-                    
+
         $container = $ppcp->container();
 
         $settings = $container->get('wcgateway.settings');
@@ -78,10 +77,10 @@ class PayPal
         $sandbox_on = $settings->has('sandbox_on') && $settings->get('sandbox_on');
 
         $env = [
-            'paypal_api_url' => $sandbox_on ? 'https://api-m.sandbox.paypal.com': 'https://api-m.paypal.com',
-            'paypal_url'     => $sandbox_on ? 'https://www.sandbox.paypal.com': 'https://www.paypal.com',
-            'client_id'      => $settings->has('client_id') && $settings->get('client_id') ? $settings->get('client_id'): '',
-            'env'            => $sandbox_on ? 'sandbox': 'production'
+            'paypal_api_url' => $sandbox_on ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com',
+            'paypal_url'     => $sandbox_on ? 'https://www.sandbox.paypal.com' : 'https://www.paypal.com',
+            'client_id'      => $settings->has('client_id') && $settings->get('client_id') ? $settings->get('client_id') : '',
+            'env'            => $sandbox_on ? 'sandbox' : 'production'
         ];
 
         return $env;
@@ -92,12 +91,12 @@ class PayPal
         return isset($response['status']) && $status === $response['status'];
     }
 
-	public static function access_token($log_error = true)
+    public static function access_token($log_error = true)
     {
         try {
-            
+
             $ppcp = new PPCP();
-                    
+
             $container = $ppcp->container();
 
             $PayPalBearer = new PayPalBearer(
@@ -111,9 +110,9 @@ class PayPal
 
             return $PayPalBearer->bearer()->token();
 
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
 
-            if($log_error) {
+            if ($log_error) {
 
                 Exception::log($e);
 
@@ -124,12 +123,12 @@ class PayPal
         }
     }
 
-	public static function request($api, $payload = [], $method = "GET", $additional_headers = [])
+    public static function request($api, $payload = [], $method = "GET", $additional_headers = [])
     {
-        if(empty(self::env()['client_id']) || !$token = self::access_token()) {
+        if (empty(self::env()['client_id']) || !$token = self::access_token()) {
 
             return false;
-            
+
         }
 
         $args = [
@@ -143,9 +142,9 @@ class PayPal
 
         $url = self::env()['paypal_api_url'] . $api;
 
-        if($payload) {
+        if ($payload) {
 
-            if("GET" === $method) {
+            if ("GET" === $method) {
 
                 $url = add_query_arg($payload, $url);
 
@@ -190,22 +189,21 @@ class PayPal
     {
         $request_body = json_decode(file_get_contents('php://input'));
 
-        if ($request_body === NULL && json_last_error() !== JSON_ERROR_NONE) {
-            
+        if ($request_body === null && json_last_error() !== JSON_ERROR_NONE) {
+
             return false;
 
         }
 
         $headers = array_change_key_case(getallheaders(), CASE_UPPER);
 
-        if(
+        if (
             (!array_key_exists('PAYPAL-AUTH-ALGO', $headers)) ||
             (!array_key_exists('PAYPAL-TRANSMISSION-ID', $headers)) ||
             (!array_key_exists('PAYPAL-CERT-URL', $headers)) ||
             (!array_key_exists('PAYPAL-TRANSMISSION-SIG', $headers)) ||
-            (!array_key_exists('PAYPAL-TRANSMISSION-TIME', $headers)) 
-        )
-        {
+            (!array_key_exists('PAYPAL-TRANSMISSION-TIME', $headers))
+        ) {
             return false;
         }
 
@@ -219,7 +217,7 @@ class PayPal
             'webhook_event'     => $request_body
         ], "POST");
 
-        $success = isset($response['response']['verification_status']) ? $response['response']['verification_status']: false;
+        $success = isset($response['response']['verification_status']) ? $response['response']['verification_status'] : false;
 
         return $success === "SUCCESS";
     }

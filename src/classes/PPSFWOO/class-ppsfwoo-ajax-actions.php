@@ -2,27 +2,27 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Product,
-    PPSFWOO\Subscriber,
-    PPSFWOO\Exception;
+use PPSFWOO\Product;
+use PPSFWOO\Subscriber;
+use PPSFWOO\Exception;
 
 class AjaxActions
 {
     // phpcs:disable
-	public function admin_ajax_callback()
-    {  
-        $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])): "";
+    public function admin_ajax_callback()
+    {
+        $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])) : "";
 
-        if(method_exists($this, $method)) {
-            
+        if (method_exists($this, $method)) {
+
             echo call_user_func([$this, $method]);
 
-        } else if(has_action($method)) {
+        } elseif (has_action($method)) {
 
             do_action($method);
 
         } else {
-            
+
             echo "";
 
             Exception::log(__CLASS__ . "->$method does not exist.");
@@ -51,16 +51,16 @@ class AjaxActions
 
         }
 
-        if($is_ajax) {
+        if ($is_ajax) {
 
             // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $product_id = isset($_POST['product_id']) ? absint($_POST['product_id']): NULL;
+            $product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : null;
 
-            $plan_id = get_post_meta($product_id, Product::get_plan_id_meta_key(), true) ?? NULL;
+            $plan_id = get_post_meta($product_id, Product::get_plan_id_meta_key(), true) ?? null;
 
-            $Plan = isset($product_id, $plan_id) ? new Plan($plan_id): NULL;
+            $Plan = isset($product_id, $plan_id) ? new Plan($plan_id) : null;
 
-            if(isset($Plan)) {
+            if (isset($Plan)) {
 
                 $response = [
                     'nonce'     => wp_create_nonce($nonce_name),
@@ -85,7 +85,7 @@ class AjaxActions
 
     protected function get_sub()
     {
-        if(!isset($_POST['nonce'], $_POST['id']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'ajax_get_sub')) {
+        if (!isset($_POST['nonce'], $_POST['id']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'ajax_get_sub')) {
 
             wp_die('Security check failed.');
 
@@ -100,9 +100,9 @@ class AjaxActions
         $logged_error = false;
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $message = isset($_POST['message'], $_POST['method']) && $_POST['method'] === __FUNCTION__ ? sanitize_text_field(wp_unslash($_POST['message'])): false;
-        
-        if($message) {
+        $message = isset($_POST['message'], $_POST['method']) && $_POST['method'] === __FUNCTION__ ? sanitize_text_field(wp_unslash($_POST['message'])) : false;
+
+        if ($message) {
 
             Exception::log("PayPal subscription button error: $message");
 

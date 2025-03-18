@@ -2,15 +2,15 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain,
-    PPSFWOO\Plan,
-    PPSFWOO\AjaxActions;
+use PPSFWOO\PluginMain;
+use PPSFWOO\Plan;
+use PPSFWOO\AjaxActions;
 
 class AjaxActionsPriv extends AjaxActions
 {
     protected function modify_plan()
     {
-        if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
+        if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
             return wp_json_encode([
                 'error' => 'Insufficient permissions.'
@@ -22,7 +22,7 @@ class AjaxActionsPriv extends AjaxActions
 
         $response = $Plan->modify_plan();
 
-        if(isset($response['success']) && true === $response['success']) {
+        if (isset($response['success']) && true === $response['success']) {
 
             $Plan->refresh_all();
 
@@ -35,7 +35,7 @@ class AjaxActionsPriv extends AjaxActions
     {
         $wait = 10;
 
-        if(true === get_transient('ppsfwoo_refresh_plans_ran')) {
+        if (true === get_transient('ppsfwoo_refresh_plans_ran')) {
 
             return wp_json_encode([
                 'error' => 'Please wait at least ' . absint($wait) . ' seconds and try again.'
@@ -43,7 +43,7 @@ class AjaxActionsPriv extends AjaxActions
 
         }
 
-        if(defined('\DOING_AJAX')
+        if (defined('\DOING_AJAX')
             && \DOING_AJAX
             && !is_super_admin()
             && !current_user_can('ppsfwoo_manage_settings')
@@ -69,7 +69,7 @@ class AjaxActionsPriv extends AjaxActions
 
     protected function search_subscribers()
     {
-        if(!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
+        if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
             return wp_json_encode([
                 'error' => 'Insufficient permissions.'
@@ -85,9 +85,9 @@ class AjaxActionsPriv extends AjaxActions
 
         }
 
-        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])): "";
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : "";
 
-        if(empty($email)) { 
+        if (empty($email)) {
 
             return wp_json_encode([
                 'error' => 'Email address is empty.'
@@ -97,7 +97,7 @@ class AjaxActionsPriv extends AjaxActions
 
         $data = PluginMain::get_instance()->subscriber_table_options_page($email);
 
-        if(!$data['num_subs']) {
+        if (!$data['num_subs']) {
 
             return wp_json_encode([
                 'error' => 'No subscribers with that email address.'

@@ -4,7 +4,9 @@ function ppsfwoo_autoload($class_name)
 {
     $namespace = 'PPSFWOO\\';
 
-    if(strpos($class_name, $namespace) !== 0) return;
+    if (strpos($class_name, $namespace) !== 0) {
+        return;
+    }
 
     $class_name = substr($class_name, strlen($namespace));
 
@@ -17,6 +19,6 @@ function ppsfwoo_autoload($class_name)
     if (file_exists($file)) {
 
         require_once $file;
-        
+
     }
 }

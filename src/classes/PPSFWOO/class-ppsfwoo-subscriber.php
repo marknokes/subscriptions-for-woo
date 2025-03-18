@@ -2,34 +2,34 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Product,
-    PPSFWOO\Plan,
-    PPSFWOO\Order,
-    PPSFWOO\Webhook,
-    PPSFWOO\Database,
-    PPSFWOO\Exception,
-    PPSFWOO\PayPal;
+use PPSFWOO\Product;
+use PPSFWOO\Plan;
+use PPSFWOO\Order;
+use PPSFWOO\Webhook;
+use PPSFWOO\Database;
+use PPSFWOO\Exception;
+use PPSFWOO\PayPal;
 
 class Subscriber
 {
     public \stdClass $subscription;
 
-    public $event_type,
-           $user_id,
-           $email,
-           $first_name,
-           $last_name,
-           $address_line_1,
-           $address_line_2,
-           $city,
-           $state,
-           $postal_code,
-           $country_code,
-           $plan;
+    public $event_type;
+    public $user_id;
+    public $email;
+    public $first_name;
+    public $last_name;
+    public $address_line_1;
+    public $address_line_2;
+    public $city;
+    public $state;
+    public $postal_code;
+    public $country_code;
+    public $plan;
 
-	public function __construct($subscription, $event_type = NULL)
+    public function __construct($subscription, $event_type = null)
     {
-        $type = isset($subscription['response']) ? "response": "resource";
+        $type = isset($subscription['response']) ? "response" : "resource";
 
         $this->subscription = (object) $subscription[$type];
 
@@ -37,11 +37,11 @@ class Subscriber
 
         $this->subscription->last_payment = !empty($this->subscription->billing_info['last_payment']['time'])
             ? new \DateTime($this->subscription->billing_info['last_payment']['time'])
-            : NULL;
+            : null;
 
         $this->subscription->next_billing = !empty($this->subscription->billing_info['next_billing_time'])
             ? new \DateTime($this->subscription->billing_info['next_billing_time'])
-            : NULL;
+            : null;
 
         $expiration = $this->add_frequency_to_last_payment(
             $this->subscription->last_payment,
@@ -51,7 +51,7 @@ class Subscriber
         $this->subscription->expiration = $expiration
             ?? $this->subscription->next_billing
             ?? new \DateTime();
-        
+
         $this->email            = $this->subscription->subscriber['email_address'];
 
         $this->first_name       = $this->subscription->subscriber['name']['given_name'];
@@ -76,7 +76,9 @@ class Subscriber
 
     protected static function add_frequency_to_last_payment($datetime, $interval_type)
     {
-        if(empty($datetime)) return NULL;
+        if (empty($datetime)) {
+            return null;
+        }
 
         $intervals = [
             'DAY'   => 'P1D',
@@ -110,12 +112,12 @@ class Subscriber
 
     public static function get($subs_id)
     {
-        if(!isset($subs_id)) {
+        if (!isset($subs_id)) {
 
             return esc_attr("false");
 
         }
-        
+
         $redirect = false;
 
         $query = "SELECT `wp_customer_id`
@@ -125,7 +127,7 @@ class Subscriber
 
         $results = new Database($query, [$subs_id]);
 
-        $order_id = $results->result[0]->order_id ?? NULL;
+        $order_id = $results->result[0]->order_id ?? null;
 
         if ($order_id && $order = wc_get_order($order_id)) {
 
@@ -141,12 +143,12 @@ class Subscriber
 
             }
 
-        } else if(
+        } elseif (
             false !== get_transient('ppsfwoo_customer_nonce')
             && $response = PayPal::request(PayPal::EP_SUBSCRIPTIONS . $subs_id)
         ) {
 
-            if(self::is_active($response)) {
+            if (self::is_active($response)) {
 
                 delete_transient('ppsfwoo_customer_nonce');
 
@@ -156,7 +158,7 @@ class Subscriber
             }
         }
 
-        return $redirect ? esc_url($redirect): esc_attr("false");
+        return $redirect ? esc_url($redirect) : esc_attr("false");
     }
 
     public static function is_active($response)
@@ -166,11 +168,11 @@ class Subscriber
 
     private function insert()
     {
-        $wp_user = !empty($this->email) ? get_user_by('email', $this->email): false;
+        $wp_user = !empty($this->email) ? get_user_by('email', $this->email) : false;
 
         $this->user_id = $wp_user->ID ?? false;
 
-        if(!$this->user_id) {
+        if (!$this->user_id) {
 
             $this->user_id = $this->create_wp_user();
 
@@ -180,7 +182,7 @@ class Subscriber
 
         $order_id = Order::get_order_id_by_subscription_id($this->get_id());
 
-        if(false === $order_id) {
+        if (false === $order_id) {
 
             $result = new Database(
                 "INSERT INTO {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber (
@@ -217,20 +219,20 @@ class Subscriber
             Product::update_download_permissions($order_id);
         }
 
-        $errors = isset($result->result['error']) ? $result->result['error']: false;
+        $errors = isset($result->result['error']) ? $result->result['error'] : false;
 
         return [
             'errors' => $errors,
-            'action' => false === $order_id ? 'insert': 'update'
+            'action' => false === $order_id ? 'insert' : 'update'
         ];
     }
 
     public function cancel()
-    {   
+    {
         $expiration = $this->subscription->expiration->format('Y-m-d');
 
-        if($order_id = Order::get_order_id_by_subscription_id($this->get_id())) {
-        
+        if ($order_id = Order::get_order_id_by_subscription_id($this->get_id())) {
+
             Product::update_download_permissions($order_id, $expiration);
 
         }
@@ -249,7 +251,7 @@ class Subscriber
             ]
         );
 
-        $errors = isset($result->result['error']) ? $result->result['error']: false;
+        $errors = isset($result->result['error']) ? $result->result['error'] : false;
 
         return [
             'errors' => $errors
@@ -260,7 +262,7 @@ class Subscriber
     {
         $response = $this->insert();
 
-        if(false === $response['errors'] && 'insert' === $response['action']) {
+        if (false === $response['errors'] && 'insert' === $response['action']) {
 
             $order_id = Order::insert($this);
 

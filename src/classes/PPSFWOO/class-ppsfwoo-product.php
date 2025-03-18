@@ -2,30 +2,30 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain,
-    PPSFWOO\Database,
-    PPSFWOO\PayPal,
-    PPSFWOO\Plan;
+use PPSFWOO\PluginMain;
+use PPSFWOO\Database;
+use PPSFWOO\PayPal;
+use PPSFWOO\Plan;
 
 class Product
 {
-    const TYPE = "subscription";
+    public const TYPE = "subscription";
 
-    private $plan_id_meta_key,
-            $env;
+    private $plan_id_meta_key;
+    private $env;
 
-	public function __construct()
+    public function __construct()
     {
         $this->env = PayPal::env();
 
         $this->plan_id_meta_key = self::get_plan_id_meta_key($this->env);
 
-    	$this->add_actions();
+        $this->add_actions();
 
-    	$this->add_filters();
+        $this->add_filters();
     }
 
-    public static function get_plan_id_meta_key($env = NULL)
+    public static function get_plan_id_meta_key($env = null)
     {
         $env = $env ?? PayPal::env();
 
@@ -36,12 +36,12 @@ class Product
     {
         add_action('woocommerce_product_meta_start', [PayPal::class, 'button']);
 
-		add_action('admin_head', [$this, 'edit_product_css']);
+        add_action('admin_head', [$this, 'edit_product_css']);
 
         add_action('woocommerce_admin_order_data_after_order_details', [$this, 'edit_product_css'], 10, 1);
-        
+
         add_action('woocommerce_product_data_panels', [$this, 'options_product_tab_content']);
-        
+
         add_action('woocommerce_process_product_meta_' . self::TYPE, [$this, 'save_option_field']);
 
         add_action('admin_footer', [$this, 'custom_js']);
@@ -49,7 +49,7 @@ class Product
 
     private function add_filters()
     {
-    	add_filter('woocommerce_get_price_html', [$this, 'change_product_price_display']);
+        add_filter('woocommerce_get_price_html', [$this, 'change_product_price_display']);
 
         add_filter('product_type_selector', [$this, 'add_product']);
 
@@ -79,19 +79,19 @@ class Product
                             price = selectedOption.data('price').replace('$', '');
                         $('#_regular_price').val(price);
                         <?php
-                        if($tax_class_exists) {
+                        if ($tax_class_exists) {
                             ?>$('#_tax_class').val("<?php echo esc_attr($tax_rate_slug); ?>");<?php
                         }
-                        ?>
+        ?>
                     });
             });
 
         </script><?php
     }
 
-	public static function add_product($types)
+    public static function add_product($types)
     {
-        if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
+        if (PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
 
             return $types;
         }
@@ -103,11 +103,11 @@ class Product
 
     public static function custom_product_tabs($tabs)
     {
-        if(PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
+        if (PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
 
             return $tabs;
         }
-        
+
         $tabs[self::TYPE] = [
             'label'     => 'Subscription Plan',
             'target'    => 'ppsfwoo_options',
@@ -132,52 +132,51 @@ class Product
 
                 $selected_plan_id = get_post_meta($post->ID, $this->plan_id_meta_key, true);
 
-                $plans = Plan::get_plans();
+        $plans = Plan::get_plans();
 
-                if($plans && !isset($plans['000'])) {
+        if ($plans && !isset($plans['000'])) {
 
-                    $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+            $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
 
-                    $options = "<option value=''>Select a plan [" . $this->env['env'] . "]</option>";
+            $options = "<option value=''>Select a plan [" . $this->env['env'] . "]</option>";
 
-                    foreach($plans as $plan_id => $plan)
-                    {
-                        if("ACTIVE" !== $plan->status) {
+            foreach ($plans as $plan_id => $plan) {
+                if ("ACTIVE" !== $plan->status) {
 
-                            unset($plans[$plan_id]);
+                    unset($plans[$plan_id]);
 
-                        } else {
+                } else {
 
-                            $selected = $selected_plan_id === $plan_id ? 'selected': '';
+                    $selected = $selected_plan_id === $plan_id ? 'selected' : '';
 
-                            $options .= '<option value="' . esc_attr($plan_id) . '" ' . $selected . ' data-price="' . esc_attr($formatter->formatCurrency($plan->price, 'USD')) . '">' . esc_html("{$plan->name} [{$plan->product_name}] [{$plan->frequency}]") . '</option>';
+                    $options .= '<option value="' . esc_attr($plan_id) . '" ' . $selected . ' data-price="' . esc_attr($formatter->formatCurrency($plan->price, 'USD')) . '">' . esc_html("{$plan->name} [{$plan->product_name}] [{$plan->frequency}]") . '</option>';
 
-                        }
+                }
 
-                    }
+            }
 
-                    wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false);
+            wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false);
 
-                    ?>
+            ?>
                     <p class="form-field">
                         <label for="<?php echo esc_attr($this->plan_id_meta_key); ?>">PayPal Subscription Plan</label>
                         <select id="<?php echo esc_attr($this->plan_id_meta_key); ?>" name="<?php echo esc_attr($this->plan_id_meta_key); ?>">
                             <?php
-                            echo wp_kses($options, [
-                                'option' => [
-                                    'value'      => [],
-                                    'selected'   => [],
-                                    'data-price' => []
-                                ]
-                            ]);
-                            ?>
+                    echo wp_kses($options, [
+                        'option' => [
+                            'value'      => [],
+                            'selected'   => [],
+                            'data-price' => []
+                        ]
+                    ]);
+            ?>
                         </select>
                     </p>
                     <?php
-                    
-                } else {
 
-                    ?>
+        } else {
+
+            ?>
 
                     <h3 style="padding: 2em">
 
@@ -189,18 +188,18 @@ class Product
 
                 <?php
 
-                }
+        }
 
-            ?></div>
+        ?></div>
 
         </div><?php
     }
 
-    public static function edit_product_css($order = NULL)
+    public static function edit_product_css($order = null)
     {
         $screen = get_current_screen();
 
-        if($screen->post_type === 'product') {
+        if ($screen->post_type === 'product') {
 
             ?>
             <script type="text/javascript">
@@ -211,7 +210,7 @@ class Product
             </script>
             <?php
 
-        } else if(isset($order) && $screen->post_type === 'shop_order' && Order::has_subscription($order)) {
+        } elseif (isset($order) && $screen->post_type === 'shop_order' && Order::has_subscription($order)) {
 
             ?>
             <script type="text/javascript">
@@ -242,7 +241,7 @@ class Product
 
     public static function get_product_id_by_plan_id($plan_id)
     {
-        $query = new \WP_Query ([
+        $query = new \WP_Query([
             'post_type'      => 'product',
             'posts_per_page' => 1,
             'post_status'    => array_values(get_post_stati()),
@@ -257,22 +256,22 @@ class Product
 
         $products = $query->get_posts();
 
-        return $products ? $products[0]->ID: 0;
+        return $products ? $products[0]->ID : 0;
     }
 
-	public function change_product_price_display($price)
+    public function change_product_price_display($price)
     {
         global $product;
 
-        $product_id = $product ? $product->get_id(): false;
+        $product_id = $product ? $product->get_id() : false;
 
-        if(empty($price) || false === $product_id || !$product->is_type(self::TYPE)) {
+        if (empty($price) || false === $product_id || !$product->is_type(self::TYPE)) {
 
             return $price;
 
         }
 
-        $plan_id = get_post_meta($product_id, $this->plan_id_meta_key, true) ?? NULL;
+        $plan_id = get_post_meta($product_id, $this->plan_id_meta_key, true) ?? null;
 
         $Plan = new Plan($plan_id);
 
@@ -284,8 +283,7 @@ class Product
 
             $span = $dom->getElementsByTagName('span');
 
-            foreach ($span as $tag)
-            {
+            foreach ($span as $tag) {
                 $current = $tag->nodeValue;
 
                 $new = $current . "/" . ucfirst(strtolower($Plan->frequency));
@@ -305,30 +303,28 @@ class Product
 
             $order = wc_get_order($order_id);
 
-            if(!$order) {
+            if (!$order) {
 
                 return;
 
             }
 
-            foreach ($order->get_items() as $item)
-            {
-                $product = $item->get_product(); 
+            foreach ($order->get_items() as $item) {
+                $product = $item->get_product();
 
                 if ($product && $product->exists() && $product->is_downloadable()) {
-                    
+
                     $downloads = $product->get_downloads();
 
-                    foreach (array_keys($downloads) as $download_id)
-                    {
-                        if(!empty($access_expires)) {
+                    foreach (array_keys($downloads) as $download_id) {
+                        if (!empty($access_expires)) {
 
                             new Database(
                                 "UPDATE {$GLOBALS['wpdb']->base_prefix}woocommerce_downloadable_product_permissions
                                  SET `access_expires` = %s
                                  WHERE `download_id` = %s
                                  AND `order_id` = %d;",
-                                [   
+                                [
                                     $access_expires,
                                     $download_id,
                                     $order_id
@@ -349,8 +345,8 @@ class Product
                             );
 
                         }
-                    } 
-                } 
+                    }
+                }
             }
         }
     }

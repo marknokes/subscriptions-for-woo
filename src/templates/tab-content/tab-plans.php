@@ -1,7 +1,9 @@
 <?php
 use PPSFWOO\Plan;
 
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 ?>
 
@@ -11,11 +13,11 @@ if (!defined('ABSPATH')) exit;
 
 $plans = Plan::get_plans();
 
-if(sizeof($plans)) {
+if (sizeof($plans)) {
 
-	self::display_template("table-plans", [
+    self::display_template("table-plans", [
         'plans'      => $plans,
-    	'paypal_url' => $this->env['paypal_url']
+        'paypal_url' => $this->env['paypal_url']
     ]);
 
 }

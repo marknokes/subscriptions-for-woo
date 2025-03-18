@@ -1,4 +1,6 @@
-<?php if (!defined('ABSPATH')) exit; ?>
+<?php if (!defined('ABSPATH')) {
+    exit;
+} ?>
 
 <table id="plans" class="pp-inner-table">
 	<tr>
@@ -12,19 +14,18 @@
 		<th>Modify</th>
 	</tr>
 	<?php
-	if(!isset($plans['000'])) {
+    if (!isset($plans['000'])) {
 
-		foreach ($plans as $plan_id => $plan)
-		{
-			$plan_active = "ACTIVE" === $plan->status;
+        foreach ($plans as $plan_id => $plan) {
+            $plan_active = "ACTIVE" === $plan->status;
 
-			$paypal_action = $plan_active ? 'deactivate': 'activate';
+            $paypal_action = $plan_active ? 'deactivate' : 'activate';
 
-			$status_indicator = $plan_active ? 'green': 'red';
+            $status_indicator = $plan_active ? 'green' : 'red';
 
-			$formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+            $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
 
-			?>
+            ?>
 			<tr class="plan-row">
 				<td><a href='<?php echo esc_url($paypal_url); ?>/billing/plans/<?php echo esc_attr($plan_id); ?>' target='_blank'><?php echo esc_html($plan_id); ?></a></td>
 				<td><?php echo esc_html($plan->name); ?></td>
@@ -39,8 +40,8 @@
 				<td><a href='#' class='<?php echo esc_attr($paypal_action); ?>' data-plan-id='<?php echo esc_attr($plan_id); ?>' data-nonce='<?php echo esc_attr(wp_create_nonce('modify_plan')); ?>'><?php echo esc_html(ucfirst($paypal_action)); ?></a></td>
 			</tr>
 		<?php
-		}
-		
-	}
-	?>
+        }
+
+    }
+?>
 </table>
