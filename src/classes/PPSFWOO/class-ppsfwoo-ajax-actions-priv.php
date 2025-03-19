@@ -8,6 +8,11 @@ use PPSFWOO\AjaxActions;
 
 class AjaxActionsPriv extends AjaxActions
 {
+    /**
+    * Modifies the current plan.
+     *
+     * @return string JSON-encoded response from the Plan class.
+    */
     protected function modify_plan()
     {
         if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
@@ -30,7 +35,11 @@ class AjaxActionsPriv extends AjaxActions
 
         return wp_json_encode($response);
     }
-
+    /**
+    * Refreshes all plans.
+     *
+     * @return string JSON-encoded response with success and length properties.
+    */
     public static function refresh_plans()
     {
         $wait = 10;
@@ -66,7 +75,11 @@ class AjaxActionsPriv extends AjaxActions
             "length"   => sizeof($plans)
         ]);
     }
-
+    /**
+    * Searches for subscribers by email address.
+     *
+     * @return string JSON-encoded response containing either an error message or HTML of subscriber data.
+    */
     protected function search_subscribers()
     {
         if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {

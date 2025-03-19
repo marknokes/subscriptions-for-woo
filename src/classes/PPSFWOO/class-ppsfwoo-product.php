@@ -9,11 +9,31 @@ use PPSFWOO\Plan;
 
 class Product
 {
+    /**
+    * WooCommerce product type
+     *
+     * @var string
+    */
     public const TYPE = "subscription";
-
-    private $plan_id_meta_key;
+    /**
+    * Meta key saved with each product. Value is plan id.
+     *
+     * @var string
+    */
+    private $plan_id_meta_key = null;
+    /**
+    * PayPal environment information
+     *
+     * @var array
+    */
     private $env;
-
+    /**
+    * Constructor for the PayPal class.
+     * Initializes the class by setting the environment and plan ID meta key,
+     * and adding necessary actions and filters.
+     *
+     * @return void
+    */
     public function __construct()
     {
         $this->env = PayPal::env();
@@ -24,14 +44,25 @@ class Product
 
         $this->add_filters();
     }
-
+    /**
+    * Returns the meta key used for storing the PayPal plan ID in the specified environment.
+     * If no environment is specified, the default environment from the PayPal class will be used.
+     *
+     * @param string|null $env The environment for which the meta key should be retrieved.
+     * @return string The meta key for the specified environment.
+    */
     public static function get_plan_id_meta_key($env = null)
     {
         $env = $env ?? PayPal::env();
 
         return "{$env['env']}_ppsfwoo_plan_id";
     }
-
+    /**
+    * Adds necessary actions for the plugin to function properly.
+     *
+     * @since 1.0.0
+     * @access private
+    */
     private function add_actions()
     {
         add_action('woocommerce_product_meta_start', [PayPal::class, 'button']);
@@ -46,7 +77,11 @@ class Product
 
         add_action('admin_footer', [$this, 'custom_js']);
     }
-
+    /**
+    * Adds filters to modify product price display, add product types, and customize product data tabs.
+     *
+     * @return void
+    */
     private function add_filters()
     {
         add_filter('woocommerce_get_price_html', [$this, 'change_product_price_display']);
@@ -55,7 +90,11 @@ class Product
 
         add_filter('woocommerce_product_data_tabs', [$this, 'custom_product_tabs']);
     }
-
+    /**
+    * Generates custom JavaScript for product page.
+     *
+     * @return void
+    */
     public function custom_js()
     {
         if ('product' !== get_post_type()) {
@@ -88,7 +127,12 @@ class Product
 
         </script><?php
     }
-
+    /**
+    * Adds the "Subscription" product type to the given array of product types.
+     *
+     * @param array $types An array of product types.
+     * @return array The updated array of product types.
+    */
     public static function add_product($types)
     {
         if (PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
@@ -100,7 +144,12 @@ class Product
 
         return $types;
     }
-
+    /**
+    * Adds a custom tab for subscription plans to the product page.
+     *
+     * @param array $tabs The existing product tabs.
+     * @return array The updated product tabs.
+    */
     public static function custom_product_tabs($tabs)
     {
         if (PPSFWOO_PLUGIN_EXTRAS && !current_user_can('ppsfwoo_manage_subscription_products')) {
@@ -119,7 +168,11 @@ class Product
 
         return $tabs;
     }
-
+    /**
+    * Displays the options for the product tab content.
+     *
+     * @global $post
+    */
     public function options_product_tab_content()
     {
         global $post;
@@ -141,6 +194,7 @@ class Product
             $options = "<option value=''>Select a plan [" . $this->env['env'] . "]</option>";
 
             foreach ($plans as $plan_id => $plan) {
+
                 if ("ACTIVE" !== $plan->status) {
 
                     unset($plans[$plan_id]);
@@ -194,7 +248,11 @@ class Product
 
         </div><?php
     }
-
+    /**
+    * Edits the CSS for the product page and order page if there is a subscription.
+     *
+     * @param int|null $order Optional. The order ID. Default null.
+    */
     public static function edit_product_css($order = null)
     {
         $screen = get_current_screen();
@@ -222,7 +280,12 @@ class Product
 
         }
     }
-
+    /**
+    * Saves the option field for a given product ID.
+     *
+     * @param int $product_id The ID of the product to save the option field for.
+     * @return void
+    */
     public function save_option_field($product_id)
     {
         if (!isset($_POST[$this->plan_id_meta_key]) ||
@@ -238,7 +301,12 @@ class Product
 
         update_post_meta($product_id, $this->plan_id_meta_key, $plan_id);
     }
-
+    /**
+    * Retrieves the product ID associated with a given plan ID.
+     *
+     * @param int $plan_id The ID of the plan to retrieve the product ID for.
+     * @return int The product ID associated with the given plan ID, or 0 if no product is found.
+    */
     public static function get_product_id_by_plan_id($plan_id)
     {
         $query = new \WP_Query([
@@ -258,7 +326,12 @@ class Product
 
         return $products ? $products[0]->ID : 0;
     }
-
+    /**
+    * Changes the display of the product price to include the frequency of the plan, if applicable.
+     *
+     * @param string $price The original price of the product.
+     * @return string The modified price with the frequency of the plan included, if applicable.
+    */
     public function change_product_price_display($price)
     {
         global $product;
@@ -284,6 +357,7 @@ class Product
             $span = $dom->getElementsByTagName('span');
 
             foreach ($span as $tag) {
+
                 $current = $tag->nodeValue;
 
                 $new = $current . "/" . ucfirst(strtolower($Plan->frequency));
@@ -296,7 +370,12 @@ class Product
 
         return $price;
     }
-
+    /**
+    * Updates the download permissions for a given order.
+     *
+     * @param int $order_id The ID of the order to update permissions for.
+     * @param string $access_expires Optional. The expiration date for the download access.
+    */
     public static function update_download_permissions($order_id, $access_expires = "")
     {
         if (class_exists('\WC_Product')) {
@@ -310,6 +389,7 @@ class Product
             }
 
             foreach ($order->get_items() as $item) {
+
                 $product = $item->get_product();
 
                 if ($product && $product->exists() && $product->is_downloadable()) {
@@ -317,6 +397,7 @@ class Product
                     $downloads = $product->get_downloads();
 
                     foreach (array_keys($downloads) as $download_id) {
+
                         if (!empty($access_expires)) {
 
                             new Database(

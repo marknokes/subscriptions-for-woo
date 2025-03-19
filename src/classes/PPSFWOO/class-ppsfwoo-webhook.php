@@ -9,37 +9,115 @@ use PPSFWOO\Exception;
 
 class Webhook
 {
+    /**
+    * PayPal webhook event type indicating that a subscription is activated
+     *
+     * @var string
+    */
     public const ACTIVATED = 'BILLING.SUBSCRIPTION.ACTIVATED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription is expired
+     *
+     * @var string
+    */
     public const EXPIRED = 'BILLING.SUBSCRIPTION.EXPIRED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription is cancelled
+     *
+     * @var string
+    */
     public const CANCELLED = 'BILLING.SUBSCRIPTION.CANCELLED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription is paused
+     *
+     * @var string
+    */
     public const SUSPENDED = 'BILLING.SUBSCRIPTION.SUSPENDED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription payment failed
+     *
+     * @var string
+    */
     public const PAYMENT_FAILED = 'BILLING.SUBSCRIPTION.PAYMENT.FAILED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription plan is created
+     *
+     * @var string
+    */
     public const BP_CREATED = 'BILLING.PLAN.CREATED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription plan is activated
+     *
+     * @var string
+    */
     public const BP_ACTIVATED = 'BILLING.PLAN.ACTIVATED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription plan price is updated
+     *
+     * @var string
+    */
     public const BP_PRICE_CHANGE_ACTIVATED = 'BILLING.PLAN.PRICING-CHANGE.ACTIVATED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription plan is deactivated
+     *
+     * @var string
+    */
     public const BP_DEACTIVATED = 'BILLING.PLAN.DEACTIVATED';
-
+    /**
+    * PayPal webhook event type indicating that a subscription plan is updated
+     *
+     * @var string
+    */
     public const BP_UPDATED = 'BILLING.PLAN.UPDATED';
-
+    /**
+    * Class instance
+     *
+     * @var object
+    */
     private static $instance = null;
-
+    /**
+    * WordPress api namespace for the plugin to receive webhooks
+     *
+     * @var string
+    */
     public static $api_namespace = "subscriptions-for-woo/v1";
-
+    /**
+    * WordPress api endpoint for the plugin to receive webhooks
+     *
+     * @var string
+    */
     public static $endpoint = "/incoming";
-
-    public $site_url;
-    public $listen_address;
-    public $webhook_id;
-    public $subscribed_webhooks;
-
+    /**
+    * url of the WordPress site
+     *
+     * @var object
+    */
+    public $site_url = null;
+    /**
+    * Listen address - Concatenation of $site_url, $api_namespace, and $endpoint.
+     *
+     * @var string
+    */
+    public $listen_address = null;
+    /**
+    * PayPal webhook id
+     *
+     * @var string
+    */
+    public $webhook_id = null;
+    /**
+    * Array of subscribed webhooks
+     *
+     * @var array
+    */
+    public $subscribed_webhooks = null;
+    /**
+    * Constructor for the class.
+     *
+     * Initializes the site URL, listen address, webhook ID, and subscribed webhooks for the class.
+     *
+     * @return void
+    */
     public function __construct()
     {
         $this->site_url = network_site_url('', 'https');
@@ -50,7 +128,11 @@ class Webhook
 
         $this->subscribed_webhooks = PluginMain::get_option('ppsfwoo_subscribed_webhooks');
     }
-
+    /**
+    * Returns an instance of the current class.
+     *
+     * @return self The instance of the current class.
+    */
     public static function get_instance()
     {
         if (self::$instance === null) {
@@ -61,7 +143,11 @@ class Webhook
 
         return self::$instance;
     }
-
+    /**
+    * Retrieves an array of event types.
+     *
+     * @return array An array of event types.
+    */
     protected function get_event_types()
     {
         return [
@@ -77,7 +163,13 @@ class Webhook
             ['name' => self::BP_UPDATED]
         ];
     }
-
+    /**
+    * Handles a REST request.
+     *
+     * @param \WP_REST_Request $request The request object.
+     *
+     * @return \WP_REST_Response The response object.
+    */
     public function handle_request(\WP_REST_Request $request)
     {
         $response = new \WP_REST_Response();
@@ -122,7 +214,11 @@ class Webhook
 
         return $response;
     }
-
+    /**
+    * Initializes the REST API for the plugin.
+     *
+     * @return void
+    */
     public function rest_api_init()
     {
         register_rest_route(
@@ -152,17 +248,29 @@ class Webhook
             ]
         );
     }
-
+    /**
+    * Returns the webhook ID.
+     *
+     * @return int The webhook ID.
+    */
     public function id()
     {
         return $this->webhook_id;
     }
-
+    /**
+    * Returns the listen address of the current object.
+     *
+     * @return string The listen address.
+    */
     public function listen_address()
     {
         return $this->listen_address;
     }
-
+    /**
+    * Resubscribes the webhook by deleting any existing webhooks with the same listen address and creating a new one.
+     *
+     * @return bool True if the webhook was successfully resubscribed, false otherwise.
+    */
     public function resubscribe()
     {
         $created = false;
@@ -172,6 +280,7 @@ class Webhook
             if (isset($webhooks['response']['webhooks'])) {
 
                 foreach ($webhooks['response']['webhooks'] as $key => $webhook) {
+
                     if ($this->listen_address() === $webhooks['response']['webhooks'][$key]['url']) {
 
                         $this->delete($webhooks['response']['webhooks'][$key]['id']);
@@ -185,7 +294,11 @@ class Webhook
 
         return $created;
     }
-
+    /**
+    * Retrieves a list of subscribed webhooks for the current user.
+     *
+     * @return array|bool Returns an array of subscribed webhooks if successful, or false if there are no subscribed webhooks or an error occurs.
+    */
     public function list()
     {
         if ($this->id() && is_array($this->subscribed_webhooks) && sizeof($this->subscribed_webhooks)) {
@@ -199,6 +312,7 @@ class Webhook
             if (isset($webhooks['response']['webhooks'])) {
 
                 foreach ($webhooks['response']['webhooks'] as $key => $webhook) {
+
                     if ($webhook['id'] === $this->id()) {
 
                         $subscribed = $webhook['event_types'];
@@ -216,7 +330,11 @@ class Webhook
 
         return $subscribed ?? false;
     }
-
+    /**
+    * Creates a new webhook for PayPal events.
+     *
+     * @return array|bool Returns the response from PayPal if successful, or false if there was an error.
+    */
     public function create()
     {
         $webhook_id = "";
@@ -266,7 +384,12 @@ class Webhook
 
         }
     }
-
+    /**
+    * Patch the webhook with the given parameters.
+     *
+     * @param bool $get_new_response Whether to return a new response or not.
+     * @return array|null Returns the response if $get_new_response is true, otherwise null.
+    */
     protected function patch($get_new_response = false)
     {
         if ($webhooks = PayPal::request(PayPal::EP_WEBHOOKS)) {
@@ -274,6 +397,7 @@ class Webhook
             if (isset($webhooks['response']['webhooks'])) {
 
                 foreach ($webhooks['response']['webhooks'] as $key => $webhook) {
+
                     if (!$get_new_response && $this->listen_address() !== $webhooks['response']['webhooks'][$key]['url']) {
 
                         $webhook_id = $webhooks['response']['webhooks'][$key]['id'];
@@ -306,7 +430,12 @@ class Webhook
             }
         }
     }
-
+    /**
+    * Deletes a webhook from PayPal.
+     *
+     * @param string $webhook_id (Optional) The ID of the webhook to be deleted. If not provided, the ID of the current object will be used.
+     * @return bool|mixed Returns the response from PayPal if successful, or false if unsuccessful.
+    */
     public function delete($webhook_id = "")
     {
         $webhook_id = $webhook_id ?: $this->id();

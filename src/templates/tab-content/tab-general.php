@@ -30,6 +30,7 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 	<table id="settings-main">
 
 		<?php foreach (self::$options as $option => $array) {
+
 		    if (isset($array['is_premium']) && $is_premium = $array['is_premium']) {
 
 		        $feature = "Premium";
@@ -98,6 +99,7 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 		                    if ($options) {
 
 		                        foreach (array_keys($options) as $option) {
+
 		                            $selected = selected($option, $value, false);
 
 		                            echo wp_kses("<option value='$option' $selected>$options[$option]</option>", $wp_keses_options);
@@ -113,6 +115,7 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 		                                if ($categories = get_terms($array['taxonomy'])) {
 
 		                                    foreach ($categories as $category) {
+
 		                                        $selected = selected($category->slug, $value, false);
 
 		                                        echo wp_kses("<option value='$category->slug' $selected>$category->name</option>", $wp_keses_options);
@@ -126,6 +129,7 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 		                                if ($pages = get_posts(['numberposts' => -1, 'post_status' => 'any', 'post_type' => [$post_type]])) {
 
 		                                    foreach ($pages as $page) {
+
 		                                        $selected = selected($page->ID, $value, false);
 
 		                                        echo wp_kses("<option value='$page->ID' $selected>$page->post_title</option>", $wp_keses_options);
@@ -150,6 +154,7 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 		                    if ($pages = get_posts(['numberposts' => -1, 'post_type' => [$type]])) {
 
 		                        foreach ($pages as $page) {
+
 		                            $key = array_search($page->ID, $value['page_ids']);
 
 		                            $selected = selected($page->ID, $value['page_ids'][$key]);

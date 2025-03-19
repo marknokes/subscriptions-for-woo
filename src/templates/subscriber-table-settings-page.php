@@ -20,6 +20,7 @@ if (!defined('ABSPATH')) {
     <?php
 
     foreach ($results as $row) {
+
         $user = get_user_by('id', $row->wp_customer_id);
 
         if (!is_object($user)) {

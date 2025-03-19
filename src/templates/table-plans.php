@@ -17,6 +17,7 @@
     if (!isset($plans['000'])) {
 
         foreach ($plans as $plan_id => $plan) {
+
             $plan_active = "ACTIVE" === $plan->status;
 
             $paypal_action = $plan_active ? 'deactivate' : 'activate';

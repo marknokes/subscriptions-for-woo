@@ -8,26 +8,63 @@ use PPSFWOO\Database;
 
 class Order
 {
+    /**
+    * The order total
+     *
+     * @var int
+    */
     private static $order_total = 0;
-
-    private static $has_trial = null;
-
+    /**
+    * Whether the subscription has a trial period
+     *
+     * @var bool
+    */
+    private static $has_trial = false;
+    /**
+    * Tax data from the subscription
+     *
+     * @var array
+    */
     private static $tax_rate_data = [];
-
+    /**
+    * Order quantity
+     *
+     * @var int
+    */
     private static $quantity = 1;
-
+    /**
+    * Price for the individual item
+     *
+     * @var float
+    */
     private static $line_item_price = 0;
-
+    /**
+    * The Subscriber object
+     *
+     * @var object
+    */
     private static $Subscriber = null;
-
+    /**
+    * Constructor for the class.
+     * Adds a filter to exclude certain items from the order subtotal in WooCommerce.
+     *
+     * @since 1.0.0
+    */
     public function __construct()
     {
         add_filter('woocommerce_order_get_subtotal', [$this, 'exclude_from_subtotal'], 10, 2);
     }
-
+    /**
+    * Calculates the subtotal of an order, excluding any items marked as excluded from the order total.
+     *
+     * @param float $subtotal The current subtotal of the order.
+     * @param WC_Order $order The order object.
+     * @return float The updated subtotal.
+    */
     public static function exclude_from_subtotal($subtotal, $order)
     {
         foreach ($order->get_items() as $item_id => $item) {
+
             $exclude_from_order_total = $item->get_meta('exclude_from_order_total')['value'] ?? '';
 
             if ($exclude_from_order_total === 'yes') {
@@ -39,14 +76,23 @@ class Order
 
         return $subtotal;
     }
-
+    /**
+    * Retrieves the order ID associated with a given subscription ID.
+     *
+     * @param int $subs_id The subscription ID to retrieve the order ID for.
+     * @return int|bool The order ID if found, or false if not found.
+    */
     public static function get_order_id_by_subscription_id($subs_id)
     {
         $results = new Database("SELECT `order_id` FROM {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber WHERE `id` = %s", [$subs_id]);
 
         return $results->result[0]->order_id ?? false;
     }
-
+    /**
+    * Returns an array containing the subscriber's address information.
+     *
+     * @return array
+    */
     public static function get_address()
     {
         return [
@@ -63,7 +109,12 @@ class Order
             'country'    => self::$Subscriber->country_code
         ];
     }
-
+    /**
+    * Checks if an order has a subscription product.
+     *
+     * @param \WC_Order $order The order to check.
+     * @return bool True if the order contains a subscription product, false otherwise.
+    */
     public static function has_subscription($order)
     {
         $has_subscription = false;
@@ -71,6 +122,7 @@ class Order
         if (isset($order) && $order instanceof \WC_Order) {
 
             foreach ($order->get_items() as $item) {
+
                 $product = $item->get_product();
 
                 if ($product->is_type(Product::TYPE)) {
@@ -86,7 +138,15 @@ class Order
 
         return $has_subscription;
     }
-
+    /**
+    * Creates a line item for a subscription order.
+     *
+     * @param array $cycle The subscription cycle details.
+     * @param float $total The total price for the line item.
+     * @param int $sequence The sequence number for the line item.
+     * @param string $name The name of the line item.
+     * @return \WC_Order_Item_Product The created line item.
+    */
     private static function create_line_item($cycle, $total, $sequence, $name)
     {
         $item = new \WC_Order_Item_Product();
@@ -128,12 +188,17 @@ class Order
 
         return $item;
     }
-
+    /**
+    * Parses the billing cycles for the current subscriber's plan and creates line items for each cycle.
+     *
+     * @return array An array of line items for each billing cycle.
+    */
     private static function parse_billing_cycles()
     {
         $items = [];
 
         foreach (self::$Subscriber->plan->get_billing_cycles() as $cycle) {
+
             $sequence = intval($cycle['sequence']);
 
             if (isset($cycle['pricing_scheme']['fixed_price'])) {
@@ -149,6 +214,7 @@ class Order
             } elseif (isset($cycle['pricing_scheme']['pricing_model'])) {
 
                 foreach ($cycle['pricing_scheme']['tiers'] as $key => $tier) {
+
                     $ending_quantity = $tier['ending_quantity'] ?? INF;
 
                     if (self::$quantity >= $tier['starting_quantity'] && self::$quantity <= $ending_quantity) {
@@ -170,7 +236,11 @@ class Order
 
         return $items;
     }
-
+    /**
+    * Parses the order items for a given order.
+     *
+     * @param WC_Order $order The order to parse items for.
+    */
     private static function parse_order_items($order)
     {
         $payment_preferences = self::$Subscriber->plan->get_payment_preferences() ?? [];
@@ -204,6 +274,7 @@ class Order
         $order->add_product($product, self::$quantity);
 
         foreach ($order->get_items() as $item) {
+
             $product = $item->get_product();
 
             if (self::$has_trial && $product && $product->exists()) {
@@ -221,12 +292,19 @@ class Order
 
         // add additional line items to order
         foreach ($items as $sequence => $item) {
+
             self::set_taxes($item);
 
             $order->add_item($item);
         }
     }
-
+    /**
+    * Sets taxes for a given item using the provided tax rate data.
+     *
+     * @param object $item The item for which taxes will be set.
+     * @param array|null $tax_rate_data The tax rate data to be used for calculating taxes.
+     * @return void
+    */
     public static function set_taxes($item, $tax_rate_data = null)
     {
         $tax_rate_data = $tax_rate_data ?? self::$tax_rate_data;
@@ -242,6 +320,7 @@ class Order
         }
 
         foreach ($taxes as $tax_rate_object) {
+
             if ($tax_rate_data['tax_rate'] === $tax_rate_object->tax_rate) {
 
                 $found_rate = $tax_rate_object;
@@ -279,7 +358,12 @@ class Order
             'total'    => $taxes,
         ]);
     }
-
+    /**
+    * Inserts a new subscriber into the system and creates a new order for their subscription.
+     *
+     * @param Subscriber $Subscriber The subscriber to be inserted.
+     * @return int The ID of the newly created order.
+    */
     public static function insert(Subscriber $Subscriber)
     {
         self::$Subscriber = $Subscriber;

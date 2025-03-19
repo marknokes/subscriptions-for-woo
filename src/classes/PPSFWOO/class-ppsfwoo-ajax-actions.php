@@ -9,6 +9,11 @@ use PPSFWOO\Exception;
 class AjaxActions
 {
     // phpcs:disable
+    /**
+    * Handles all AJAX callbacks.
+     *
+     * @return void
+    */
     public function admin_ajax_callback()
     {
         $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])) : "";
@@ -32,7 +37,12 @@ class AjaxActions
         wp_die();
     }
     // phpcs:enable
-
+    /**
+    * Retrieves a unique nonce for subscription ID redirects.
+     *
+     * @param bool $is_ajax Whether the request is an AJAX request.
+     * @return string|false The generated nonce or false if the request is not an AJAX request.
+    */
     public static function subs_id_redirect_nonce($is_ajax = true)
     {
         $nonce_name = "";
@@ -82,7 +92,12 @@ class AjaxActions
 
         }
     }
-
+    /**
+    * Retrieves a subscriber object based on the provided ID.
+     *
+     * @param int $id The ID of the subscriber to retrieve.
+     * @return Subscriber|null The subscriber object, or null if not found.
+    */
     protected function get_sub()
     {
         if (!isset($_POST['nonce'], $_POST['id']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'ajax_get_sub')) {
@@ -94,7 +109,11 @@ class AjaxActions
         return Subscriber::get(sanitize_text_field(wp_unslash($_POST['id'])));
 
     }
-
+    /**
+    * Logs any errors related to PayPal subscription buttons.
+     *
+     * @return string JSON-encoded string indicating whether an error was logged or not.
+    */
     protected function log_paypal_buttons_error()
     {
         $logged_error = false;

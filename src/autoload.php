@@ -1,5 +1,11 @@
 <?php
 
+/**
+* Autoloads all required classes
+*
+* @param string $class_name
+* @return @return void
+*/
 function ppsfwoo_autoload($class_name)
 {
     $namespace = 'PPSFWOO\\';

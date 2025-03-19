@@ -7,11 +7,28 @@ use PPSFWOO\AjaxActionsPriv;
 
 class Database
 {
+    /**
+    * The output format of the query result. Defaults to OBJECT.
+     *
+     * @var object
+    */
     public $result;
 
+    /**
+    * The default plugin database version.
+     *
+     * @var string
+    */
     protected static $version = "2.4";
 
     // phpcs:disable
+    /**
+    * Constructs a new instance of the class with the given query, variables, and output format.
+     *
+     * @param string $query The SQL query to be executed.
+     * @param array $vars Optional. An array of variables to be used in the query. Defaults to an empty array.
+     * @param string $output Optional. The output format of the query result. Defaults to OBJECT.
+    */
     public function __construct($query, $vars = [], $output = OBJECT)
     {
         global $wpdb;
@@ -42,7 +59,16 @@ class Database
 
     }
     // phpcs:enable
-
+    /**
+    * Handles the export action for the plugin.
+     *
+     * This function checks for the necessary parameters and verifies the security nonce before exporting the database table as an SQL file.
+     *
+     * @since 1.0.0
+     * @access public
+     *
+     * @return void
+    */
     public static function handle_export_action()
     {
         if (!isset($_GET['ppsfwoo_export_table'], $_GET['_wpnonce'])) {
@@ -66,7 +92,13 @@ class Database
 
         exit();
     }
-
+    /**
+    * Installs the necessary database tables for the plugin.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+    */
     public static function install()
     {
         if ((new self("SHOW TABLES LIKE '{$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber';"))->result) {
@@ -96,7 +128,13 @@ class Database
 
         update_option('ppsfwoo_db_version', self::$version, false);
     }
-
+    /**
+    * Upgrades the plugin's database to the latest version.
+     *
+     * @since 2.4.1
+     *
+     * @return void
+    */
     public static function upgrade()
     {
         $installed_version = PluginMain::get_option('ppsfwoo_db_version') ?: self::$version;
@@ -137,7 +175,11 @@ class Database
         wp_cache_delete('ppsfwoo_db_version', 'options');
 
     }
-
+    /**
+    * Exports data from the ppsfwoo_subscriber table in the database.
+     *
+     * @return string Returns a SQL query string for inserting data into the ppsfwoo_subscriber table.
+    */
     public static function export()
     {
         global $wpdb;
@@ -157,6 +199,7 @@ class Database
         $values = [];
 
         foreach ($data->result as $row) {
+
             $escaped_values = array_map(function ($value) use ($wpdb) {
 
                 if (is_null($value)) {

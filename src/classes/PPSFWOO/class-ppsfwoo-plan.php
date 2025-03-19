@@ -7,27 +7,133 @@ use PPSFWOO\PluginMain;
 
 class Plan
 {
-    public $env;
-    public $id;
-    public $frequency;
-    public $price;
-    public $product_name;
-    public $image_url;
-    public $version;
-    public $product_id;
-    public $name;
-    public $status;
-    public $usage_type;
+    /**
+    * PayPal envrionment data
+     *
+     * @var array
+    */
+    public $env = [];
+    /**
+    * PayPal plan id
+     *
+     * @var string
+    */
+    public $id = null;
+    /**
+    * PayPal plan recurring payment frequency
+     *
+     * @var string
+    */
+    public $frequency = null;
+    /**
+    * PayPal subscription price
+     *
+     * @var float
+    */
+    public $price = null;
+    /**
+    * Product name associated with PayPal plan
+     *
+     * @var string
+    */
+    public $product_name = null;
+    /**
+    * Product image url
+     *
+     * @var string
+    */
+    public $image_url = null;
+    /**
+    * PayPal api version
+     *
+     * @var string
+    */
+    public $version = null;
+    /**
+    * Product id associated with PayPal plan
+     *
+     * @var string
+    */
+    public $product_id = null;
+    /**
+    * The plan name
+     *
+     * @var string
+    */
+    public $name = null;
+    /**
+    * The plan status. ACTIVE, INACTIVE, CREATED
+     *
+     * @var string
+    */
+    public $status = null;
+    /**
+    * PayPal plan usage type. LICENSED.
+     *
+     * @var string
+    */
+    public $usage_type = null;
+    /**
+    * PayPal subscription plan billing cycles
+     *
+     * @var array
+    */
     public $billing_cycles;
+    /**
+    * PayPal subscription plan payment preferences
+     *
+     * @var array
+    */
     public $payment_preferences;
+    /**
+    * PayPal subscription plan tax information
+     *
+     * @var array
+    */
     public $taxes;
+    /**
+    * Whether the subscription plan supports a quantity, e.g., tiered or volume pricing plan(s)
+     *
+     * @var string
+    */
     public $quantity_supported;
+    /**
+    * The customer
+     *
+     * @var array
+    */
     public $payee;
+    /**
+    * PayPal subscription plan creation time
+     *
+     * @var string
+    */
     public $create_time;
+    /**
+    * PayPal subscription plan updated time
+     *
+     * @var string
+    */
     public $update_time;
+    /**
+    * Action links provided by PayPal
+     *
+     * @var array
+    */
     public $links;
+    /**
+    * Subscription plan description
+     *
+     * @var string
+    */
     public $description;
-
+    /**
+    * Constructor for the class.
+     *
+     * @param string|null $id The ID of the plan to be created. Defaults to null.
+     *
+     * @return void
+    */
     public function __construct($id = null)
     {
         $this->env = PayPal::env()['env'];
@@ -51,7 +157,14 @@ class Plan
             $this->product_name = $plan_data['product_name'] ?? "";
         }
     }
-
+    /**
+    * Calls a method that starts with 'get_' and returns the value of the corresponding property.
+     *
+     * @param string $name The name of the method being called.
+     * @param array $arguments The arguments passed to the method.
+     * @return mixed The value of the property.
+     * @throws \BadMethodCallException If the property does not exist.
+    */
     public function __call($name, $arguments)
     {
         if (strpos($name, 'get_') === 0) {
@@ -67,12 +180,19 @@ class Plan
 
         throw new \BadMethodCallException("Property " . esc_attr($name) . " does not exist.");
     }
-
+    /**
+    * Retrieves the specified value from the billing cycles in the given response.
+     *
+     * @param string $find The value to retrieve from the billing cycles.
+     * @param array|null $response The response containing the billing cycles.
+     * @return float|string|null The retrieved value, or null if not found.
+    */
     private function get_from_billing_cycles($find, $response = null)
     {
         $billing_cycles = $this->billing_cycles ?? $response['billing_cycles'] ?? $response ?? [];
 
         foreach ($billing_cycles as $cycle) {
+
             if ($cycle['tenure_type'] === 'REGULAR') {
 
                 if ('price' === $find) {
@@ -86,6 +206,7 @@ class Plan
                         $values = [];
 
                         foreach ($cycle['pricing_scheme']['tiers'] as $tier) {
+
                             $values[] = $tier['amount']['value'];
                         }
 
@@ -103,7 +224,11 @@ class Plan
 
         return;
     }
-
+    /**
+    * Modifies a plan using PayPal API.
+     *
+     * @return array Response from PayPal API, containing either an error or success message.
+    */
     public function modify_plan()
     {
         $response = ['error' => 'An unexpected error occurred.'];
@@ -141,7 +266,11 @@ class Plan
 
         return $response;
     }
-
+    /**
+    * Refreshes all plans from PayPal and updates the local cache.
+     *
+     * @return array Array of plans retrieved from PayPal.
+    */
     public function refresh_all()
     {
         $plans = [];
@@ -163,6 +292,7 @@ class Plan
             ) {
 
                 foreach ($plan_data['response']['plans'] as $plan) {
+
                     if (PluginMain::get_option('ppsfwoo_hide_inactive_plans') && "ACTIVE" !== $plan['status']) {
 
                         continue;
@@ -206,7 +336,11 @@ class Plan
 
         return $plans;
     }
-
+    /**
+    * Retrieves tax rate data for the current plugin.
+     *
+     * @return array An array containing the tax rate, whether it is inclusive, the tax rate class, and the tax rate slug.
+    */
     public function get_tax_rate_data()
     {
         $class = PluginMain::plugin_data('Name');
@@ -236,7 +370,12 @@ class Plan
             'tax_rate_slug'  => $slug
         ];
     }
-
+    /**
+    * Inserts a tax rate into the database and returns the tax rate ID.
+     *
+     * @param float $tax_rate The tax rate to be inserted.
+     * @return int The tax rate ID.
+    */
     private function insert_tax_rate($tax_rate)
     {
         $tax_rate_data = $this->get_tax_rate_data();
@@ -250,6 +389,7 @@ class Plan
         if ($taxes) {
 
             foreach ($taxes as $id => $tax_rate_object) {
+
                 if (
                     $tax_rate_object->tax_rate_class === $tax_rate_data['tax_rate_slug']
                     && $tax_rate_object->tax_rate === number_format($tax_rate, 4)
@@ -289,7 +429,11 @@ class Plan
 
         return $tax_rate_id;
     }
-
+    /**
+    * Retrieves an array of plan objects from the plugin options.
+     *
+     * @return array An array of plan objects.
+    */
     public static function get_plans()
     {
         $plan_objects = [];

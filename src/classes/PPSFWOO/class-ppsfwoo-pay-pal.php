@@ -11,16 +11,42 @@ use WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
 
 class PayPal
 {
+    /**
+    * PayPal enpoint for subscriptions
+     *
+     * @var string
+    */
     public const EP_SUBSCRIPTIONS  = "/v1/billing/subscriptions/";
-
+    /**
+    * PayPal enpoint for plans
+     *
+     * @var string
+    */
     public const EP_PLANS          = "/v1/billing/plans/";
-
+    /**
+    * PayPal enpoint for products
+     *
+     * @var string
+    */
     public const EP_PRODUCTS       = "/v1/catalogs/products/";
-
+    /**
+    * PayPal enpoint for webhooks
+     *
+     * @var string
+    */
     public const EP_WEBHOOKS       = "/v1/notifications/webhooks/";
-
+    /**
+    * PayPal enpoint for verifying a webhook signature
+     *
+     * @var string
+    */
     public const EP_VERIFY_SIG     = "/v1/notifications/verify-webhook-signature";
-
+    /**
+    * Displays a PayPal button for a specific product, allowing customers to subscribe to a subscription product.
+     *
+     * @param int|null $product_id The ID of the product to display the button for. Defaults to the current product ID if not provided.
+     * @return void
+    */
     public static function button($product_id = null)
     {
         $product_id = !empty($product_id) ? $product_id : get_the_ID();
@@ -65,7 +91,15 @@ class PayPal
             'product_id' => $product_id
         ]);
     }
-
+    /**
+    * Returns an array of environment settings for the PayPal API based on the current settings in the container.
+     *
+     * @return array An array containing the following keys:
+     *               - paypal_api_url: The URL for the PayPal API, either for the sandbox or production environment.
+     *               - paypal_url: The URL for the PayPal website, either for the sandbox or production environment.
+     *               - client_id: The client ID for the PayPal API, if available.
+     *               - env: The current environment, either 'sandbox' or 'production'.
+    */
     public static function env()
     {
         $ppcp = new PPCP();
@@ -85,12 +119,23 @@ class PayPal
 
         return $env;
     }
-
+    /**
+    * Checks if the status of the given response matches the specified status.
+     *
+     * @param array $response The response to check.
+     * @param int $status The status to compare against.
+     * @return bool True if the response status matches the specified status, false otherwise.
+    */
     public static function response_status_is($response, $status)
     {
         return isset($response['status']) && $status === $response['status'];
     }
-
+    /**
+    * Retrieves the access token from PayPal for use in API requests.
+     *
+     * @param bool $log_error Whether to log any errors encountered.
+     * @return string|bool The access token, or false if an error occurred.
+    */
     public static function access_token($log_error = true)
     {
         try {
@@ -122,7 +167,15 @@ class PayPal
 
         }
     }
-
+    /**
+    * Sends a request to the PayPal API.
+     *
+     * @param string $api The API endpoint to send the request to.
+     * @param array $payload (Optional) The data to be sent with the request.
+     * @param string $method (Optional) The HTTP method to use for the request.
+     * @param array $additional_headers (Optional) Additional headers to be included in the request.
+     * @return array|bool An array containing the response and status code, or false if there was an error.
+    */
     public static function request($api, $payload = [], $method = "GET", $additional_headers = [])
     {
         if (empty(self::env()['client_id']) || !$token = self::access_token()) {
@@ -184,7 +237,12 @@ class PayPal
             'status'   => $remote_response['response']['code']
         ];
     }
-
+    /**
+    * Validates a webhook request from PayPal.
+     *
+     * @param string $webhook_id The ID of the webhook to validate against.
+     * @return bool Returns true if the request is valid, false otherwise.
+    */
     public static function valid_request($webhook_id)
     {
         $request_body = json_decode(file_get_contents('php://input'));
