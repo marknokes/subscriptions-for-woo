@@ -400,13 +400,9 @@ class PluginMain
 
         }
 
-        $meta = $item->get_meta('exclude_from_order_total')['value'] ?? '';
+        if (empty($item->get_total())) {
 
-        $exclude_from_order_total = $meta === 'yes';
-
-        if ($exclude_from_order_total) {
-
-            $item->set_subtotal($item->get_total());
+            $item->set_subtotal(0);
 
         }
     }

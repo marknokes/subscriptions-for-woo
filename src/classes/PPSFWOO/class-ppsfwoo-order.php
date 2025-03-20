@@ -65,9 +65,7 @@ class Order
     {
         foreach ($order->get_items() as $item_id => $item) {
 
-            $exclude_from_order_total = $item->get_meta('exclude_from_order_total')['value'] ?? '';
-
-            if ($exclude_from_order_total === 'yes') {
+            if (empty($item->get_total())) {
 
                 $subtotal -= $item->get_subtotal();
 
@@ -151,11 +149,15 @@ class Order
     {
         $item = new \WC_Order_Item_Product();
 
-        if (1 === $sequence) {
+        $is_trial_period = $cycle['tenure_type'] === 'TRIAL';
+
+        $is_first_sequence = 1 === $sequence;
+
+        if ($is_first_sequence) {
 
             $start_time =  (new \DateTime(self::$Subscriber->subscription->start_time))->format('l, F j, Y');
 
-            $name = " $name starts $start_time";
+            $name = sprintf(' %s <span class="ppsfwoo-receipt-start-time">starts %s</span>', $name, $start_time);
 
         }
 
@@ -165,7 +167,13 @@ class Order
 
         $item->set_quantity(self::$quantity);
 
-        if ($cycle['tenure_type'] === 'TRIAL' && 1 === $sequence) {
+        if ($is_trial_period) {
+
+            $item->add_meta_data('is_trial_period', ['value' => 'yes']);
+
+        }
+
+        if ($is_trial_period && $is_first_sequence) {
 
             $item->set_total($total);
 
@@ -175,8 +183,6 @@ class Order
 
             $item->set_total(0);
 
-            $item->add_meta_data('exclude_from_order_total', ['value' => 'yes']);
-
         }
 
         if (0 === self::$line_item_price && $cycle['tenure_type'] === 'REGULAR') {
@@ -184,7 +190,6 @@ class Order
             self::$line_item_price = $total / self::$quantity;
 
         }
-
 
         return $item;
     }
@@ -205,7 +210,12 @@ class Order
 
                 $price = floatval($cycle['pricing_scheme']['fixed_price']['value']);
 
-                $name = "{$cycle['tenure_type']} (period $sequence)";
+                $name = sprintf(
+                    '<span class="ppsfwoo-receipt-period">%s (period %d)</span> <span class="ppsfwoo-receipt-regular-price">@$%.2f/each</span>',
+                    $cycle['tenure_type'],
+                    $sequence,
+                    $price
+                );
 
                 $item = self::create_line_item($cycle, $price * self::$quantity, $sequence, $name);
 
@@ -223,7 +233,13 @@ class Order
 
                         $price = floatval($tier['amount']['value']);
 
-                        $name = "{$cycle['tenure_type']} (period $sequence) tier $tier_num";
+                        $name = sprintf(
+                            '<span class="ppsfwoo-receipt-period">%s (period %d)</span> <span class="ppsfwoo-receipt-regular-price">@$%.2f/each</span> <span class="ppsfwoo-receipt-tier">tier %d</span>',
+                            $cycle['tenure_type'],
+                            $sequence,
+                            $price,
+                            $tier_num
+                        );
 
                         $item = self::create_line_item($cycle, $price * self::$quantity, $sequence, $name);
 
@@ -282,8 +298,6 @@ class Order
                 $item->set_subtotal(self::$line_item_price * self::$quantity);
 
                 $item->set_total(0);
-
-                $item->add_meta_data('exclude_from_order_total', ['value' => 'yes']);
 
             }
 
