@@ -16,7 +16,6 @@
  * Requires PHP: 7.4
  */
 
-use WooCommerce\PayPalCommerce\PPCP;
 use PPSFWOO\PluginMain;
 use PPSFWOO\AjaxActionsPriv;
 use PPSFWOO\Product;
@@ -49,47 +48,4 @@ add_action('upgrader_process_complete', [PluginMain::class, 'upgrader_process_co
 
 add_action('ppsfwoo_refresh_plans', [AjaxActionsPriv::class, 'refresh_plans']);
 
-add_action('plugins_loaded', function () {
-
-    if (!class_exists(WC_Product::class) || !class_exists(PPCP::class)) {
-
-        return;
-
-    }
-
-    global $product;
-
-    $ClassName = 'WC_Product_' . Product::TYPE;
-
-    $ClassDefinition = new class ($product) extends WC_Product {
-        public $product_type;
-
-        public function __construct($product)
-        {
-            $this->product_type = Product::TYPE;
-
-            parent::__construct($product);
-        }
-    };
-
-    class_alias(get_class($ClassDefinition), $ClassName);
-
-    $PluginMain = PluginMain::get_instance();
-
-    Database::upgrade();
-
-    register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$PluginMain, 'plugin_deactivation']);
-
-    $PluginMain->add_actions();
-
-    $PluginMain->add_filters();
-
-    new Product();
-
-    new Order();
-
-    if (PPSFWOO_PLUGIN_EXTRAS) {
-        new PluginExtras();
-    };
-
-}, 11);
+add_action('plugins_loaded', [PluginMain::class, 'plugin_main_init'], 12);

@@ -3,6 +3,7 @@
 namespace PPSFWOO;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
+use WooCommerce\PayPalCommerce\PPCP;
 use PPSFWOO\AjaxActions;
 use PPSFWOO\AjaxActionsPriv;
 use PPSFWOO\Webhook;
@@ -294,6 +295,54 @@ class PluginMain
 
             add_action("update_option_$option_name", [$this, 'after_update_option'], 10, 3);
         }
+    }
+    /**
+    * Initializes the plugin on plugins_loaded
+     *
+     * @return void
+    */
+    public static function plugin_main_init()
+    {
+        if (!class_exists(\WC_Product::class) || !class_exists(PPCP::class)) {
+
+            return;
+
+        }
+
+        global $product;
+
+        $ClassName = 'WC_Product_' . Product::TYPE;
+
+        $ClassDefinition = new class ($product) extends \WC_Product {
+            public $product_type;
+
+            public function __construct($product)
+            {
+                $this->product_type = Product::TYPE;
+
+                parent::__construct($product);
+            }
+        };
+
+        class_alias(get_class($ClassDefinition), $ClassName);
+
+        $PluginMain = self::get_instance();
+
+        Database::upgrade();
+
+        register_deactivation_hook(PPSFWOO_PLUGIN_PATH, [$PluginMain, 'plugin_deactivation']);
+
+        $PluginMain->add_actions();
+
+        $PluginMain->add_filters();
+
+        new Product();
+
+        new Order();
+
+        if (PPSFWOO_PLUGIN_EXTRAS) {
+            new PluginExtras();
+        };
     }
     /**
     * Returns the instance of the class.
