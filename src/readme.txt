@@ -3,7 +3,7 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.5.2
+Stable tag: 2.5.3
 WC tested up to: 9.7.1
 Requires at least: 6.4.3
 Tested up to: 6.7.2
@@ -104,6 +104,14 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.5.3 =
+* Improvemnet: remove superfluous import statements
+* Improvement: remove superfluous period after required PHP version
+* Improvement: move plugin init to PluginMain class
+* Improvement: simplify order line item meta
+* Improvement: add docblocks to class methods and properties
+* Improvement: normalize line endings
 
 = 2.5.2 =
 * Improvement: normalize line endings
