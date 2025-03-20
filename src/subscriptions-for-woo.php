@@ -15,7 +15,7 @@ namespace PPSFWOO;
  * WC tested up to: 9.7.1
  * Requires at least: 6.4.3
  * Tested up to: 6.7.2
- * Requires PHP: 7.4.
+ * Requires PHP: 7.4
  */
 
 if (!defined('ABSPATH')) {
