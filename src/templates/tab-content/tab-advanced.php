@@ -1,6 +1,6 @@
 <?php
-use PPSFWOO\PluginExtras;
-use PPSFWOO\Webhook;
+
+namespace PPSFWOO;
 
 if (!defined('ABSPATH')) {
     exit;

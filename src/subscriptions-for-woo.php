@@ -1,6 +1,8 @@
 <?php
 
-/**
+namespace PPSFWOO;
+
+/*
  * Plugin Name: Subscriptions for Woo
  * Description: Enjoy recurring PayPal subscription payments leveraging WooCommerce and WooCommerce PayPal Payments
  * Requires Plugins: woocommerce, woocommerce-paypal-payments
@@ -15,11 +17,6 @@
  * Tested up to: 6.7.2
  * Requires PHP: 7.4.
  */
-
-use PPSFWOO\AjaxActionsPriv;
-use PPSFWOO\Enterprise;
-use PPSFWOO\PluginExtras;
-use PPSFWOO\PluginMain;
 
 if (!defined('ABSPATH')) {
     exit;

@@ -1,5 +1,6 @@
 <?php
-use PPSFWOO\Plan;
+
+namespace PPSFWOO;
 
 if (!defined('ABSPATH')) {
     exit;

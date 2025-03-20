@@ -1,5 +1,6 @@
 <?php
-use PPSFWOO\PluginExtras;
+
+namespace PPSFWOO;
 
 if (!defined('ABSPATH')) {
     exit;
