@@ -157,7 +157,11 @@ class Order
 
             $start_time =  (new \DateTime(self::$Subscriber->subscription->start_time))->format('l, F j, Y');
 
-            $name = sprintf(' %s <span class="ppsfwoo-receipt-start-time">starts %s</span>', $name, $start_time);
+            $name = sprintf(
+                ' %s <span class="ppsfwoo-receipt-start-time">starts %s </span>',
+                $name,
+                $start_time
+            );
 
         }
 
@@ -211,7 +215,8 @@ class Order
                 $price = floatval($cycle['pricing_scheme']['fixed_price']['value']);
 
                 $name = sprintf(
-                    '<span class="ppsfwoo-receipt-period">%s (period %d)</span> <span class="ppsfwoo-receipt-regular-price">@$%.2f/each</span>',
+                    '<span class="ppsfwoo-receipt-period">%s (period %d) </span>
+                    <span class="ppsfwoo-receipt-regular-price">@$%.2f/each </span>',
                     $cycle['tenure_type'],
                     $sequence,
                     $price
@@ -234,7 +239,9 @@ class Order
                         $price = floatval($tier['amount']['value']);
 
                         $name = sprintf(
-                            '<span class="ppsfwoo-receipt-period">%s (period %d)</span> <span class="ppsfwoo-receipt-regular-price">@$%.2f/each</span> <span class="ppsfwoo-receipt-tier">tier %d</span>',
+                            '<span class="ppsfwoo-receipt-period">%s (period %d) </span>
+                            <span class="ppsfwoo-receipt-regular-price">@$%.2f/each </span>
+                            <span class="ppsfwoo-receipt-tier">tier %d </span>',
                             $cycle['tenure_type'],
                             $sequence,
                             $price,
