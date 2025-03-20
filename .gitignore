@@ -8,3 +8,4 @@ src/js/enterprise*
 src/css/enterprise*
 src/templates/tab-content/tab-license.php
 test-data
+.*
