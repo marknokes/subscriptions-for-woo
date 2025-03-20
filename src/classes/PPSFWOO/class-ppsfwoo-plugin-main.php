@@ -313,7 +313,8 @@ class PluginMain
 
         $ClassName = 'WC_Product_' . Product::TYPE;
 
-        $ClassDefinition = new class ($product) extends \WC_Product {
+        $ClassDefinition = new class ($product) extends \WC_Product
+        {
             public $product_type;
 
             public function __construct($product)
