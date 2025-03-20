@@ -14,12 +14,10 @@ if (!defined('ABSPATH')) {
 $plans = Plan::get_plans();
 
 if (sizeof($plans)) {
-
-    self::display_template("table-plans", [
-        'plans'      => $plans,
-        'paypal_url' => $this->env['paypal_url']
+    self::display_template('table-plans', [
+        'plans' => $plans,
+        'paypal_url' => $this->env['paypal_url'],
     ]);
-
 }
 
 ?>

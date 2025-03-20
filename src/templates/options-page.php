@@ -6,7 +6,7 @@
 	
 	<div class="wrap <?php echo PPSFWOO_PLUGIN_EXTRAS ? 'full-width' : 'partial-width'; ?>">
 
-	    <h1><?php echo esc_html(self::plugin_data("Name")); ?></h1>
+	    <h1><?php echo esc_html(self::plugin_data('Name')); ?></h1>
 
 		<div class="nav-tab-wrapper">
 

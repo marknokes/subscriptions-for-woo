@@ -13,16 +13,13 @@
  * WC tested up to: 9.7.1
  * Requires at least: 6.4.3
  * Tested up to: 6.7.2
- * Requires PHP: 7.4
+ * Requires PHP: 7.4.
  */
 
-use PPSFWOO\PluginMain;
 use PPSFWOO\AjaxActionsPriv;
-use PPSFWOO\Product;
-use PPSFWOO\PluginExtras;
 use PPSFWOO\Enterprise;
-use PPSFWOO\Database;
-use PPSFWOO\Order;
+use PPSFWOO\PluginExtras;
+use PPSFWOO\PluginMain;
 
 if (!defined('ABSPATH')) {
     exit;

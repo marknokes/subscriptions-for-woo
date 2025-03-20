@@ -2,33 +2,30 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\PluginMain;
-use PPSFWOO\AjaxActionsPriv;
-
 class Database
 {
     /**
-    * The output format of the query result. Defaults to OBJECT.
+     * The output format of the query result. Defaults to OBJECT.
      *
      * @var object
-    */
+     */
     public $result;
 
     /**
-    * The default plugin database version.
+     * The default plugin database version.
      *
      * @var string
-    */
-    protected static $version = "2.4";
+     */
+    protected static $version = '2.4';
 
     // phpcs:disable
     /**
-    * Constructs a new instance of the class with the given query, variables, and output format.
+     * Constructs a new instance of the class with the given query, variables, and output format.
      *
-     * @param string $query The SQL query to be executed.
-     * @param array $vars Optional. An array of variables to be used in the query. Defaults to an empty array.
+     * @param string $query  the SQL query to be executed
+     * @param array  $vars   Optional. An array of variables to be used in the query. Defaults to an empty array.
      * @param string $output Optional. The output format of the query result. Defaults to OBJECT.
-    */
+     */
     public function __construct($query, $vars = [], $output = OBJECT)
     {
         global $wpdb;
@@ -37,50 +34,33 @@ class Database
 
         $stmt = $vars ? $wpdb->prepare($query, $vars) : $query;
 
-        if (strpos($query, "SELECT") === 0) {
-
+        if (0 === strpos($query, 'SELECT')) {
             $result = $wpdb->get_results($stmt, $output);
-
         } else {
-
             $result = $wpdb->query($stmt);
-
         }
 
         if (!empty($wpdb->last_error)) {
-
-            $this->result = ['error'  => $wpdb->last_error];
-
+            $this->result = ['error' => $wpdb->last_error];
         } else {
-
             $this->result = $result;
-
         }
-
     }
+
     // phpcs:enable
     /**
-    * Handles the export action for the plugin.
+     * Handles the export action for the plugin.
      *
      * This function checks for the necessary parameters and verifies the security nonce before exporting the database table as an SQL file.
-     *
-     * @since 1.0.0
-     * @access public
-     *
-     * @return void
-    */
+     */
     public static function handle_export_action()
     {
         if (!isset($_GET['ppsfwoo_export_table'], $_GET['_wpnonce'])) {
-
             return;
-
         }
 
         if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'db_export_nonce')) {
-
-            wp_die("Security check failed");
-
+            wp_die('Security check failed');
         }
 
         header('Content-Type: application/sql');
@@ -90,19 +70,15 @@ class Database
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo self::export();
 
-        exit();
+        exit;
     }
+
     /**
-    * Installs the necessary database tables for the plugin.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-    */
+     * Installs the necessary database tables for the plugin.
+     */
     public static function install()
     {
         if ((new self("SHOW TABLES LIKE '{$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber';"))->result) {
-
             return;
         }
 
@@ -128,13 +104,10 @@ class Database
 
         update_option('ppsfwoo_db_version', self::$version, false);
     }
+
     /**
-    * Upgrades the plugin's database to the latest version.
-     *
-     * @since 2.4.1
-     *
-     * @return void
-    */
+     * Upgrades the plugin's database to the latest version.
+     */
     public static function upgrade()
     {
         $installed_version = PluginMain::get_option('ppsfwoo_db_version') ?: self::$version;
@@ -146,7 +119,6 @@ class Database
         }
 
         if (version_compare($installed_version, '2.4.1', '<')) {
-
             new self(
                 "ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
                 ADD COLUMN `expires` datetime DEFAULT NULL,
@@ -155,7 +127,6 @@ class Database
         }
 
         if (version_compare($installed_version, '2.4.2', '<')) {
-
             new self(
                 "ALTER TABLE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
                 MODIFY `expires` date,
@@ -165,21 +136,19 @@ class Database
         }
 
         if (version_compare($installed_version, '2.4.6', '<')) {
-
             do_action('ppsfwoo_refresh_plans');
-
         }
 
         update_option('ppsfwoo_db_version', $this_version, false);
 
         wp_cache_delete('ppsfwoo_db_version', 'options');
-
     }
+
     /**
-    * Exports data from the ppsfwoo_subscriber table in the database.
+     * Exports data from the ppsfwoo_subscriber table in the database.
      *
-     * @return string Returns a SQL query string for inserting data into the ppsfwoo_subscriber table.
-    */
+     * @return string returns a SQL query string for inserting data into the ppsfwoo_subscriber table
+     */
     public static function export()
     {
         global $wpdb;
@@ -187,43 +156,32 @@ class Database
         $data = new self("SELECT * FROM {$wpdb->prefix}ppsfwoo_subscriber", [], ARRAY_A);
 
         if (!isset($data->result[0])) {
-
             exit;
-
         }
 
         $columns = array_keys($data->result[0]);
 
-        $column_names = "`" . implode('`, `', $columns) . "`";
+        $column_names = '`'.implode('`, `', $columns).'`';
 
         $values = [];
 
         foreach ($data->result as $row) {
-
             $escaped_values = array_map(function ($value) use ($wpdb) {
-
                 if (is_null($value)) {
-
                     return 'NULL';
-
-                } elseif (ctype_digit($value)) {
-
+                }
+                if (ctype_digit($value)) {
                     return $wpdb->prepare('%d', $value);
-
-                } else {
-
-                    return $wpdb->prepare('%s', $value);
-
                 }
 
+                return $wpdb->prepare('%s', $value);
             }, $row);
 
-            $values[] = '(' . implode(', ', $escaped_values) . ')';
-
+            $values[] = '('.implode(', ', $escaped_values).')';
         }
 
         $db_name = DB_NAME;
 
-        return "INSERT INTO `{$db_name}`.`{$wpdb->prefix}ppsfwoo_subscriber` ({$column_names}) VALUES " . implode(', ', $values) . ';';
+        return "INSERT INTO `{$db_name}`.`{$wpdb->prefix}ppsfwoo_subscriber` ({$column_names}) VALUES ".implode(', ', $values).';';
     }
 }

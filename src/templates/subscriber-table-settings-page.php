@@ -20,37 +20,41 @@ if (!defined('ABSPATH')) {
     <?php
 
     foreach ($results as $row) {
-
         $user = get_user_by('id', $row->wp_customer_id);
 
         if (!is_object($user)) {
-
             continue;
-
         }
 
-        $user_profile_link = admin_url("user-edit.php?user_id=$row->wp_customer_id");
+        $user_profile_link = admin_url("user-edit.php?user_id={$row->wp_customer_id}");
 
-        $order_link = admin_url("admin.php?page=wc-orders&action=edit&id=$row->order_id");
+        $order_link = admin_url("admin.php?page=wc-orders&action=edit&id={$row->order_id}");
 
         switch ($row->event_type) {
             case Webhook::ACTIVATED:
-                $class = "status green";
+                $class = 'status green';
+
                 break;
+
             case Webhook::SUSPENDED:
-                $class = "status orange";
+                $class = 'status orange';
+
                 break;
+
             case Webhook::CANCELLED:
             case Webhook::PAYMENT_FAILED:
             case Webhook::EXPIRED:
-                $class = "status red";
+                $class = 'status red';
+
                 break;
+
             default:
-                $class = "";
+                $class = '';
+
                 break;
         }
 
-        $date = gmdate("F j, Y", strtotime($row->created));
+        $date = gmdate('F j, Y', strtotime($row->created));
 
         ?>
         <tr>

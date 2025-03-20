@@ -2,103 +2,108 @@
 
 namespace PPSFWOO;
 
-use PPSFWOO\Product;
-use PPSFWOO\Plan;
-use PPSFWOO\Order;
-use PPSFWOO\Webhook;
-use PPSFWOO\Database;
-use PPSFWOO\Exception;
-use PPSFWOO\PayPal;
-
 class Subscriber
 {
     /**
-    * PayPal subscription
+     * PayPal subscription.
      *
      * @var object
-    */
+     */
     public \stdClass $subscription;
+
     /**
-    * PayPal subscription webhook event type
+     * PayPal subscription webhook event type.
      *
      * @var string
-    */
-    public $event_type = null;
+     */
+    public $event_type;
+
     /**
-    * WordPress user id
+     * WordPress user id.
      *
      * @var int
-    */
-    public $user_id = null;
+     */
+    public $user_id;
+
     /**
-    * Subscriber email address
+     * Subscriber email address.
      *
      * @var string
-    */
-    public $email = null;
+     */
+    public $email;
+
     /**
-    * Subscriber's first name
+     * Subscriber's first name.
      *
      * @var string
-    */
-    public $first_name = null;
+     */
+    public $first_name;
+
     /**
-    * Subscriber's last name
+     * Subscriber's last name.
      *
      * @var string
-    */
-    public $last_name = null;
+     */
+    public $last_name;
+
     /**
-    * Subscriber's address line 1
+     * Subscriber's address line 1.
      *
      * @var string
-    */
-    public $address_line_1 = null;
+     */
+    public $address_line_1;
+
     /**
-    * Subscriber's address line 2
+     * Subscriber's address line 2.
      *
      * @var string
-    */
-    public $address_line_2 = null;
+     */
+    public $address_line_2;
+
     /**
-    * Subscriber's city
+     * Subscriber's city.
      *
      * @var string
-    */
-    public $city = null;
+     */
+    public $city;
+
     /**
-    * Subscriber's state
+     * Subscriber's state.
      *
      * @var string
-    */
-    public $state = null;
+     */
+    public $state;
+
     /**
-    * Subscriber's zip code
+     * Subscriber's zip code.
      *
      * @var string
-    */
-    public $postal_code = null;
+     */
+    public $postal_code;
+
     /**
-    * Subscriber's country code
+     * Subscriber's country code.
      *
      * @var string
-    */
-    public $country_code = null;
+     */
+    public $country_code;
+
     /**
-    * Subscriber's chosen plan
+     * Subscriber's chosen plan.
      *
      * @var object
-    */
-    public $plan = null;
+     */
+    public $plan;
+
     /**
-    * Constructor for the Subscription class.
+     * Constructor for the Subscription class.
      *
-     * @param array $subscription The subscription data.
-     * @param string|null $event_type The type of event.
-    */
+     * @param array       $subscription the subscription data
+     * @param null|string $event_type   the type of event
+     */
     public function __construct($subscription, $event_type = null)
     {
-        $type = isset($subscription['response']) ? "response" : "resource";
+        $type = isset($subscription['response']) ? 'response' : 'resource';
 
         $this->subscription = (object) $subscription[$type];
 
@@ -121,91 +126,58 @@ class Subscriber
             ?? $this->subscription->next_billing
             ?? new \DateTime();
 
-        $this->email            = $this->subscription->subscriber['email_address'];
+        $this->email = $this->subscription->subscriber['email_address'];
 
-        $this->first_name       = $this->subscription->subscriber['name']['given_name'];
+        $this->first_name = $this->subscription->subscriber['name']['given_name'];
 
-        $this->last_name        = $this->subscription->subscriber['name']['surname'];
+        $this->last_name = $this->subscription->subscriber['name']['surname'];
 
-        $this->address_line_1   = $this->subscription->subscriber['shipping_address']['address']['address_line_1'];
+        $this->address_line_1 = $this->subscription->subscriber['shipping_address']['address']['address_line_1'];
 
-        $this->address_line_2   = $this->subscription->subscriber['shipping_address']['address']['address_line_2'] ?? "";
+        $this->address_line_2 = $this->subscription->subscriber['shipping_address']['address']['address_line_2'] ?? '';
 
-        $this->city             = $this->subscription->subscriber['shipping_address']['address']['admin_area_2'];
+        $this->city = $this->subscription->subscriber['shipping_address']['address']['admin_area_2'];
 
-        $this->state            = $this->subscription->subscriber['shipping_address']['address']['admin_area_1'];
+        $this->state = $this->subscription->subscriber['shipping_address']['address']['admin_area_1'];
 
-        $this->postal_code      = $this->subscription->subscriber['shipping_address']['address']['postal_code'];
+        $this->postal_code = $this->subscription->subscriber['shipping_address']['address']['postal_code'];
 
-        $this->country_code     = $this->subscription->subscriber['shipping_address']['address']['country_code'];
+        $this->country_code = $this->subscription->subscriber['shipping_address']['address']['country_code'];
 
-        $this->event_type       = $event_type;
-
+        $this->event_type = $event_type;
     }
+
     /**
-    * Adds a specified interval to a given datetime and returns the new date.
+     * Retrieves the ID of the subscription associated with this object.
      *
-     * @param DateTime $datetime The datetime to add the interval to.
-     * @param string $interval_type The type of interval to add, must be DAY, WEEK, MONTH, or YEAR.
-     * @return DateTime|null The new date with the added interval, or null if the datetime is empty.
-     * @throws InvalidArgumentException If the interval type is not valid.
-    */
-    protected static function add_frequency_to_last_payment($datetime, $interval_type)
-    {
-        if (empty($datetime)) {
-            return null;
-        }
-
-        $intervals = [
-            'DAY'   => 'P1D',
-            'WEEK'  => 'P1W',
-            'MONTH' => 'P1M',
-            'YEAR'  => 'P1Y'
-        ];
-
-        if (!isset($intervals[$interval_type])) {
-
-            throw new \InvalidArgumentException("Invalid interval type. Use WEEK, MONTH, or YEAR.");
-
-        }
-
-        $new_date = clone $datetime;
-
-        $new_date->add(new \DateInterval($intervals[$interval_type]));
-
-        return $new_date;
-    }
-    /**
-    * Retrieves the ID of the subscription associated with this object.
-     *
-     * @return string The ID of the subscription, or an empty string if no subscription is associated.
-    */
+     * @return string the ID of the subscription, or an empty string if no subscription is associated
+     */
     public function get_id()
     {
         return $this->subscription->id ?? '';
     }
+
     /**
-    * Retrieves the plan ID associated with the subscription.
+     * Retrieves the plan ID associated with the subscription.
      *
-     * @return string The plan ID, or an empty string if not available.
-    */
+     * @return string the plan ID, or an empty string if not available
+     */
     public function get_plan_id()
     {
         return $this->subscription->plan_id ?? '';
     }
+
     /**
-    * Retrieves the redirect URL for a subscription based on the given subscription ID.
+     * Retrieves the redirect URL for a subscription based on the given subscription ID.
      *
-     * @param int $subs_id The subscription ID to retrieve the redirect URL for.
+     * @param int $subs_id the subscription ID to retrieve the redirect URL for
      *
-     * @return string|bool The redirect URL for the subscription, or false if the subscription ID is not set.
-    */
+     * @return bool|string the redirect URL for the subscription, or false if the subscription ID is not set
+     */
     public static function get($subs_id)
     {
         if (!isset($subs_id)) {
-
-            return esc_attr("false");
-
+            return esc_attr('false');
         }
 
         $redirect = false;
@@ -220,7 +192,6 @@ class Subscriber
         $order_id = $results->result[0]->order_id ?? null;
 
         if ($order_id && $order = wc_get_order($order_id)) {
-
             $order->set_status('completed', 'Order complete.');
 
             $order->save();
@@ -228,18 +199,13 @@ class Subscriber
             $redirect = $order->get_checkout_order_received_url();
 
             if ($user = get_user_by('id', $results->result[0]->wp_customer_id)) {
-
                 wp_set_auth_cookie($user->ID);
-
             }
-
         } elseif (
             false !== get_transient('ppsfwoo_customer_nonce')
-            && $response = PayPal::request(PayPal::EP_SUBSCRIPTIONS . $subs_id)
+            && $response = PayPal::request(PayPal::EP_SUBSCRIPTIONS.$subs_id)
         ) {
-
             if (self::is_active($response)) {
-
                 delete_transient('ppsfwoo_customer_nonce');
 
                 $Subscriber = new self($response, Webhook::ACTIVATED);
@@ -248,23 +214,118 @@ class Subscriber
             }
         }
 
-        return $redirect ? esc_url($redirect) : esc_attr("false");
+        return $redirect ? esc_url($redirect) : esc_attr('false');
     }
+
     /**
-    * Checks if the given response is active.
+     * Checks if the given response is active.
      *
-     * @param array $response The response to check.
-     * @return bool Returns true if the response is active, false otherwise.
-    */
+     * @param array $response the response to check
+     *
+     * @return bool returns true if the response is active, false otherwise
+     */
     public static function is_active($response)
     {
-        return isset($response['response']['status']) && "ACTIVE" === $response['response']['status'];
+        return isset($response['response']['status']) && 'ACTIVE' === $response['response']['status'];
     }
+
     /**
-    * Inserts a new subscriber into the database or updates an existing one.
+     * Cancels the subscription and updates the expiration date and event type in the database.
      *
-     * @return array An array containing any errors and the action performed (insert or update).
-    */
+     * @return array an array containing any errors that occurred during the cancellation process
+     */
+    public function cancel()
+    {
+        $expiration = $this->subscription->expiration->format('Y-m-d');
+
+        if ($order_id = Order::get_order_id_by_subscription_id($this->get_id())) {
+            Product::update_download_permissions($order_id, $expiration);
+        }
+
+        $result = new Database(
+            "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
+             SET `event_type` = %s,
+                 `canceled_date` = %s,
+                 `expires` = %s
+             WHERE `id` = %s;",
+            [
+                $this->event_type,
+                gmdate('Y-m-d H:i:s'),
+                $expiration,
+                $this->get_id(),
+            ]
+        );
+
+        $errors = isset($result->result['error']) ? $result->result['error'] : false;
+
+        return [
+            'errors' => $errors,
+        ];
+    }
+
+    /**
+     * Subscribes the user to the service.
+     *
+     * @return false|int the ID of the subscriber if successful, false otherwise
+     */
+    public function subscribe()
+    {
+        $response = $this->insert();
+
+        if (false === $response['errors'] && 'insert' === $response['action']) {
+            $order_id = Order::insert($this);
+
+            new Database(
+                "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `order_id` = %d, `canceled_date` = NULL WHERE `id` = %s;",
+                [
+                    $order_id,
+                    $this->get_id(),
+                ]
+            );
+        }
+
+        return $this->get_id() ?? false;
+    }
+
+    /**
+     * Adds a specified interval to a given datetime and returns the new date.
+     *
+     * @param DateTime $datetime      the datetime to add the interval to
+     * @param string   $interval_type the type of interval to add, must be DAY, WEEK, MONTH, or YEAR
+     *
+     * @return null|DateTime the new date with the added interval, or null if the datetime is empty
+     *
+     * @throws InvalidArgumentException if the interval type is not valid
+     */
+    protected static function add_frequency_to_last_payment($datetime, $interval_type)
+    {
+        if (empty($datetime)) {
+            return null;
+        }
+
+        $intervals = [
+            'DAY' => 'P1D',
+            'WEEK' => 'P1W',
+            'MONTH' => 'P1M',
+            'YEAR' => 'P1Y',
+        ];
+
+        if (!isset($intervals[$interval_type])) {
+            throw new \InvalidArgumentException('Invalid interval type. Use WEEK, MONTH, or YEAR.');
+        }
+
+        $new_date = clone $datetime;
+
+        $new_date->add(new \DateInterval($intervals[$interval_type]));
+
+        return $new_date;
+    }
+
+    /**
+     * Inserts a new subscriber into the database or updates an existing one.
+     *
+     * @return array an array containing any errors and the action performed (insert or update)
+     */
     private function insert()
     {
         $wp_user = !empty($this->email) ? get_user_by('email', $this->email) : false;
@@ -272,17 +333,14 @@ class Subscriber
         $this->user_id = $wp_user->ID ?? false;
 
         if (!$this->user_id) {
-
             $this->user_id = $this->create_wp_user();
 
             $this->create_woocommerce_customer();
-
         }
 
         $order_id = Order::get_order_id_by_subscription_id($this->get_id());
 
         if (false === $order_id) {
-
             $result = new Database(
                 "INSERT INTO {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber (
                     `id`,
@@ -295,12 +353,10 @@ class Subscriber
                     $this->get_id(),
                     $this->user_id,
                     $this->get_plan_id(),
-                    $this->event_type
+                    $this->event_type,
                 ]
             );
-
         } else {
-
             $result = new Database(
                 "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET
                     `paypal_plan_id` = %s,
@@ -311,7 +367,7 @@ class Subscriber
                 [
                     $this->get_plan_id(),
                     $this->event_type,
-                    $this->get_id()
+                    $this->get_id(),
                 ]
             );
 
@@ -322,102 +378,40 @@ class Subscriber
 
         return [
             'errors' => $errors,
-            'action' => false === $order_id ? 'insert' : 'update'
+            'action' => false === $order_id ? 'insert' : 'update',
         ];
     }
+
     /**
-    * Cancels the subscription and updates the expiration date and event type in the database.
+     * Creates a new WordPress user with the given information.
      *
-     * @return array An array containing any errors that occurred during the cancellation process.
-    */
-    public function cancel()
-    {
-        $expiration = $this->subscription->expiration->format('Y-m-d');
-
-        if ($order_id = Order::get_order_id_by_subscription_id($this->get_id())) {
-
-            Product::update_download_permissions($order_id, $expiration);
-
-        }
-
-        $result = new Database(
-            "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber
-             SET `event_type` = %s,
-                 `canceled_date` = %s,
-                 `expires` = %s
-             WHERE `id` = %s;",
-            [
-                $this->event_type,
-                gmdate("Y-m-d H:i:s"),
-                $expiration,
-                $this->get_id()
-            ]
-        );
-
-        $errors = isset($result->result['error']) ? $result->result['error'] : false;
-
-        return [
-            'errors' => $errors
-        ];
-    }
-    /**
-    * Subscribes the user to the service.
-     *
-     * @return int|false The ID of the subscriber if successful, false otherwise.
-    */
-    public function subscribe()
-    {
-        $response = $this->insert();
-
-        if (false === $response['errors'] && 'insert' === $response['action']) {
-
-            $order_id = Order::insert($this);
-
-            new Database(
-                "UPDATE {$GLOBALS['wpdb']->base_prefix}ppsfwoo_subscriber SET `order_id` = %d, `canceled_date` = NULL WHERE `id` = %s;",
-                [
-                    $order_id,
-                    $this->get_id()
-                ]
-            );
-        }
-
-        return $this->get_id() ?? false;
-    }
-    /**
-    * Creates a new WordPress user with the given information.
-     *
-     * @return int|bool The user ID if successful, false if there was an error.
-    */
+     * @return bool|int the user ID if successful, false if there was an error
+     */
     private function create_wp_user()
     {
         $user_id = wp_insert_user([
-            'user_login' => strtolower($this->first_name) . '.' . strtolower($this->last_name),
-            'user_pass'  => wp_generate_password(12, false),
+            'user_login' => strtolower($this->first_name).'.'.strtolower($this->last_name),
+            'user_pass' => wp_generate_password(12, false),
             'user_email' => $this->email,
             'first_name' => $this->first_name,
-            'last_name'  => $this->last_name,
-            'role'       => 'customer'
+            'last_name' => $this->last_name,
+            'role' => 'customer',
         ]);
 
         if (!is_wp_error($user_id)) {
-
             wp_new_user_notification($user_id, null, 'user');
 
             return $user_id;
-
-        } else {
-
-            Exception::log("Error creating user");
-
-            return false;
         }
+
+        Exception::log('Error creating user');
+
+        return false;
     }
+
     /**
-    * Creates a new WooCommerce customer with the provided user information.
-     *
-     * @return void
-    */
+     * Creates a new WooCommerce customer with the provided user information.
+     */
     private function create_woocommerce_customer()
     {
         $customer = new \WC_Customer($this->user_id);

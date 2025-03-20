@@ -15,16 +15,14 @@
 	</tr>
 	<?php
     if (!isset($plans['000'])) {
-
         foreach ($plans as $plan_id => $plan) {
-
-            $plan_active = "ACTIVE" === $plan->status;
+            $plan_active = 'ACTIVE' === $plan->status;
 
             $paypal_action = $plan_active ? 'deactivate' : 'activate';
 
             $status_indicator = $plan_active ? 'green' : 'red';
 
-            $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+            $formatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
 
             ?>
 			<tr class="plan-row">
@@ -42,7 +40,6 @@
 			</tr>
 		<?php
         }
-
     }
 ?>
 </table>
