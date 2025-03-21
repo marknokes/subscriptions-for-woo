@@ -21,7 +21,7 @@ function ppsfwoo_autoload($class_name)
 
     $path = __DIR__.'\classes\\'.$namespace.'class-ppsfwoo-'.$class_name;
 
-    $file = preg_replace('~[\\\\/]~', DIRECTORY_SEPARATOR, $path).'.php';
+    $file = preg_replace('~[\\\/]~', DIRECTORY_SEPARATOR, $path).'.php';
 
     if (file_exists($file)) {
         require_once $file;
