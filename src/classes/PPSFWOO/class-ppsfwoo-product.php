@@ -67,10 +67,21 @@ class Product
 
         $tax_rate_slug = (new Plan())->get_tax_rate_data()['tax_rate_slug'];
 
-        $tax_class_exists = \WC_Tax::get_tax_class_by('slug', $tax_rate_slug);
+        $plans = Plan::get_plans();
+
+        $taxes = [];
+
+        if (sizeof($plans)) {
+            foreach ($plans as $plan_id => $plan) {
+                if (!empty($plan->taxes)) {
+                    $taxes[] = $plan_id;
+                }
+            }
+        }
 
         ?><script type='text/javascript'>
             jQuery(document).ready(function($) {
+                var taxes = <?php echo json_encode($taxes); ?>;
                 $('.show_if_simple, .general_options')
                     .addClass('show_if_<?php echo esc_attr(self::TYPE); ?>')
                     .show();
@@ -79,11 +90,13 @@ class Product
                         var selectedOption = $(this).find('option:selected'),
                             price = selectedOption.data('price').replace('$', '');
                         $('#_regular_price').val(price);
-                        <?php
-                        if ($tax_class_exists) {
-                            ?>$('#_tax_class').val("<?php echo esc_attr($tax_rate_slug); ?>");<?php
+                        if (taxes.includes(selectedOption.val())) {
+                            $('#_tax_status').val("taxable");
+                            $('#_tax_class').val("<?php echo esc_attr($tax_rate_slug); ?>");
+                        } else {
+                            $('#_tax_status').val("none");
+                            $('#_tax_class').val(""); 
                         }
-        ?>
                     });
             });
 
@@ -135,75 +148,43 @@ class Product
 
     /**
      * Displays the options for the product tab content.
-     *
-     * @global $post
      */
     public function options_product_tab_content()
     {
-        global $post;
-
         ?>
 
         <div id='ppsfwoo_options' class='panel woocommerce_options_panel'>
 
-            <div class='options_group'><?php
+        <div class='options_group'>
 
-                $selected_plan_id = get_post_meta($post->ID, $this->plan_id_meta_key, true);
+        <?php
 
         $plans = Plan::get_plans();
 
         if ($plans && !isset($plans['000'])) {
-            $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+            $options = $this->get_select_options($plans);
 
-            $options = "<option value=''>Select a plan [".$this->env['env'].']</option>';
-
-            foreach ($plans as $plan_id => $plan) {
-                if ('ACTIVE' !== $plan->status) {
-                    unset($plans[$plan_id]);
-                } else {
-                    $selected = $selected_plan_id === $plan_id ? 'selected' : '';
-
-                    $options .= '<option value="'.esc_attr($plan_id).'" '.$selected.' data-price="'.esc_attr($formatter->formatCurrency($plan->price, 'USD')).'">'.esc_html("{$plan->name} [{$plan->product_name}] [{$plan->frequency}]").'</option>';
-                }
-            }
-
-            wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false);
-
-            ?>
-                    <p class="form-field">
-                        <label for="<?php echo esc_attr($this->plan_id_meta_key); ?>">PayPal Subscription Plan</label>
-                        <select id="<?php echo esc_attr($this->plan_id_meta_key); ?>" name="<?php echo esc_attr($this->plan_id_meta_key); ?>">
-                            <?php
-                    echo wp_kses($options, [
-                        'option' => [
-                            'value' => [],
-                            'selected' => [],
-                            'data-price' => [],
-                        ],
-                    ]);
-            ?>
-                        </select>
-                    </p>
-                    <?php
-
-        } else {
-            ?>
-
-                    <h3 style="padding: 2em">
-
-                        Please be sure your <a href="<?php echo esc_url(admin_url(PluginMain::$ppcp_settings_url)); ?>">connection to PayPal</a>
-
-                        is setup and that you've created at least one plan in your <span style="text-decoration: underline;"><?php echo esc_html($this->env['env']); ?></span> environment. <a href="<?php echo esc_url($this->env['paypal_url']); ?>/billing/plans" target="_blank">Create a plan now.</a>
-
-                    </h3>
-
-                <?php
-
+            wp_nonce_field('ppsfwoo_plan_id_nonce', 'ppsfwoo_plan_id_nonce', false); ?>
+            <p class="form-field">
+                <label for="<?php echo esc_attr($this->plan_id_meta_key); ?>">PayPal Subscription Plan</label>
+                <select id="<?php echo esc_attr($this->plan_id_meta_key); ?>" name="<?php echo esc_attr($this->plan_id_meta_key); ?>">
+                    <?php echo wp_kses($options['html'], $options['wp_kses_options']); ?>
+                </select>
+            </p><?php
+        } else { ?>
+            <h3 style="padding: 2em">
+                Please be sure your <a href="<?php echo esc_url(admin_url(PluginMain::$ppcp_settings_url)); ?>">connection to PayPal</a>
+                is setup and that you've created at least one plan in your <span style="text-decoration: underline;"><?php echo esc_html($this->env['env']); ?></span> environment. <a href="<?php echo esc_url($this->env['paypal_url']); ?>/billing/plans" target="_blank">Create a plan now.</a>
+            </h3>
+            <?php
         }
+        ?>
 
-        ?></div>
+        </div>
 
-        </div><?php
+        </div>
+
+        <?php
     }
 
     /**
@@ -375,6 +356,47 @@ class Product
                 }
             }
         }
+    }
+
+    /**
+     * Get the html select options for options_product_tab_content.
+     *
+     * @param array $plans the available plans
+     *
+     * @global $post
+     *
+     * @return string the select option html
+     */
+    protected function get_select_options($plans)
+    {
+        global $post;
+
+        $selected_plan_id = get_post_meta($post->ID, $this->plan_id_meta_key, true);
+
+        $formatter = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+
+        $options = "<option value=''>Select a plan [".$this->env['env'].']</option>';
+
+        foreach ($plans as $plan_id => $plan) {
+            if ('ACTIVE' !== $plan->status) {
+                unset($plans[$plan_id]);
+            } else {
+                $selected = $selected_plan_id === $plan_id ? 'selected' : '';
+
+                $options .= '<option value="'.esc_attr($plan_id).'" '.$selected.' data-price="'.esc_attr($formatter->formatCurrency($plan->price, 'USD')).'">'.esc_html("{$plan->name} [{$plan->product_name}] [{$plan->frequency}]").'</option>';
+            }
+        }
+
+        return [
+            'html' => $options,
+            'wp_kses_options' => [
+                'option' => [
+                    'value' => [],
+                    'selected' => [],
+                    'data-price' => [],
+                ],
+            ],
+        ];
     }
 
     /**
