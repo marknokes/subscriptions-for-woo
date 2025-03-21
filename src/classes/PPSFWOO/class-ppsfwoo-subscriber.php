@@ -208,9 +208,7 @@ class Subscriber
             if (self::is_active($response)) {
                 delete_transient('ppsfwoo_customer_nonce');
 
-                $Subscriber = new self($response, Webhook::ACTIVATED);
-
-                $Subscriber->subscribe();
+                (new self($response, Webhook::ACTIVATED))->subscribe();
             }
         }
 
