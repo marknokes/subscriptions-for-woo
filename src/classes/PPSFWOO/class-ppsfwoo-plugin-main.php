@@ -1024,7 +1024,7 @@ class PluginMain
     public function admin_enqueue_scripts($hook)
     {
         global $post_type;
-        
+
         if ('woocommerce_page_subscriptions_for_woo' !== $hook && 'product' !== $post_type) {
             return;
         }
