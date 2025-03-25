@@ -6,7 +6,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Stable tag: 2.5.3
 WC tested up to: 9.7.1
 Requires at least: 6.4.3
-Tested up to: 6.7.2
+Tested up to: 6.8
 Requires PHP: 7.4
 
 Enjoy recurring PayPal subscription payments leveraging WooCommerce and WooCommerce PayPal Payments
