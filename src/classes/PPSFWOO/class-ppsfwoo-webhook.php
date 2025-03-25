@@ -221,6 +221,7 @@ class Webhook
                     'callback' => [$this, 'handle_request'],
                     'args' => [
                         'event_type' => [
+                            'required' => true,
                             'validate_callback' => function ($param, $request, $key) {
                                 return in_array(
                                     $param,
