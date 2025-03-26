@@ -114,6 +114,15 @@ class PluginMain
             'description' => 'Email reminders with a link to resubscribe should be sent this many days before expiration of a canceled subscription. {wc_settings_tab_email}',
             'sanitize_callback' => 'absint',
         ],
+        'ppsfwoo_discount_offer_expires' => [
+            'name' => 'Offer expires',
+            'type' => 'number',
+            'min' => 0,
+            'default' => 10,
+            'is_enterprise' => true,
+            'description' => 'Number of days after a subscribtion expiration that the resubscribe offer is valid. 0 = no limit.',
+            'sanitize_callback' => 'absint',
+        ],
         'ppsfwoo_resubscribe_landing_page_id' => [
             'name' => 'Resubscribe landing page',
             'type' => 'select',
@@ -222,6 +231,13 @@ class PluginMain
      * @var int
      */
     public $ppsfwoo_reminder = 10;
+
+    /**
+     * Number of days after a subscribtion expiration that the resubscribe offer is valid. 0 = no limit.
+     *
+     * @var int
+     */
+    public $ppsfwoo_discount_offer_expires = 10;
 
     /**
      * Page that customers will visit upon resubscribing to a canceled subscription.

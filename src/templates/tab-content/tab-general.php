@@ -147,7 +147,11 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 		                case 'number':
 		                    $value = esc_attr($value);
 
-		                    echo "<input size='2' type='number' min='1' max='100' id='".esc_attr($option)."' name='".esc_attr($name)."' value='".esc_attr($value)."' ".esc_attr($disabled).' />';
+		                    $min = $array['min'] ?? 1;
+
+		                    $max = $array['max'] ?? 100;
+
+		                    echo "<input size='2' type='number' min='".esc_attr($min)."' max='".esc_attr($max)."' id='".esc_attr($option)."' name='".esc_attr($name)."' value='".esc_attr($value)."' ".esc_attr($disabled).' />';
 
 		                    break;
 
