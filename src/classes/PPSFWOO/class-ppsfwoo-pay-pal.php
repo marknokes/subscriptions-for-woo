@@ -85,6 +85,10 @@ class PayPal
                 });
         ");
 
+        wp_localize_script('ppsfwoo-paypal-button', 'ppsfwoo_paypal_ajax_var', [
+            'redirect' => get_permalink(PluginMain::get_option('ppsfwoo_thank_you_page_id')),
+        ]);
+
         PluginMain::display_template('paypal-button', [
             'button_text' => PluginMain::get_option('ppsfwoo_button_text'),
             'product_id' => $product_id,

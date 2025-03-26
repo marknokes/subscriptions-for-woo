@@ -706,10 +706,6 @@ class PluginMain
     public function enqueue_frontend()
     {
         if (!is_admin()) {
-            wp_localize_script('ppsfwoo-paypal-button', 'ppsfwoo_paypal_ajax_var', [
-                'redirect' => get_permalink($this->ppsfwoo_thank_you_page_id),
-            ]);
-
             wp_enqueue_style('ppsfwoo-styles', $this->plugin_dir_url.'css/frontend.min.css', [], self::plugin_data('Version'));
 
             if (is_product()) {
