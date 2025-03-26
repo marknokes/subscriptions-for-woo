@@ -125,7 +125,7 @@ class Order
             foreach ($order->get_items() as $item) {
                 $product = $item->get_product();
 
-                if ($product->is_type(Product::TYPE)) {
+                if ($product && $product->is_type(Product::TYPE)) {
                     $has_subscription = true;
 
                     break;
