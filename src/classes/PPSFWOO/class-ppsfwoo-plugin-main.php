@@ -508,6 +508,11 @@ class PluginMain
     public function options_page_tab_menu($tabs)
     {
         foreach ($tabs as $tab_id => $display_name) {
+            $file = $this->template_dir."tab-content/{$tab_id}.php";
+
+            if (!file_exists($file)) {
+                continue;
+            }
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             $active = isset($_GET['tab']) && $tab_id === $_GET['tab'] ? 'nav-tab-active' : '';
 
