@@ -342,6 +342,11 @@ class PluginMain
         {
             public $product_type;
 
+            /**
+             * Constructor for the Product class.
+             *
+             * @param $product - The product to be assigned to the class
+             */
             public function __construct($product)
             {
                 $this->product_type = Product::TYPE;
