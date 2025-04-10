@@ -112,7 +112,7 @@ jQuery(document).ready(function($) {
 				'nonce': nonce
 			});
 	    });
-	    $('.plan-row').on('click', '.copy-button', function(e) {
+	    $('.plan-row, .role-row').on('click', '.copy-button', function(e) {
 			var copyText = $(this).prev('.copy-text'),
 				tempTextarea = $('<textarea>');
 			tempTextarea.val(copyText.text());
