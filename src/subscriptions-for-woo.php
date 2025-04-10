@@ -10,7 +10,7 @@ namespace PPSFWOO;
  * Author URI: https://wp-subscriptions.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Version: 2.5.3
+ * Version: 2.5.4
  * WC requires at least: 8.6.0
  * WC tested up to: 9.7.1
  * Requires at least: 6.4.3

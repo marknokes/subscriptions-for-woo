@@ -3,7 +3,7 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.5.3
+Stable tag: 2.5.4
 WC tested up to: 9.7.1
 Requires at least: 6.4.3
 Tested up to: 6.8
@@ -12,24 +12,40 @@ Requires PHP: 7.4
 Enjoy recurring PayPal subscription payments leveraging WooCommerce and WooCommerce PayPal Payments
 
 == Description ==
-
 Subscriptions for Woo takes the hassle (and high cost) out of managing subscriptions products and services for your business. Simply create your PayPal subscription products and plans in your PayPal business subscriptions dashboard, and sync them with the plugin. After sync, a new product type "Subscription" is added to the product menu. Selection provides an additional tab where you choose your plan. Save and done!
 
 = Offer Subscription payments to help drive repeat business =
-Create stable, predictable income by offering subscription plans. Subscription plans are created and managed at PayPal, where customer payments are securely maintained. **Consumers are nearly three times more likely to purchase when you offer PayPal.** 
+Create stable, predictable income by offering subscription plans.
+- Subscription plans are created and managed at PayPal where customer payments are securely maintained. **Consumers are nearly three times more likely to purchase when you offer PayPal.** 
+- Built to seamlessly integrate with your WooCommerce store, offering a tailored solution for managing recurring payments and subscriptions.
+- Designed to streamline the subscription process, from setup to management, providing you with the tools you need to drive revenue and foster long-term customer relationships.
+- As your business grows and evolves, our plugin grows with you, seamlessly accommodating increased subscription volumes, expanding product catalogs, and evolving customer needs.
+- You can confidently scale your subscription offerings without worrying about technical limitations or disruptions.
+- [Subscriptions for Woo](https://wp-subscriptions.com/) allow business and casual sellers to accept reliable recurring payments on a fixed billing schedule (buyers may require a PayPal account).
+- It’s easy for shoppers, simple for you, and great for your business!
 
-= Purpose built =
-Built to seamlessly integrate with your WooCommerce store, offering a tailored solution for managing recurring payments and subscriptions. Designed to streamline the subscription process, from setup to management, providing you with the tools you need to drive revenue and foster long-term customer relationships.
+= Subscriptions for Woo Features =
+- Unlimited downloads
+- Unlimited domains
+- PayPal subscription plan chosen on WooCommerce product
 
-= Low Cost = 
-We understand the importance of cost-effectiveness for businesses of all sizes, which is why we’ve made it our priority to offer a solution that delivers exceptional functionality without breaking the bank. With transparent pricing and no hidden fees, our plugin provides an affordable subscription management solution that maximizes your ROI.
+= Subscriptions for Woo Premium Features =
+Everything from above plus the following:
+- Allow specific users to edit plugin settings and permissions
+- Allow specific users to view and manage subscribers
+- Allow specific users to edit subscription products
+- Give subscribers the ability to manage their own plan, including pausing, cancelling, or re-activating, without needing to wait on you for help
+- Create virtual and downloadable subscription products
 
-= Scalability =
-As your business grows and evolves, our plugin grows with you, seamlessly accommodating increased subscription volumes, expanding product catalogs, and evolving customer needs. You can confidently scale your subscription offerings without worrying about technical limitations or disruptions.
+= Subscriptions for Woo Enterprise Features =
+Everything from above plus the following:
+- Create custom roles to restrict content based on customer subscription(s)
+- Shortcode allows adding PayPal subscribe button to any page
+- Allow canceled subscribers to resubscribe and receive a discount
+- Easily generate WooCommerce products from each plan with one click
+- Enterprise support
 
-[Subscriptions for Woo](https://wp-subscriptions.com/) allow business and casual sellers to accept reliable recurring payments on a fixed billing schedule (buyers may require a PayPal account).
-
-It’s easy for shoppers, simple for you, and great for your business – with no monthly or setup fees.
+[Compare plans at https://wp-subscriptions.com/compare-plans/](https://wp-subscriptions.com/compare-plans/)
 
 = Activate PayPal =
 Are you new to PayPal? [Learn how to add it to your store.](https://woocommerce.com/document/woocommerce-paypal-payments/)
@@ -104,6 +120,14 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.5.4 =
+* Bugfix: deleted products cause error on order template in admin area
+* Improvemnet: add missing css identifier in js
+* Improvemnet: add missing docblock
+* Improvemnet: check for tab content before attempting to include in options page menu
+* Improvemnet: add min and max to number type for options page
+* Improvemnet: move localize script for paypal button to paypal class
 
 = 2.5.3 =
 * Improvemnet: remove superfluous import statements
