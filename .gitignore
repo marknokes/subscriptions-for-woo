@@ -7,5 +7,6 @@ src/js/my-account*
 src/js/enterprise*
 src/css/enterprise*
 src/templates/tab-content/tab-license.php
+src/templates/tab-content/tab-roles.php
 test-data
 .*
