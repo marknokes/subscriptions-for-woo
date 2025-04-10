@@ -16,6 +16,7 @@ Subscriptions for Woo takes the hassle (and high cost) out of managing subscript
 
 = Offer Subscription payments to help drive repeat business =
 Create stable, predictable income by offering subscription plans.
+
 - Subscription plans are created and managed at PayPal where customer payments are securely maintained. **Consumers are nearly three times more likely to purchase when you offer PayPal.** 
 - Built to seamlessly integrate with your WooCommerce store, offering a tailored solution for managing recurring payments and subscriptions.
 - Designed to streamline the subscription process, from setup to management, providing you with the tools you need to drive revenue and foster long-term customer relationships.
@@ -31,6 +32,7 @@ Create stable, predictable income by offering subscription plans.
 
 = Subscriptions for Woo Premium Features =
 Everything from above plus the following:
+
 - Allow specific users to edit plugin settings and permissions
 - Allow specific users to view and manage subscribers
 - Allow specific users to edit subscription products
@@ -39,6 +41,7 @@ Everything from above plus the following:
 
 = Subscriptions for Woo Enterprise Features =
 Everything from above plus the following:
+
 - Create custom roles to restrict content based on customer subscription(s)
 - Shortcode allows adding PayPal subscribe button to any page
 - Allow canceled subscribers to resubscribe and receive a discount
@@ -50,8 +53,6 @@ Everything from above plus the following:
 = Activate PayPal =
 Are you new to PayPal? [Learn how to add it to your store.](https://woocommerce.com/document/woocommerce-paypal-payments/)
 Need to update your existing PayPal integration? [Learn how to upgrade your integration.](https://woocommerce.com/document/woocommerce-paypal-payments/paypal-payments-upgrade-guide/)
-
-[Watch the video on how to activate PayPal for your WooCommerce store](https://woocommerce.com/document/woocommerce-paypal-payments/#complete-setup-video)
 
 == Frequently Asked Questions ==
 
