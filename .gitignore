@@ -5,6 +5,7 @@ src/templates/users-table-settings-page.php
 src/templates/subscriber-table-my-account.php
 src/js/my-account*
 src/js/enterprise*
+src/js/plugin-update*
 src/css/enterprise*
 src/templates/tab-content/tab-license.php
 src/templates/tab-content/tab-roles.php
