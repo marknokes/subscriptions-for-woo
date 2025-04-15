@@ -126,7 +126,7 @@ function ppsfwooInitializePayPalSubscription(product_id, button) {
         if(response.error) {
             throw new Error("No plan id found for product with ID " + product_id);
         } else {
-            document.getElementById('lds-ellipsis-' + product_id).style.setProperty("display", "none", "important");
+            document.getElementById('lds-ellipsis-' + product_id).style.setProperty("display", "none");
             if(response.quantity_supported) {
                 ppsfwooCreateQuantityInput(product_id);
             }

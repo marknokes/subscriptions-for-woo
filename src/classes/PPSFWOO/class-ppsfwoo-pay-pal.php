@@ -46,11 +46,14 @@ class PayPal
     /**
      * Displays a PayPal button for a specific product, allowing customers to subscribe to a subscription product.
      *
-     * @param null|int $product_id The ID of the product to display the button for. Defaults to the current product ID if not provided.
+     * @param null|int $product_id  The ID of the product to display the button for. Defaults to the current product ID if not provided.
+     * @param mixed    $button_text
      */
-    public static function button($product_id = null)
+    public static function button($product_id = null, $button_text = '')
     {
         $product_id = !empty($product_id) ? $product_id : get_the_ID();
+
+        $button_text = !empty($button_text) ? $button_text : PluginMain::get_option('ppsfwoo_button_text');
 
         $product = wc_get_product($product_id);
 
@@ -80,7 +83,7 @@ class PayPal
             document.getElementById('ppsfwoo-subscribe-button-{$product_id}')
                 .addEventListener('click', function() {
                     this.style.display = 'none';
-                    document.getElementById('lds-ellipsis-{$product_id}').style.setProperty('display', 'inline-block', 'important');
+                    document.getElementById('lds-ellipsis-{$product_id}').style.setProperty('display', 'block');
                     ppsfwooInitializePayPalSubscription({$product_id}, this);
                 });
         ");
@@ -90,7 +93,7 @@ class PayPal
         ]);
 
         PluginMain::display_template('paypal-button', [
-            'button_text' => PluginMain::get_option('ppsfwoo_button_text'),
+            'button_text' => $button_text,
             'product_id' => $product_id,
         ]);
     }
