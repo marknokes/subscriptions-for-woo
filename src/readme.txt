@@ -3,7 +3,7 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.5.4
+Stable tag: 2.5.5
 WC tested up to: 9.7.1
 Requires at least: 6.4.3
 Tested up to: 6.8
@@ -122,16 +122,20 @@ If you encounter issues with the PayPal buttons not appearing after an update, p
 
 == Changelog ==
 
+= 2.5.5 =
+* Improvement: update paypal subscribe button to 100% of container
+* Improvement: center waiting elipsis on subscribe button click
+
 = 2.5.4 =
 * Bugfix: deleted products cause error on order template in admin area
-* Improvemnet: add missing css identifier in js
-* Improvemnet: add missing docblock
-* Improvemnet: check for tab content before attempting to include in options page menu
-* Improvemnet: add min and max to number type for options page
-* Improvemnet: move localize script for paypal button to paypal class
+* Improvement: add missing css identifier in js
+* Improvement: add missing docblock
+* Improvement: check for tab content before attempting to include in options page menu
+* Improvement: add min and max to number type for options page
+* Improvement: move localize script for paypal button to paypal class
 
 = 2.5.3 =
-* Improvemnet: remove superfluous import statements
+* Improvement: remove superfluous import statements
 * Improvement: remove superfluous period after required PHP version
 * Improvement: move plugin init to PluginMain class
 * Improvement: simplify order line item meta
