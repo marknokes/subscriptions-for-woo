@@ -48,8 +48,9 @@ class PayPal
      *
      * @param null|int $product_id  The ID of the product to display the button for. Defaults to the current product ID if not provided.
      * @param mixed    $button_text
+     * @param mixed    $style
      */
-    public static function button($product_id = null, $button_text = '')
+    public static function button($product_id = null, $button_text = '', $style = '')
     {
         $product_id = !empty($product_id) ? $product_id : get_the_ID();
 
@@ -95,6 +96,7 @@ class PayPal
         PluginMain::display_template('paypal-button', [
             'button_text' => $button_text,
             'product_id' => $product_id,
+            'style' => $style,
         ]);
     }
 
