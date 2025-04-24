@@ -35,6 +35,10 @@ table {
   font-size: 1.25em;
   margin-left: 20px;
 }
+.tab-content ul {
+  list-style:initial;
+  margin-left: 1.5em;
+}
 .tab-content,
 .hide {
   display: none;
