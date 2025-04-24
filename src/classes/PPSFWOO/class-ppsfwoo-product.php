@@ -42,6 +42,26 @@ class Product
     }
 
     /**
+     * Filters the product query by user capability.
+     *
+     * @param array $query the query to be filtered
+     *
+     * @return array the filtered query
+     */
+    public function filter_product_query_by_capability($query)
+    {
+        if (is_admin()
+            && isset($query['post_type'], $query['tax_query'][0]['terms'])
+            && 'product' === $query['post_type']
+            && current_user_can('ppsfwoo_manage_settings')
+        ) {
+            array_push($query['tax_query'][0]['terms'], self::TYPE);
+        }
+
+        return $query;
+    }
+
+    /**
      * Returns the meta key used for storing the PayPal plan ID in the specified environment.
      * If no environment is specified, the default environment from the PayPal class will be used.
      *
@@ -415,6 +435,8 @@ class Product
         add_action('woocommerce_process_product_meta_'.self::TYPE, [$this, 'save_option_field']);
 
         add_action('admin_footer', [$this, 'custom_js']);
+
+        add_action('woocommerce_product_data_store_cpt_get_products_query', [$this, 'filter_product_query_by_capability']);
     }
 
     /**
