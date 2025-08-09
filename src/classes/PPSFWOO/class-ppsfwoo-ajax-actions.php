@@ -4,13 +4,21 @@ namespace PPSFWOO;
 
 class AjaxActions
 {
+    protected $data;
+
     // phpcs:disable
     /**
      * Handles all AJAX callbacks.
      */
     public function admin_ajax_callback()
     {
-        $method = isset($_POST['method']) ? sanitize_text_field(wp_unslash($_POST['method'])) : '';
+        $stream = file_get_contents('php://input');
+
+        $json = json_decode($stream, true);
+
+        $this->data = $json ?: $_POST;
+
+        $method = isset($this->data['method']) ? sanitize_text_field(wp_unslash($this->data['method'])) : '';
 
         if (method_exists($this, $method)) {
             echo call_user_func([$this, $method]);

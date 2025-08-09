@@ -2,6 +2,10 @@
 
 namespace PPSFWOO;
 
+use WooCommerce\PayPalCommerce\Button\Endpoint\RequestData;
+use WooCommerce\PayPalCommerce\PPCP;
+use WooCommerce\PayPalCommerce\Webhooks\Endpoint\ResubscribeEndpoint;
+
 class AjaxActionsPriv extends AjaxActions
 {
     /**
@@ -103,5 +107,21 @@ class AjaxActionsPriv extends AjaxActions
         return wp_json_encode([
             'html' => $data['html'],
         ]);
+    }
+
+    /**
+     * Resubscribe webhooks.
+     */
+    protected function resubscribe_webhooks()
+    {
+        try {
+            $container = PPCP::container();
+            $registrar = $container->get('webhook.registrar');
+            $request_data = new RequestData();
+            $endpoint = new ResubscribeEndpoint($registrar, $request_data);
+            $endpoint->handle_request();
+        } catch (Exception $e) {
+            Exception::log($e);
+        }
     }
 }

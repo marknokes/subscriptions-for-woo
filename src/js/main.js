@@ -1,17 +1,20 @@
-function ppsfwooDoAjax(action, success, args = {}) {
-	var data = {
-		'action': 'ppsfwoo_admin_ajax_callback',
-		'method': action
-	}
+function ppsfwooDoAjax(action, success, args = {}, contentType = 'application/x-www-form-urlencoded; charset=UTF-8') {
+	var isJson = 'application/json' === contentType,
+		jsonAction = '?action=ppsfwoo_admin_ajax_callback',
+		data = {
+			'action': 'ppsfwoo_admin_ajax_callback',
+			'method': action
+		};
 	
 	if(!jQuery.isEmptyObject(args)) {
 		data = jQuery.extend({}, data, args);
 	}
 
 	jQuery.ajax({
-		'type': "POST",
-		'url': '/wp-admin/admin-ajax.php',
-		'data': data,
+		'type': 'POST',
+		'contentType': contentType,
+		'url': '/wp-admin/admin-ajax.php' + jsonAction,
+		'data': isJson ? JSON.stringify(data) : data,
 		'success': success
 	});
 }
@@ -164,6 +167,21 @@ jQuery(document).ready(function($) {
 			}
 			ppsfwooHideLoadingMessage();
 		});
+	});
+
+	$("#resubscribe").click(function(e) {
+		e.preventDefault();
+		var nonce = $(this).data('nonce');
+		ppsfwooShowLoadingMessage('Processing...');
+		ppsfwooDoAjax('resubscribe_webhooks',
+			function(r) {
+				ppsfwooShowMsg("Successfully resubscribed webhooks.");
+				ppsfwooHideLoadingMessage();
+			}, {
+				'nonce': nonce
+			},
+			'application/json'
+		);
 	});
 
 	$('.nav-tab-wrapper a').click(function(e) {

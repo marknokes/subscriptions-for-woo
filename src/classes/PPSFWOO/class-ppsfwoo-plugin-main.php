@@ -653,6 +653,24 @@ class PluginMain
     }
 
     /**
+     * WooCommerce PayPal Payments UI support.
+     *
+     * Certain events require webhook resubscription. This function adds actions that "listens" for those events and calls schedule_webhook_resubscribe.
+     *
+     * @static
+     */
+    public static function ppcp_ui_support()
+    {
+        // Support for WooCommerce PayPal Payments old UI
+        add_action('wc_ajax_ppc-webhooks-resubscribe', [self::class, 'schedule_webhook_resubscribe']);
+
+        add_action('update_option_woocommerce-ppcp-settings', [self::class, 'schedule_webhook_resubscribe']);
+
+        // Support for WooCommerce PayPal Payments new UI
+        add_action('add_option_ppcp-webhook', [self::class, 'schedule_webhook_resubscribe']);
+    }
+
+    /**
      * Schedule a webhook resubscribe event.
      *
      * This function checks if the ppsfwoo_ppcp_updated transient is set and if the ppsfwoo_cron_resubscribe_webhooks event is not already scheduled. If both conditions are met, the transient is set to true and a single event is scheduled to run immediately using the wp_schedule_single_event function. Finally, the wp_cron action is triggered.

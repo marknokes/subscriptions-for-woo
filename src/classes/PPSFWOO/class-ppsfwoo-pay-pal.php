@@ -111,20 +111,20 @@ class PayPal
      */
     public static function env()
     {
-        $ppcp = new PPCP();
+        try {
+            $container = PPCP::container();
+            $settings = $container->get('wcgateway.settings');
+            $sandbox_on = $settings->has('sandbox_on') && $settings->get('sandbox_on');
 
-        $container = $ppcp->container();
-
-        $settings = $container->get('wcgateway.settings');
-
-        $sandbox_on = $settings->has('sandbox_on') && $settings->get('sandbox_on');
-
-        return [
-            'paypal_api_url' => $sandbox_on ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com',
-            'paypal_url' => $sandbox_on ? 'https://www.sandbox.paypal.com' : 'https://www.paypal.com',
-            'client_id' => $settings->has('client_id') && $settings->get('client_id') ? $settings->get('client_id') : '',
-            'env' => $sandbox_on ? 'sandbox' : 'production',
-        ];
+            return [
+                'paypal_api_url' => $sandbox_on ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com',
+                'paypal_url' => $sandbox_on ? 'https://www.sandbox.paypal.com' : 'https://www.paypal.com',
+                'client_id' => $settings->has('client_id') && $settings->get('client_id') ? $settings->get('client_id') : '',
+                'env' => $sandbox_on ? 'sandbox' : 'production',
+            ];
+        } catch (\Exception $e) {
+            Exception::log($e);
+        }
     }
 
     /**
@@ -150,9 +150,7 @@ class PayPal
     public static function access_token($log_error = true)
     {
         try {
-            $ppcp = new PPCP();
-
-            $container = $ppcp->container();
+            $container = PPCP::container();
 
             $PayPalBearer = new PayPalBearer(
                 new Cache('ppcp-paypal-bearer'),
