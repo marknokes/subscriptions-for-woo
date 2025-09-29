@@ -109,6 +109,10 @@ class Subscriber
 
         $this->plan = new Plan($this->get_plan_id());
 
+        $this->subscription->start_time = !empty($this->subscription->start_time)
+            ? new \DateTime($this->subscription->start_time)
+            : null;
+
         $this->subscription->last_payment = !empty($this->subscription->billing_info['last_payment']['time'])
             ? new \DateTime($this->subscription->billing_info['last_payment']['time'])
             : null;
@@ -117,13 +121,16 @@ class Subscriber
             ? new \DateTime($this->subscription->billing_info['next_billing_time'])
             : null;
 
-        $expiration = $this->add_frequency_to_last_payment(
+        $expiration = $this->add_frequency(
             $this->subscription->last_payment,
             $this->plan->frequency
         );
 
+        $trial_expiry = $this->get_trial_expiry($this->subscription, $this->plan);
+
         $this->subscription->expiration = $expiration
             ?? $this->subscription->next_billing
+            ?? $trial_expiry
             ?? new \DateTime();
 
         $this->email = $this->subscription->subscriber['email_address'];
@@ -286,6 +293,80 @@ class Subscriber
     }
 
     /**
+     * Gets the trial expiration from the subscription create time and plan data.
+     *
+     * @param DateTime $subscription the subscription object
+     * @param string   $plan         the plan data
+     *
+     * @return null|DateTime the new date with the added interval, or null if no trial
+     *
+     * @throws Exception if no start time or create time
+     */
+    protected function get_trial_expiry($subscription, $plan)
+    {
+        $start_time = $subscription->start_time ?? $subscription->create_time ?? null;
+
+        if (!$start_time) {
+            throw new \Exception('Subscription missing start_time and create_time');
+        }
+
+        $start_time_clone = clone $start_time;
+
+        $billing_cycles = $plan->billing_cycles ?? [];
+
+        $trial_cycle = null;
+
+        foreach ($billing_cycles as $cycle) {
+            if (isset($cycle['tenure_type']) && 'TRIAL' === $cycle['tenure_type']) {
+                $trial_cycle = $cycle;
+
+                break;
+            }
+        }
+
+        if (!$trial_cycle) {
+            return null;
+        }
+
+        $unit = $trial_cycle['frequency']['interval_unit'] ?? null;
+
+        $interval_count = (int) ($trial_cycle['frequency']['interval_count'] ?? 1);
+
+        $total_cycles = (int) ($trial_cycle['total_cycles'] ?? 1);
+
+        $total_intervals = $interval_count * $total_cycles;
+
+        switch (strtoupper($unit)) {
+            case 'DAY':
+                $interval_spec = "P{$total_intervals}D";
+
+                break;
+
+            case 'WEEK':
+                $interval_spec = "P{$total_intervals}W";
+
+                break;
+
+            case 'MONTH':
+                $interval_spec = "P{$total_intervals}M";
+
+                break;
+
+            case 'YEAR':
+                $interval_spec = "P{$total_intervals}Y";
+
+                break;
+
+            default:
+                throw new \Exception("Unsupported interval unit: {$unit}");
+        }
+
+        $trial_end = $start_time_clone->add(new \DateInterval($interval_spec));
+
+        return $trial_end->format(\DateTime::ATOM);
+    }
+
+    /**
      * Adds a specified interval to a given datetime and returns the new date.
      *
      * @param DateTime $datetime      the datetime to add the interval to
@@ -295,7 +376,7 @@ class Subscriber
      *
      * @throws InvalidArgumentException if the interval type is not valid
      */
-    protected static function add_frequency_to_last_payment($datetime, $interval_type)
+    protected static function add_frequency($datetime, $interval_type)
     {
         if (empty($datetime)) {
             return null;
