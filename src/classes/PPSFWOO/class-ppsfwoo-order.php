@@ -256,7 +256,7 @@ class Order
         $is_first_sequence = 1 === $sequence;
 
         if ($is_first_sequence) {
-            $start_time = (new \DateTime(self::$Subscriber->subscription->start_time))->format('l, F j, Y');
+            $start_time = self::$Subscriber->subscription->start_time->format('l, F j, Y');
 
             $name = sprintf(
                 ' %s <span class="ppsfwoo-receipt-start-time">starts %s </span>',
