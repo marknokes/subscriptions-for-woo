@@ -358,7 +358,7 @@ class Subscriber
                 break;
 
             default:
-                throw new \Exception("Unsupported interval unit: {$unit}");
+                throw new \Exception("Unsupported interval unit in trial trial expiry");
         }
 
         $trial_end = $start_time_clone->add(new \DateInterval($interval_spec));
