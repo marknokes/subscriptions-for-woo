@@ -363,7 +363,7 @@ class Subscriber
 
         $trial_end = $start_time_clone->add(new \DateInterval($interval_spec));
 
-        return $trial_end->format(\DateTime::ATOM);
+        return $trial_end;
     }
 
     /**

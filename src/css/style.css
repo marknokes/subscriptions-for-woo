@@ -132,6 +132,7 @@ div.tab-content {
   margin-left: -60px;
   opacity: 0;
   transition: opacity 0.3s;
+  text-wrap: nowrap;
 }
 .tooltip:hover .tooltip-text {
   visibility: visible;

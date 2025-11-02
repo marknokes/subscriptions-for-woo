@@ -3,7 +3,7 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.5.8
+Stable tag: 2.5.9
 WC tested up to: 9.7.1
 Requires at least: 6.4.3
 Tested up to: 6.8
@@ -121,6 +121,10 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.5.9 =
+* Bugfix: Additional incorrect date format issues
+* Improvement: Display cancel and expire date in subscriber table tooltip
 
 = 2.5.8 =
 * Bugfix: Incorrect date format in order causes fatal error

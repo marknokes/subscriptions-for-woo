@@ -56,6 +56,8 @@ if (!defined('ABSPATH')) {
 
         $date = gmdate('F j, Y', strtotime($row->created));
 
+        $tooltip = !empty($row->canceled_date) ? "Canceled: $row->canceled_date, Expires: $row->expires" : "Active";
+
         ?>
         <tr>
 
@@ -67,7 +69,7 @@ if (!defined('ABSPATH')) {
 
             <td><?php echo esc_html($date); ?></td>
 
-            <td><span class='tooltip <?php echo esc_attr($class); ?>'><span class="tooltip-text"><?php echo esc_attr($row->event_type); ?></span></span></td>
+            <td><span class='tooltip <?php echo esc_attr($class); ?>'><span class="tooltip-text"><?php echo esc_html($tooltip); ?></span></span></td>
 
             <td><a href='<?php echo esc_url($paypal_url); ?>/billing/subscriptions/<?php echo esc_attr($row->id); ?>' target='_blank'>Manage Subscription</a></td>
 
