@@ -6,8 +6,8 @@
 
 <?php
 
-if ($data = $this->subscriber_table_options_page()) {
-    if ($data['num_subs']) {
+if ($ppsfwoo_data = $this->subscriber_table_options_page()) {
+    if ($ppsfwoo_data['num_subs']) {
         ?>
 		
 		<form id="subs-search">
@@ -19,20 +19,20 @@ if ($data = $this->subscriber_table_options_page()) {
 		
 		<?php
 
-        echo wp_kses_post($data['html']);
+        echo wp_kses_post($ppsfwoo_data['html']);
 
-        $export_url = add_query_arg([
+        $ppsfwoo_export_url = add_query_arg([
             'ppsfwoo_export_table' => 1,
             '_wpnonce' => wp_create_nonce('db_export_nonce'),
         ], admin_url('admin.php?page=subscriptions_for_woo'));
 
         ?>
 
-		<a class="button export-table-data" href="<?php echo esc_url($export_url); ?>" target="_blank">Export Table Data</a>
+		<a class="button export-table-data" href="<?php echo esc_url($ppsfwoo_export_url); ?>" target="_blank">Export Table Data</a>
 		
 		<?php
 
-    } elseif (0 === $data['num_subs']) {
+    } elseif (0 === $ppsfwoo_data['num_subs']) {
         echo '<p>When you receive a new subscriber, they will appear here. </p>';
     }
 }

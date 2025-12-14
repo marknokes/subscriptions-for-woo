@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 
 <?php
 
-$wp_keses_options = [
+$ppsfwoo_wp_keses_options = [
     'option' => [
         'value' => [],
         'selected' => [],
@@ -30,26 +30,26 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 
 	<table id="settings-main">
 
-		<?php foreach (self::$options as $option => $array) {
-		    if (isset($array['is_premium']) && $is_premium = $array['is_premium']) {
-		        $feature = 'Premium';
+		<?php foreach (self::$options as $ppsfwoo_option => $ppsfwoo_array) {
+		    if (isset($ppsfwoo_array['is_premium']) && $ppsfwoo_is_premium = $ppsfwoo_array['is_premium']) {
+		        $ppsfwoo_feature = 'Premium';
 
-		        $disabled = $is_premium && (!PPSFWOO_PLUGIN_EXTRAS || !PluginExtras::onboarding_complete()) ? 'disabled=true' : '';
-		    } elseif (isset($array['is_enterprise']) && $is_enterprise = $array['is_enterprise']) {
-		        $feature = 'Enterprise';
+		        $ppsfwoo_disabled = $ppsfwoo_is_premium && (!PPSFWOO_PLUGIN_EXTRAS || !PluginExtras::onboarding_complete()) ? 'disabled=true' : '';
+		    } elseif (isset($ppsfwoo_array['is_enterprise']) && $ppsfwoo_is_enterprise = $ppsfwoo_array['is_enterprise']) {
+		        $ppsfwoo_feature = 'Enterprise';
 
-		        $disabled = $is_enterprise && (!PPSFWOO_ENTERPRISE || !PluginExtras::onboarding_complete()) ? 'disabled=true' : '';
+		        $ppsfwoo_disabled = $ppsfwoo_is_enterprise && (!PPSFWOO_ENTERPRISE || !PluginExtras::onboarding_complete()) ? 'disabled=true' : '';
 		    } else {
-		        $feature = $disabled = '';
+		        $ppsfwoo_feature = $ppsfwoo_disabled = '';
 		    }
 
-		    if ('skip_settings_field' === $array['type']) {
+		    if ('skip_settings_field' === $ppsfwoo_array['type']) {
 		        continue;
 		    }
 
-		    $name = !$disabled ? $option : '';
+		    $ppsfwoo_name = !$ppsfwoo_disabled ? $ppsfwoo_option : '';
 
-		    $value = self::get_option($option);
+		    $ppsfwoo_value = self::get_option($ppsfwoo_option);
 
 		    ?>
 
@@ -58,62 +58,62 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 				<td style="padding-bottom: 15px;">
 
 					<h3>
-						<label for="<?php echo esc_attr($name); ?>"><?php echo esc_attr($array['name']); ?></label>
+						<label for="<?php echo esc_attr($ppsfwoo_name); ?>"><?php echo esc_attr($ppsfwoo_array['name']); ?></label>
 					</h3>
 
 					<?php
 
-		            switch ($array['type']) {
+		            switch ($ppsfwoo_array['type']) {
 		                case 'checkbox':
-		                    $checked = checked(1, $value, false);
+		                    $ppsfwoo_checked = checked(1, $ppsfwoo_value, false);
 		                    ?>
-							<input type='checkbox' name='<?php echo esc_attr($name); ?>' value='1' <?php echo esc_attr($checked); ?> <?php echo esc_attr($disabled); ?> />
+							<input type='checkbox' name='<?php echo esc_attr($ppsfwoo_name); ?>' value='1' <?php echo esc_attr($ppsfwoo_checked); ?> <?php echo esc_attr($ppsfwoo_disabled); ?> />
 							<?php
 		                    break;
 
 		                case 'wysiwyg':
-		                    wp_editor($value, $option, $settings = ['textarea_rows' => '10']);
+		                    wp_editor($ppsfwoo_value, $ppsfwoo_option, $ppsfwoo_settings = ['textarea_rows' => '10']);
 
 		                    break;
 
 		                case 'textarea':
 		                    ?>
-							<textarea rows="10" cols="100" id="<?php echo esc_attr($option); ?>" name="<?php echo esc_attr($name); ?>" <?php echo esc_attr($disabled); ?>><?php echo esc_textarea($value); ?></textarea>
+							<textarea rows="10" cols="100" id="<?php echo esc_attr($ppsfwoo_option); ?>" name="<?php echo esc_attr($ppsfwoo_name); ?>" <?php echo esc_attr($ppsfwoo_disabled); ?>><?php echo esc_textarea($ppsfwoo_value); ?></textarea>
 							<?php
 		                    break;
 
 		                case 'select':
-		                    echo "<select name='".esc_attr($name)."' ".esc_attr($disabled).'>';
+		                    echo "<select name='".esc_attr($ppsfwoo_name)."' ".esc_attr($ppsfwoo_disabled).'>';
 
-		                    $options = $array['options'] ?? false;
+		                    $ppsfwoo_options = $ppsfwoo_array['options'] ?? false;
 
-		                    if ($options) {
-		                        foreach (array_keys($options) as $option) {
-		                            $selected = selected($option, $value, false);
+		                    if ($ppsfwoo_options) {
+		                        foreach (array_keys($ppsfwoo_options) as $ppsfwoo_option) {
+		                            $ppsfwoo_selected = selected($ppsfwoo_option, $ppsfwoo_value, false);
 
-		                            echo wp_kses("<option value='{$option}' {$selected}>{$options[$option]}</option>", $wp_keses_options);
+		                            echo wp_kses("<option value='{$ppsfwoo_option}' {$ppsfwoo_selected}>{$ppsfwoo_options[$ppsfwoo_option]}</option>", $ppsfwoo_wp_keses_options);
 		                        }
 		                    } else {
-		                        $post_type = isset($array['post_type']) ? $array['post_type'] : 'page';
+		                        $ppsfwoo_post_type = isset($ppsfwoo_array['post_type']) ? $ppsfwoo_array['post_type'] : 'page';
 
-		                        switch ($post_type) {
+		                        switch ($ppsfwoo_post_type) {
 		                            case 'category':
-		                                if ($categories = get_terms($array['taxonomy'])) {
-		                                    foreach ($categories as $category) {
-		                                        $selected = selected($category->slug, $value, false);
+		                                if ($ppsfwoo_categories = get_terms($ppsfwoo_array['taxonomy'])) {
+		                                    foreach ($ppsfwoo_categories as $ppsfwoo_category) {
+		                                        $ppsfwoo_selected = selected($ppsfwoo_category->slug, $ppsfwoo_value, false);
 
-		                                        echo wp_kses("<option value='{$category->slug}' {$selected}>{$category->name}</option>", $wp_keses_options);
+		                                        echo wp_kses("<option value='{$ppsfwoo_category->slug}' {$ppsfwoo_selected}>{$ppsfwoo_category->name}</option>", $ppsfwoo_wp_keses_options);
 		                                    }
 		                                }
 
 		                                break;
 
 		                            default:
-		                                if ($pages = get_posts(['numberposts' => -1, 'post_status' => 'any', 'post_type' => [$post_type]])) {
-		                                    foreach ($pages as $page) {
-		                                        $selected = selected($page->ID, $value, false);
+		                                if ($ppsfwoo_pages = get_posts(['numberposts' => -1, 'post_status' => 'any', 'post_type' => [$ppsfwoo_post_type]])) {
+		                                    foreach ($ppsfwoo_pages as $ppsfwoo_page) {
+		                                        $ppsfwoo_selected = selected($ppsfwoo_page->ID, $ppsfwoo_value, false);
 
-		                                        echo wp_kses("<option value='{$page->ID}' {$selected}>{$page->post_title}</option>", $wp_keses_options);
+		                                        echo wp_kses("<option value='{$ppsfwoo_page->ID}' {$ppsfwoo_selected}>{$ppsfwoo_page->post_title}</option>", $ppsfwoo_wp_keses_options);
 		                                    }
 		                                }
 
@@ -126,17 +126,17 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 		                    break;
 
 		                case 'multiselect':
-		                    echo wp_kses("<select name='{$name['page_ids']}[]' multiple='multiple'".esc_attr($disabled).'>', ['select' => ['name' => [], 'multiple' => []]]);
+		                    echo wp_kses("<select name='{$ppsfwoo_name['page_ids']}[]' multiple='multiple'".esc_attr($ppsfwoo_disabled).'>', ['select' => ['name' => [], 'multiple' => []]]);
 
-		                    $type = isset($array['post_type']) ? $array['post_type'] : 'page';
+		                    $ppsfwoo_type = isset($ppsfwoo_array['post_type']) ? $ppsfwoo_array['post_type'] : 'page';
 
-		                    if ($pages = get_posts(['numberposts' => -1, 'post_type' => [$type]])) {
-		                        foreach ($pages as $page) {
-		                            $key = array_search($page->ID, $value['page_ids']);
+		                    if ($ppsfwoo_pages = get_posts(['numberposts' => -1, 'post_type' => [$ppsfwoo_type]])) {
+		                        foreach ($ppsfwoo_pages as $ppsfwoo_page) {
+		                            $ppsfwoo_key = array_search($ppsfwoo_page->ID, $ppsfwoo_value['page_ids']);
 
-		                            $selected = selected($page->ID, $value['page_ids'][$key]);
+		                            $ppsfwoo_selected = selected($ppsfwoo_page->ID, $ppsfwoo_value['page_ids'][$ppsfwoo_key]);
 
-		                            echo wp_kses("<option value='{$page->ID}' {$selected}>{$page->post_title}</option>", $wp_keses_options);
+		                            echo wp_kses("<option value='{$ppsfwoo_page->ID}' {$ppsfwoo_selected}>{$ppsfwoo_page->post_title}</option>", $ppsfwoo_wp_keses_options);
 		                        }
 		                    }
 
@@ -145,27 +145,27 @@ if (!is_super_admin() && !current_user_can('ppsfwoo_manage_settings')) {
 		                    break;
 
 		                case 'number':
-		                    $value = esc_attr($value);
+		                    $ppsfwoo_value = esc_attr($ppsfwoo_value);
 
-		                    $min = $array['min'] ?? 1;
+		                    $ppsfwoo_min = $ppsfwoo_array['min'] ?? 1;
 
-		                    $max = $array['max'] ?? 100;
+		                    $ppsfwoo_max = $ppsfwoo_array['max'] ?? 100;
 
-		                    echo "<input size='2' type='number' min='".esc_attr($min)."' max='".esc_attr($max)."' id='".esc_attr($option)."' name='".esc_attr($name)."' value='".esc_attr($value)."' ".esc_attr($disabled).' />';
+		                    echo "<input size='2' type='number' min='".esc_attr($ppsfwoo_min)."' max='".esc_attr($ppsfwoo_max)."' id='".esc_attr($ppsfwoo_option)."' name='".esc_attr($ppsfwoo_name)."' value='".esc_attr($ppsfwoo_value)."' ".esc_attr($ppsfwoo_disabled).' />';
 
 		                    break;
 
 		                default:
-		                    $value = esc_attr($value);
+		                    $ppsfwoo_value = esc_attr($ppsfwoo_value);
 
-		                    echo "<input size='20' type='text' id='".esc_attr($option)."' name='".esc_attr($name)."' value='".esc_attr($value)."' ".esc_attr($disabled).' />';
+		                    echo "<input size='20' type='text' id='".esc_attr($ppsfwoo_option)."' name='".esc_attr($ppsfwoo_name)."' value='".esc_attr($ppsfwoo_value)."' ".esc_attr($ppsfwoo_disabled).' />';
 
 		                    break;
 		            }
 
 		    ?>
 					<p class="description">
-						<span class="pro-name"><?php echo $disabled ? esc_html($feature).' feature: ' : ''; ?></span><?php echo wp_kses_post(wptexturize(self::format_description($array['description'], $disabled))); ?>
+						<span class="pro-name"><?php echo $ppsfwoo_disabled ? esc_html($ppsfwoo_feature).' feature: ' : ''; ?></span><?php echo wp_kses_post(wptexturize(self::format_description($ppsfwoo_array['description'], $ppsfwoo_disabled))); ?>
 					</p>
 				</td>
 

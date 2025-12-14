@@ -12,11 +12,11 @@ if (!defined('ABSPATH')) {
 
 <?php
 
-$plans = Plan::get_plans();
+$ppsfwoo_plans = Plan::get_plans();
 
-if (sizeof($plans)) {
+if (sizeof($ppsfwoo_plans)) {
     self::display_template('table-plans', [
-        'plans' => $plans,
+        'plans' => $ppsfwoo_plans,
         'paypal_url' => $this->env['paypal_url'],
     ]);
 }

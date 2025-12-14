@@ -683,7 +683,7 @@ class PluginMain
             set_transient('ppsfwoo_ppcp_updated', true);
 
             wp_schedule_single_event(time(), 'ppsfwoo_cron_resubscribe_webhooks');
-
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
             do_action('wp_cron');
         }
     }

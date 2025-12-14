@@ -19,59 +19,59 @@ if (!defined('ABSPATH')) {
 
     <?php
 
-    foreach ($results as $row) {
-        $user = get_user_by('id', $row->wp_customer_id);
+    foreach ($results as $ppsfwoo_row) {
+        $ppsfwoo_user = get_user_by('id', $ppsfwoo_row->wp_customer_id);
 
-        if (!is_object($user)) {
+        if (!is_object($ppsfwoo_user)) {
             continue;
         }
 
-        $user_profile_link = admin_url("user-edit.php?user_id={$row->wp_customer_id}");
+        $ppsfwoo_user_profile_link = admin_url("user-edit.php?user_id={$ppsfwoo_row->wp_customer_id}");
 
-        $order_link = admin_url("admin.php?page=wc-orders&action=edit&id={$row->order_id}");
+        $ppsfwoo_order_link = admin_url("admin.php?page=wc-orders&action=edit&id={$ppsfwoo_row->order_id}");
 
-        switch ($row->event_type) {
+        switch ($ppsfwoo_row->event_type) {
             case Webhook::ACTIVATED:
-                $class = 'status green';
+                $ppsfwoo_class = 'status green';
 
                 break;
 
             case Webhook::SUSPENDED:
-                $class = 'status orange';
+                $ppsfwoo_class = 'status orange';
 
                 break;
 
             case Webhook::CANCELLED:
             case Webhook::PAYMENT_FAILED:
             case Webhook::EXPIRED:
-                $class = 'status red';
+                $ppsfwoo_class = 'status red';
 
                 break;
 
             default:
-                $class = '';
+                $ppsfwoo_class = '';
 
                 break;
         }
 
-        $date = gmdate('F j, Y', strtotime($row->created));
+        $ppsfwoo_date = gmdate('F j, Y', strtotime($ppsfwoo_row->created));
 
-        $tooltip = !empty($row->canceled_date) ? "Canceled: $row->canceled_date, Expires: $row->expires" : "Active";
+        $ppsfwoo_tooltip = !empty($ppsfwoo_row->canceled_date) ? "Canceled: {$ppsfwoo_row->canceled_date}, Expires: {$ppsfwoo_row->expires}" : 'Active';
 
         ?>
         <tr>
 
-            <td><a href='<?php echo esc_attr($user_profile_link); ?>' target='_blank'><?php echo esc_html($user->display_name); ?></a></td>
+            <td><a href='<?php echo esc_attr($ppsfwoo_user_profile_link); ?>' target='_blank'><?php echo esc_html($ppsfwoo_user->display_name); ?></a></td>
 
-            <td><a href='<?php echo esc_attr($order_link); ?>' target='_blank'>Order #<?php echo esc_html($row->order_id); ?><a></td>
+            <td><a href='<?php echo esc_attr($ppsfwoo_order_link); ?>' target='_blank'>Order #<?php echo esc_html($ppsfwoo_row->order_id); ?><a></td>
 
-            <td><a href='<?php echo esc_url($paypal_url); ?>/billing/plans/<?php echo esc_attr($row->paypal_plan_id); ?>' target='_blank'><?php echo esc_html($row->paypal_plan_id); ?></a></td>
+            <td><a href='<?php echo esc_url($paypal_url); ?>/billing/plans/<?php echo esc_attr($ppsfwoo_row->paypal_plan_id); ?>' target='_blank'><?php echo esc_html($ppsfwoo_row->paypal_plan_id); ?></a></td>
 
-            <td><?php echo esc_html($date); ?></td>
+            <td><?php echo esc_html($ppsfwoo_date); ?></td>
 
-            <td><span class='tooltip <?php echo esc_attr($class); ?>'><span class="tooltip-text"><?php echo esc_html($tooltip); ?></span></span></td>
+            <td><span class='tooltip <?php echo esc_attr($ppsfwoo_class); ?>'><span class="tooltip-text"><?php echo esc_html($ppsfwoo_tooltip); ?></span></span></td>
 
-            <td><a href='<?php echo esc_url($paypal_url); ?>/billing/subscriptions/<?php echo esc_attr($row->id); ?>' target='_blank'>Manage Subscription</a></td>
+            <td><a href='<?php echo esc_url($paypal_url); ?>/billing/subscriptions/<?php echo esc_attr($ppsfwoo_row->id); ?>' target='_blank'>Manage Subscription</a></td>
 
         </tr>
 
