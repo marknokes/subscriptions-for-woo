@@ -3,8 +3,8 @@ Contributors: marknokes
 Tags: woocommerce, paypal, payments, ecommerce, subscriptions
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable tag: 2.6
-WC tested up to: 10.4.2
+Stable tag: 2.6.1
+WC tested up to: 10.6.2
 Requires at least: 6.4.3
 Tested up to: 6.9
 Requires PHP: 7.4
@@ -121,6 +121,9 @@ Automatic updates should work generally smoothly, but we still recommend you bac
 If you encounter issues with the PayPal buttons not appearing after an update, purge your website cache.
 
 == Changelog ==
+
+= 2.6.1 =
+* Address change to WooCommerce PayPal Payments for continued integration
 
 = 2.6 =
 * Confirm compatibility with WordPress 6.9

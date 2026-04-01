@@ -158,7 +158,7 @@ class PayPal
                 $container->get('api.key'),
                 $container->get('api.secret'),
                 $container->get('woocommerce.logger.woocommerce'),
-                $container->get('wcgateway.settings')
+                $container->get('settings.settings-provider')
             );
 
             return $PayPalBearer->bearer()->token();
