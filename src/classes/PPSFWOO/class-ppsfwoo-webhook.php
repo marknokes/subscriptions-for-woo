@@ -167,11 +167,15 @@ class Webhook
         if (\WP_REST_Server::READABLE === $request->get_method()) {
             $response->set_status(200);
 
+            $response->set_data(['status' => 200]);
+
             return $response;
         }
 
         if (!PayPal::valid_request($this->id())) {
             $response->set_status(403);
+
+            $response->set_data(['status' => 403]);
 
             return $response;
         }
@@ -202,6 +206,8 @@ class Webhook
         }
 
         $response->set_status(200);
+        
+        $response->set_data(['status' => 200]);
 
         return $response;
     }
