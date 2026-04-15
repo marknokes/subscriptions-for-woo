@@ -113,7 +113,7 @@ class PayPal
     {
         try {
             $container = PPCP::container();
-            $settings = $container->get('settings.settings-provider');
+            $settings = $container->get('wcgateway.settings');
             $sandbox_on = $settings->has('sandbox_on') && $settings->get('sandbox_on');
 
             return [
