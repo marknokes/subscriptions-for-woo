@@ -1,3 +1,10 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+?>
 <p class="please-wait">Please wait while we finish processing your order<span id="waiting-ellipsis">&nbsp;</span></p>
 
 You will be redirected to your order details shortly. This may take up to one minute.

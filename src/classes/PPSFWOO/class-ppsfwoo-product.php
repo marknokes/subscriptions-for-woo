@@ -2,6 +2,10 @@
 
 namespace PPSFWOO;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 class Product
 {
     /**

@@ -7,6 +7,11 @@
  *
  * @return @return void
  */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 function ppsfwoo_autoload($class_name)
 {
     $namespace = 'PPSFWOO\\';

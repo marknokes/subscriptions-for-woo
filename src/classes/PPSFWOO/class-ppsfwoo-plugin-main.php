@@ -2,6 +2,10 @@
 
 namespace PPSFWOO;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use WooCommerce\PayPalCommerce\PPCP;
 
