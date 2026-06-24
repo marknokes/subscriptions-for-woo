@@ -9,6 +9,11 @@ use WooCommerce\PayPalCommerce\PPCP;
 class PayPal
 {
     /**
+     * PayPalCommerce TokenRateLimiter
+     */
+    private \WooCommerce\PayPalCommerce\ApiClient\Authentication\TokenRateLimiter $rate_limiter;
+
+    /**
      * PayPal enpoint for subscriptions.
      *
      * @var string
@@ -158,7 +163,8 @@ class PayPal
                 $container->get('api.key'),
                 $container->get('api.secret'),
                 $container->get('woocommerce.logger.woocommerce'),
-                $container->get('settings.settings-provider')
+                $container->get('settings.settings-provider'),
+                $container->get('api.token-rate-limiter')
             );
 
             return $PayPalBearer->bearer()->token();
