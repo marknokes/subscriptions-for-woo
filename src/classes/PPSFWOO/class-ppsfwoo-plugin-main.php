@@ -314,9 +314,9 @@ class PluginMain
 
         $this->plugin_dir_url = plugin_dir_url(PPSFWOO_PLUGIN_PATH);
 
-        $this->client_id = $this->env['client_id'];
+        $this->client_id = $this->env['client_id'] ?? null;
 
-        $this->paypal_url = $this->env['paypal_url'];
+        $this->paypal_url = $this->env['paypal_url'] ?? null;
 
         foreach (self::$options as $option_name => $option_value) {
             if (self::skip_option($option_value)) {

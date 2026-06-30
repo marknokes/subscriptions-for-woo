@@ -77,7 +77,7 @@ class Product
     {
         $env = $env ?? PayPal::env();
 
-        return "{$env['env']}_ppsfwoo_plan_id";
+        return isset($env['env']) ? "{$env['env']}_ppsfwoo_plan_id" : '';
     }
 
     /**
