@@ -7,7 +7,6 @@
  *
  * @return @return void
  */
-
 if (!defined('ABSPATH')) {
     exit;
 }

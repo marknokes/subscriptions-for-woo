@@ -3,16 +3,12 @@
 namespace PPSFWOO;
 
 use WooCommerce\PayPalCommerce\ApiClient\Authentication\PayPalBearer;
+use WooCommerce\PayPalCommerce\ApiClient\Authentication\TokenRateLimiter;
 use WooCommerce\PayPalCommerce\ApiClient\Helper\Cache;
 use WooCommerce\PayPalCommerce\PPCP;
 
 class PayPal
 {
-    /**
-     * PayPalCommerce TokenRateLimiter
-     */
-    private \WooCommerce\PayPalCommerce\ApiClient\Authentication\TokenRateLimiter $rate_limiter;
-
     /**
      * PayPal enpoint for subscriptions.
      *
@@ -47,6 +43,11 @@ class PayPal
      * @var string
      */
     public const EP_VERIFY_SIG = '/v1/notifications/verify-webhook-signature';
+
+    /**
+     * PayPalCommerce TokenRateLimiter.
+     */
+    private TokenRateLimiter $rate_limiter;
 
     /**
      * Displays a PayPal button for a specific product, allowing customers to subscribe to a subscription product.

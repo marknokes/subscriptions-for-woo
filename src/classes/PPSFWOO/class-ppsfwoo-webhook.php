@@ -137,6 +137,8 @@ class Webhook
         $this->webhook_id = PluginMain::get_option('ppsfwoo_webhook_id');
 
         $this->subscribed_webhooks = PluginMain::get_option('ppsfwoo_subscribed_webhooks');
+
+        $this->check();
     }
 
     /**
@@ -206,7 +208,7 @@ class Webhook
         }
 
         $response->set_status(200);
-        
+
         $response->set_data(['status' => 200]);
 
         return $response;
@@ -293,11 +295,13 @@ class Webhook
     /**
      * Retrieves a list of subscribed webhooks for the current user.
      *
+     * @param bool $force_api_request force a new api request
+     *
      * @return array|bool returns an array of subscribed webhooks if successful, or false if there are no subscribed webhooks or an error occurs
      */
-    public function list()
+    public function list($force_api_request = false)
     {
-        if ($this->id() && is_array($this->subscribed_webhooks) && sizeof($this->subscribed_webhooks)) {
+        if (false === $force_api_request && $this->id() && is_array($this->subscribed_webhooks) && sizeof($this->subscribed_webhooks)) {
             $subscribed = $this->subscribed_webhooks;
         } elseif ($webhooks = PayPal::request(PayPal::EP_WEBHOOKS)) {
             $subscribed = [];
@@ -439,6 +443,27 @@ class Webhook
                     }
                 }
             }
+        }
+    }
+
+    protected function check()
+    {
+        if (false !== get_transient('ppsfwoo_paypal_webhook_verified')) {
+            return;
+        }
+
+        $verified = !empty($this->list(true));
+
+        if (!$verified) {
+            $verified = (false !== $this->resubscribe());
+        }
+
+        if ($verified) {
+            set_transient(
+                'ppsfwoo_paypal_webhook_verified',
+                true,
+                DAY_IN_SECONDS
+            );
         }
     }
 }
